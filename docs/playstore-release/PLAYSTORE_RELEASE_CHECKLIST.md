@@ -11,10 +11,10 @@ Related: [Compliance audit](PLAYSTORE_COMPLIANCE_AUDIT.md) · [Manual actions](P
 
 | Check | Status | Evidence |
 |---|---|---|
-| HEAD compiles (`:app:compileDebugKotlin`) | NOT VERIFIED (pending CI) | Run `44375015645` on `3692fbf` cancelled; PR run `44376563792` on `dda768a` failed at Gradle plugin resolution before compiling; last compile pass run 183 on `3c06b85` |
-| Unit tests pass | NOT VERIFIED (pending CI) | Run 183: 965 tests, 1 failed (premise fixed `c162957`) |
-| Lint (`:app:lintDebug`) | NOT VERIFIED | Not run since `a8f220c` |
-| `bundleRelease` succeeds | NOT VERIFIED | `.github/workflows/android.yml` step |
+| HEAD compiles (`:app:compileDebugKotlin`) | PASS on `07b2e0e` (CI run 219); later commits pending CI | Run `44375015645` on `3692fbf` cancelled; PR run `44376563792` on `dda768a` failed at Gradle plugin resolution before compiling; last compile pass run 183 on `3c06b85` |
+| Unit tests pass | PASS on `07b2e0e` (CI run 219); later commits pending CI | Run 183: 965 tests, 1 failed (premise fixed `c162957`) |
+| Lint (`:app:lintDebug`) | PASS on `07b2e0e` (CI run 219) | Not run since `a8f220c` |
+| `bundleRelease` succeeds | PASS as an unsigned test build on `07b2e0e` (CI run 219, policy URL guard bypassed); a signed build with the policy URL is NOT VERIFIED | `.github/workflows/android.yml` step |
 | Sideload `assembleRelease` succeeds | NOT VERIFIED | same |
 | Source audit and Room schema | NOT VERIFIED for HEAD | `scripts/ci/scanpro-quality-audit.py`, `check-room-schema.sh` |
 
@@ -80,7 +80,7 @@ Related: [Compliance audit](PLAYSTORE_COMPLIANCE_AUDIT.md) · [Manual actions](P
 
 | Check | Status | Evidence |
 |---|---|---|
-| Redaction leaves no original text (S1–S4) | NOT VERIFIED (pending CI) | `EditToolsTest`, [Security §2](PLAYSTORE_SECURITY_REPORT.md) |
+| Redaction leaves no original text (S1–S4) | Unit tests PASS (CI run 219, `EditToolsTest`); on a phone NOT VERIFIED | `EditToolsTest`, [Security §2](PLAYSTORE_SECURITY_REPORT.md) |
 | FileProvider limited, not exported | PASS | `res/xml/file_paths.xml`, manifest |
 | No cleartext traffic | PASS | `usesCleartextTraffic="false"` |
 | Release logs stripped (v/d/i) | PASS (rule) / NOT VERIFIED (dex) | `app/proguard-rules.pro:49-53` |

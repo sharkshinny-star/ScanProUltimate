@@ -66,14 +66,16 @@ class OpenCvDocumentAnalyzer(
     private var vBytes = ByteArray(0)
     private var chromaBytes = ByteArray(0)
 
+    private var planeBytes = ByteArray(0)
+
     /**
-     * The frame's colour-strength map ([LiveChroma]), turned upright and cut to the viewport like the grey image, or
-     * null when the frame has no usable colour planes. Reads the luma that [grayMatOf] left in the frame buffer, so it
-     * must be called after it, for the same frame.
+     * The frame's colour-strength map ([LiveChroma]) and its two colour-difference planes (one 2-channel Mat), each
+     * turned upright and cut to the viewport like the grey image; either is null when the frame has no usable colour
+     * planes. Reads the luma that [grayMatOf] left in the frame buffer, so it must be called after it, for the same frame.
      */
-    private fun chromaMatOf(image: ImageProxy): Mat? {
+    private fun colourMatsOf(image: ImageProxy): Pair<Mat?, Mat?> {
         val planes = image.planes
-        if (planes.size < 3 || frameBytes.size != image.width * image.height) return null
+        if (planes.size < 3 || frameBytes.size != image.width * image.height) return null to null
         fun read(buffer: java.nio.ByteBuffer, into: ByteArray): ByteArray {
             buffer.rewind()
             val bytes = if (into.size == buffer.remaining()) into else ByteArray(buffer.remaining())
@@ -84,12 +86,23 @@ class OpenCvDocumentAnalyzer(
         vBytes = read(planes[2].buffer, vBytes)
         val width = LiveChroma.width(image.width)
         val height = LiveChroma.height(image.height)
-        if (width <= 0 || height <= 0) return null
+        if (width <= 0 || height <= 0) return null to null
+        val rowStride = planes[1].rowStride
+        val pixelStride = planes[1].pixelStride
         if (chromaBytes.size != width * height) chromaBytes = ByteArray(width * height)
-        if (!LiveChroma.compute(frameBytes, image.width, image.height, uBytes, vBytes, planes[1].rowStride, planes[1].pixelStride, chromaBytes)) return null
-        val source = Mat(height, width, CvType.CV_8UC1)
+        val chroma = if (!LiveChroma.compute(frameBytes, image.width, image.height, uBytes, vBytes, rowStride, pixelStride, chromaBytes)) null
+        else runCatching { uprightMat(image, height, width, CvType.CV_8UC1, chromaBytes) }.getOrNull()
+        if (planeBytes.size != 2 * width * height) planeBytes = ByteArray(2 * width * height)
+        val colourPlanes = if (!LiveChroma.planes(image.width, image.height, uBytes, vBytes, rowStride, pixelStride, planeBytes)) null
+        else runCatching { uprightMat(image, height, width, CvType.CV_8UC2, planeBytes) }.getOrNull()
+        return chroma to colourPlanes
+    }
+
+    /** [bytes] as a [rows] x [cols] Mat of [type] (a quarter-size map of the frame), turned upright and cut to the viewport. */
+    private fun uprightMat(image: ImageProxy, rows: Int, cols: Int, type: Int, bytes: ByteArray): Mat {
+        val source = Mat(rows, cols, type)
         try {
-            source.put(0, 0, chromaBytes)
+            source.put(0, 0, bytes)
             val rotateCode = when (image.imageInfo.rotationDegrees) {
                 90 -> Core.ROTATE_90_CLOCKWISE
                 180 -> Core.ROTATE_180
@@ -137,9 +150,11 @@ class OpenCvDocumentAnalyzer(
             // are found describe exactly the pixels the user sees and the capture keeps.
             val gray = toRotatedGrayMat(image).croppedToViewport(image)
             // The colour-strength map from the same frame (R57); without it the detector works on brightness alone, as before.
-            val chroma = runCatching { chromaMatOf(image) }.getOrNull()
+            // Its two colour-difference planes add colour edges (2026-11-19): a card's coloured band or a coloured page
+            // against a surface of the same brightness has no brightness edge at all.
+            val (chroma, colourPlanes) = runCatching { colourMatsOf(image) }.getOrDefault(null to null)
             try {
-                val raw = DocumentEdgeDetector.detect(gray, chroma)
+                val raw = DocumentEdgeDetector.detect(gray, chroma, colourPlanes)
                 var result = raw.copy(guidance = steadyGuidance(raw.guidance))
                 // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
                 val now = android.os.SystemClock.elapsedRealtime()
@@ -181,6 +196,7 @@ class OpenCvDocumentAnalyzer(
             } finally {
                 gray.release()
                 chroma?.release()
+                colourPlanes?.release()
             }
         } catch (error: Throwable) {
             // Analyser failures should never kill the camera pipeline. One bad frame is dropped quietly, but a

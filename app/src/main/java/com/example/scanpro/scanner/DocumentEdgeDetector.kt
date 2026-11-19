@@ -90,7 +90,22 @@ object DocumentEdgeDetector {
     init { OpenCvRuntime.ensureLoaded() }
 
     private const val ANALYSIS_LONG_SIDE = 900.0
-    private const val MIN_DOCUMENT_AREA_RATIO = 0.08
+    /**
+     * 0.05, was 0.08 (2026-11-19): an ID card at arm's length covers about 7% of the frame and had no outline at all;
+     * a small outline still scores under the capture gate (area is nearly half the score), so it shows and asks to
+     * move closer rather than vanishing.
+     */
+    private const val MIN_DOCUMENT_AREA_RATIO = 0.05
+    /**
+     * Canny limits on the blurred colour-difference planes (Cb, Cr): a card's coloured band or a coloured page against
+     * a desk of the same brightness has no brightness edge, but a colour step of 15 to 60 levels (2026-11-19).
+     */
+    /** [preferEnclosing]: side tolerance as a share of the frame's long side, least area growth, least share of the score. */
+    private const val PART_TOLERANCE = 0.025
+    private const val PART_MIN_GROWTH = 1.08
+    private const val PART_MIN_SCORE = 0.85f
+    private const val COLOUR_CANNY_LOW = 10.0
+    private const val COLOUR_CANNY_HIGH = 28.0
     /** Canny limits for the faint-edge source, on a widely blurred copy where a 12-level step peaks near 5. */
     private const val FAINT_CANNY_LOW = 2.5
     private const val FAINT_CANNY_HIGH = 7.0
@@ -103,9 +118,11 @@ object DocumentEdgeDetector {
     /**
      * The straight-edge search runs only when the best closed outline scores below this. A page the contour sources
      * already agree on (a plain page scores 0.56 and up on the benchmark) never pays for the search; a page broken by
-     * a shadow scores 0.2 to 0.45 there and does.
+     * a shadow scores 0.2 to 0.45 there and does. 0.56, was 0.5 (2026-11-19): a part of the object (a tilted card's
+     * face under its header band, the lit part of a page under a shadow over most of one side) scores 0.50 to 0.52,
+     * just over the old gate, so the whole object was never searched for.
      */
-    private const val LINE_SEARCH_BELOW = 0.5f
+    private const val LINE_SEARCH_BELOW = 0.56f
     /**
      * F175, colour source: the least gap between the mean colour strengths of the two sides of the Otsu split
      * (chroma map units: chromaticity distance from neutral times [CHROMA_SCALE]) for the split to count as page
@@ -150,13 +167,25 @@ object DocumentEdgeDetector {
         }
     }
 
-    fun detect(grayInput: Mat, chroma: Mat? = null): DocumentDetection {
+    /**
+     * Finds the page in [grayInput]. [chroma] is the colour-strength map ([chromaMap]) and [colourPlanes] the two
+     * colour-difference planes (Cb then Cr, one 2-channel 8-bit Mat, [colourPlanes]); both optional, both at any size
+     * with the frame's shape. The planes add colour edges to the brightness edges, so an edge between two surfaces of
+     * the same brightness but different colour (a card's blue header band on brown wood) is still found.
+     */
+    fun detect(grayInput: Mat, chroma: Mat? = null, colourPlanes: Mat? = null): DocumentDetection {
         require(grayInput.channels() == 1) { "DocumentEdgeDetector expects a grayscale Mat" }
+        require(colourPlanes == null || (colourPlanes.channels() == 2 && !colourPlanes.empty())) { "The colour planes must be a 2-channel Mat" }
         // Any size with the frame's shape: the map is brought to the working size below (the live camera passes a quarter-size one).
         require(chroma == null || (chroma.channels() == 1 && !chroma.empty())) { "The colour map must be a single-channel Mat" }
         // Any size, but the frame's shape: a map of another shape would be stretched onto the frame and point the colour
         // outlines at the wrong place, so it is left out (brightness alone, as without colour).
         val colourMap = chroma?.takeIf {
+            kotlin.math.abs(it.cols().toDouble() / it.rows() - grayInput.cols().toDouble() / grayInput.rows()) <
+                2.0 / minOf(it.rows(), it.cols()).coerceAtLeast(1)
+        }
+
+        val planes = colourPlanes?.takeIf {
             kotlin.math.abs(it.cols().toDouble() / it.rows() - grayInput.cols().toDouble() / grayInput.rows()) <
                 2.0 / minOf(it.rows(), it.cols()).coerceAtLeast(1)
         }
@@ -191,6 +220,9 @@ object DocumentEdgeDetector {
             val lower = max(15.0, median * 0.5)
             val upper = min(255.0, median * 1.4)
             Imgproc.Canny(processed, edgesCanny, lower, upper)
+            // Colour edges (2026-11-19): Canny on each blurred colour-difference plane, added to the brightness edges.
+            // Fixed limits: the planes sit near 128 whatever the light, so a page edge is a step of a known size there.
+            if (planes != null) addColourEdges(planes, working.size(), edgesCanny)
 
             // Methods 3 and 4 only need the rough region of the page, not pixel-exact edges, so both run on a half-
             // size copy and their maps are scaled back up (nearest, so they stay binary). Measured 2026-11-18: 3.0 ms
@@ -263,10 +295,14 @@ object DocumentEdgeDetector {
                     polygon.release()
                 }
             }
+            // Every plausible outline is kept, so a part of the page that narrowly outscores the whole can be told apart below.
+            val candidates = ArrayList<Candidate>()
             fun consider(points: Array<Point>, weight: Double, precise: Boolean) {
                 val (ordered, score) = scoreOf(points, weight) ?: return
+                val found = Candidate(ordered, score.toFloat(), precise)
+                candidates += found
                 val current = best
-                if (current == null || score.toFloat() > current.score) best = Candidate(ordered, score.toFloat(), precise)
+                if (current == null || found.score > current.score) best = found
             }
 
             fun searchSources(sources: List<Source>) = sources.forEach { (map, weight, retrieval, precise) ->
@@ -355,6 +391,12 @@ object DocumentEdgeDetector {
                     consider(line.points, LINE_WEIGHT * line.support, precise = false)
                 }
             }
+
+            // 2026-11-19: the whole before its part. A card's face below its coloured header band, the lit part of a
+            // shadowed page or one page of an open book is a clean rectangle that can outscore the whole object by a
+            // few hundredths, and which of the two won changed from frame to frame (the outline jumped). When another
+            // outline encloses the winner, shares three of its sides and scores nearly as well, it is the object.
+            best = preferEnclosing(best, candidates, PART_TOLERANCE * max(frameWidth, frameHeight))
 
             // F170: a winner from a half-size source is up to 2 px off at the analysis scale (about 1% corner error
             // on an A4 benchmark page). Each side is slid a few pixels along its normal onto the strongest brightness
@@ -456,6 +498,42 @@ object DocumentEdgeDetector {
         }
     }
 
+    /** ORs the Canny edges of each of [colourPlanes]' two channels, brought to [size] and blurred, into [edges]. */
+    private fun addColourEdges(colourPlanes: Mat, size: Size, edges: Mat) {
+        val resized = Mat()
+        val split = ArrayList<Mat>()
+        val blurred = Mat()
+        val colourEdges = Mat()
+        try {
+            // At the working size: at half of it the outline of a card filling the guide and of one at arm's length
+            // was lost (benchmark, 2026-11-19), for about a millisecond saved.
+            Imgproc.resize(colourPlanes, resized, size, 0.0, 0.0, Imgproc.INTER_AREA)
+            Core.split(resized, split)
+            split.forEach { plane ->
+                Imgproc.GaussianBlur(plane, blurred, Size(7.0, 7.0), 0.0)
+                Imgproc.Canny(blurred, colourEdges, COLOUR_CANNY_LOW, COLOUR_CANNY_HIGH)
+                Core.bitwise_or(edges, colourEdges, edges)
+            }
+        } finally {
+            resized.release(); split.forEach(Mat::release); blurred.release(); colourEdges.release()
+        }
+    }
+
+    /** The Cb and Cr planes of [rgba] as one 2-channel 8-bit Mat (BT.601 full range, as [LiveChroma] reads the camera's). */
+    fun colourPlanes(rgba: Mat): Mat {
+        val rgb = Mat(); val ycrcb = Mat(); val ch = ArrayList<Mat>()
+        try {
+            Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
+            Imgproc.cvtColor(rgb, ycrcb, Imgproc.COLOR_RGB2YCrCb)
+            Core.split(ycrcb, ch)
+            val out = Mat()
+            Core.merge(listOf(ch[2], ch[1]), out)
+            return out
+        } finally {
+            rgb.release(); ycrcb.release(); ch.forEach(Mat::release)
+        }
+    }
+
     /** Variance of the Laplacian (higher is sharper) over [source], or only over [bounds] when given. */
     private fun varianceOfLaplacian(source: Mat, bounds: org.opencv.core.Rect? = null): Double {
         val region = if (bounds == null) source else source.submat(bounds)
@@ -478,16 +556,20 @@ object DocumentEdgeDetector {
         val rgba = Mat()
         val gray = Mat()
         var chroma: Mat? = null
+        var planes: Mat? = null
         try {
             Utils.bitmapToMat(bitmap, rgba)
             Imgproc.cvtColor(rgba, gray, Imgproc.COLOR_RGBA2GRAY)
-            // A captured photo has colour, which finds a page edge a shadow has hidden from the brightness (F175).
+            // A captured photo has colour, which finds a page edge a shadow has hidden from the brightness (F175),
+            // and colour edges where the brightness edge is missing altogether (2026-11-19).
             chroma = runCatching { chromaMap(rgba) }.getOrNull()
-            return detect(gray, chroma)
+            planes = runCatching { colourPlanes(rgba) }.getOrNull()
+            return detect(gray, chroma, planes)
         } finally {
             rgba.release()
             gray.release()
             chroma?.release()
+            planes?.release()
         }
     }
 
@@ -673,5 +755,57 @@ object DocumentEdgeDetector {
 
     /** [precise] when the points came from a full-resolution edge map; a half-size source is 2 px coarse. */
     private data class Candidate(val points: List<Point>, val score: Float, val precise: Boolean)
+
+    private fun quadArea(points: List<Point>): Double {
+        var sum = 0.0
+        for (i in points.indices) { val a = points[i]; val b = points[(i + 1) % points.size]; sum += a.x * b.y - b.x * a.y }
+        return abs(sum) / 2.0
+    }
+
+    /** Distance from [p] to the line through [a] and [b]. */
+    private fun lineDistance(p: Point, a: Point, b: Point): Double {
+        val length = hypot(b.x - a.x, b.y - a.y).coerceAtLeast(1e-6)
+        return abs((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / length
+    }
+
+    /**
+     * [winner], or the largest of [candidates] it is a part of: an outline at least [PART_MIN_GROWTH] times its area
+     * that scores at least [PART_MIN_SCORE] of it, with at least three of the winner's sides lying along its own
+     * (both ends within [tolerance] px of the same side's line) and no corner of the winner more than [tolerance]
+     * outside it. Three shared sides is what a part has and a page lying on a larger object (a desk mat, a folder)
+     * does not. Corners are in the same order (top left first) in every candidate.
+     */
+    private fun preferEnclosing(winner: Candidate?, candidates: List<Candidate>, tolerance: Double): Candidate? {
+        var chosen = winner ?: return null
+        var area = quadArea(chosen.points)
+        // An enclosing outline can itself be a part (the card's face, then the card): climb until nothing encloses.
+        repeat(3) {
+            val part = chosen
+            val whole = candidates.filter { other ->
+                if (other === part || other.score < part.score * PART_MIN_SCORE) return@filter false
+                if (quadArea(other.points) < area * PART_MIN_GROWTH) return@filter false
+                var shared = 0
+                for (i in 0 until 4) {
+                    val a = other.points[i]; val b = other.points[(i + 1) % 4]
+                    val d0 = lineDistance(part.points[i], a, b); val d1 = lineDistance(part.points[(i + 1) % 4], a, b)
+                    if (d0 <= tolerance && d1 <= tolerance) shared++
+                }
+                if (shared < 3) return@filter false
+                // Inside the larger outline: every corner of the part on the inner side of each of its sides.
+                val centreX = other.points.sumOf { it.x } / 4.0; val centreY = other.points.sumOf { it.y } / 4.0
+                part.points.all { p ->
+                    (0 until 4).all { i ->
+                        val a = other.points[i]; val b = other.points[(i + 1) % 4]
+                        val side = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)
+                        val inner = (b.x - a.x) * (centreY - a.y) - (b.y - a.y) * (centreX - a.x)
+                        side * inner >= 0 || lineDistance(p, a, b) <= tolerance
+                    }
+                }
+            }.maxByOrNull { quadArea(it.points) } ?: return chosen
+            chosen = whole
+            area = quadArea(whole.points)
+        }
+        return chosen
+    }
 }
 

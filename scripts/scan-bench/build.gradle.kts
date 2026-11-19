@@ -8,7 +8,7 @@ val imaging = rootDir.resolve("../../app/src/main/java/com/example/scanpro/imagi
 val synced = layout.buildDirectory.dir("synced")
 // The app's own detector and filter sources, compiled unchanged against the stubs in stubs/.
 val syncDetector = tasks.register<Copy>("syncDetector") {
-    from(detector) { include("DocumentEdgeDetector.kt", "QuadGeometry.kt", "PageQuality.kt", "ScanAlignment.kt", "LineQuadFinder.kt", "PageFraming.kt") }
+    from(detector) { include("DocumentEdgeDetector.kt", "QuadGeometry.kt", "PageQuality.kt", "ScanAlignment.kt", "LineQuadFinder.kt", "PageFraming.kt", "OutlineTracker.kt") }
     from(imaging) { include("MatFilters.kt") }
     into(synced)
 }

@@ -273,6 +273,8 @@ fun CameraScannerScreen(
     var steadiness by remember { mutableFloatStateOf(0f) }
     // The outline as drawn: it follows the detector with a little lag so it glides instead of jittering.
     var shownQuad by remember { mutableStateOf<CropQuad?>(null) }
+    // Holds the outline over a missed frame, ignores a single stray one and damps trembling (2026-11-19).
+    val outlineTracker = remember { OutlineTracker() }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var boundUseCases by remember { mutableStateOf<List<androidx.camera.core.UseCase>>(emptyList()) }
@@ -544,13 +546,7 @@ fun CameraScannerScreen(
                 if (isStable && !stable) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 stable = isStable
                 steadiness = if (result.quad == null) 0f else progress
-                val target = result.quad
-                val previous = shownQuad
-                shownQuad = when {
-                    target == null -> null
-                    previous == null -> target
-                    else -> previous.towards(target, 0.45f)
-                }
+                shownQuad = outlineTracker.update(result.quad, android.os.SystemClock.uptimeMillis())
                 // "Hold… capturing" is chosen where it is shown, which knows whether auto-capture is on.
                 guidanceHold.update(result.guidance.labelRes, android.os.SystemClock.uptimeMillis())?.let { label ->
                     liveGuidance = resources.getString(label)
@@ -863,6 +859,7 @@ fun CameraScannerScreen(
                     val density = previewView.resources.displayMetrics.density
                     val idMode = scanMode == ScanMode.ID_CARD
                     val idRatio = idKind.heightRatio
+                    val detectsEdges = detectMode != DetectMode.NO_DETECT
                     scope.launch {
                         val guideCrop = if (!idMode) null else withContext(Dispatchers.Default) {
                             runCatching {
@@ -873,7 +870,14 @@ fun CameraScannerScreen(
                                 idCardCrop(viewW, viewH, w, h, density, idRatio)
                             }.getOrNull()
                         }
-                        val quad = guideCrop ?: inspector.of(raw)?.first
+                        val detected = inspector.of(raw)?.first
+                        // ID cards: the card's own outline when it lies inside the guide (a tight, straightened crop),
+                        // else everything inside the guide as before. With edge detection off, always the guide.
+                        val quad = when {
+                            guideCrop == null -> detected
+                            detectsEdges -> IdCardOutline.choose(guideCrop, detected)
+                            else -> guideCrop
+                        }
                         if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
                         // Book mode, two pages: the spread is cut out and split at the spine into two pages (R29).
                         if (scanMode == ScanMode.BOOK && bookLayout != 0 && !replacing && quad != null && pages.contains(captured)) {
@@ -1368,8 +1372,26 @@ fun CameraScannerScreen(
             )
 
             if (showGrid && !reviewing) ThirdsGrid()
-            if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
-                DocumentBoundaryOverlay(detection = detection, quad = { shownQuad }, stable = stable)
+            if (!barcodeMode && detectMode != DetectMode.NO_DETECT) {
+                // ID card mode (2026-11-19, it had no outline): the card is outlined once it is seen inside the guide,
+                // and that outline is what the capture keeps. Anything else found in the frame is not drawn.
+                val idMode = scanMode == ScanMode.ID_CARD
+                val idRatio = idKind.heightRatio
+                DocumentBoundaryOverlay(
+                    detection = detection,
+                    quad = {
+                        val outline = shownQuad
+                        val frame = detection
+                        if (!idMode || outline == null || frame == null) outline else {
+                            val guide = idCardCrop(
+                                previewView.width.toFloat(), previewView.height.toFloat(), frame.frameWidth, frame.frameHeight,
+                                previewView.resources.displayMetrics.density, idRatio
+                            )
+                            outline.takeIf { guide != null && IdCardOutline.fits(guide, it) }
+                        }
+                    },
+                    stable = stable
+                )
             }
             if (scanMode == ScanMode.BOOK && bookLayout != 0 && !barcodeMode && !reviewing) {
                 val tracking = detectMode != DetectMode.NO_DETECT
@@ -2760,17 +2782,6 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: () -> C
             }
         }
     }
-}
-
-/** This outline moved [fraction] of the way towards [target]; the bends are taken from the target. */
-private fun CropQuad.towards(target: CropQuad, fraction: Float): CropQuad {
-    fun step(a: NormalizedPoint, b: NormalizedPoint) = NormalizedPoint(a.x + (b.x - a.x) * fraction, a.y + (b.y - a.y) * fraction)
-    return target.copy(
-        topLeft = step(topLeft, target.topLeft),
-        topRight = step(topRight, target.topRight),
-        bottomRight = step(bottomRight, target.bottomRight),
-        bottomLeft = step(bottomLeft, target.bottomLeft)
-    )
 }
 
 private fun CropQuad.asList() = listOf(topLeft, topRight, bottomRight, bottomLeft)

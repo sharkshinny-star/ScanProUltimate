@@ -73,7 +73,7 @@ folder's; A* and S* refer to the platform and security audits of 2026-11-18 summ
 **PS-04 Build of HEAD and release checks not yet proven.**
 - Evidence: last green push run on this branch is `44323159144` (docs F177); last green PR run `44353049118` on `a8f220c`. CI run 183 on `3c06b85` compiled (965 tests, 1 failed, premise fixed in `c162957`). Runs on `e8a31d3` and `e764f73` failed to compile (`ToolDemos.kt:378`, fixed in `d2ba7aa`/`3860b76`; `scale` import fixed in `3dcaa66`). Later runs, including `44375015645` on `3692fbf`, were cancelled by newer pushes; PR run `44376563792` on `dda768a` failed in 32 s at Gradle plugin resolution (`org.jetbrains.kotlin.plugin.compose` 2.4.21 not found; likely a repository fault, NOT VERIFIED), before compiling.
 - The Release check workflow (`.github/workflows/release-check.yml`, `cf6b35e`) has never run. `gh run list --workflow release-check.yml` answers "workflow … not found on the default branch": GitHub lists and dispatches `workflow_dispatch` workflows from the default branch, so it can probably only be started once the file is on `main` (NOT VERIFIED whether dispatch by workflow ID with `--ref` works).
-- Impact: F193, F195–F197, F210–F212 compile and test status: pending CI. 16 KB alignment of the packaged bundle unknown.
+- Impact: F193, F195–F197, F210–F212 compile and pass unit tests and lint (CI run 219 on `07b2e0e`). 16 KB alignment of the packaged bundle unknown.
 - Fix: wait for CI on `3692fbf`; get the release-check workflow onto the default branch or run `scripts/ci/release-check.sh` locally after `bundleRelease`.
 
 **PS-05 No device test of a release build (A16; R2, R7, R44, R55, R60, R64, R69, R70, R71).**
