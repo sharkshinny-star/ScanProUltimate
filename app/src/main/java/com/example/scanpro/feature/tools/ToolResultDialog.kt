@@ -125,6 +125,9 @@ private fun loadResultPreview(file: File, heightPx: Int): ResultPreview = runCat
 /** More files than this go out as the zip itself: a share intent carrying hundreds of links can fail to start. */
 internal const val MAX_SHARED_PARTS = 200
 
+/** Most bytes unpacked from one result zip for sharing; a larger (crafted or corrupt) zip is refused. */
+internal const val MAX_SHARED_BYTES = 1L * 1024 * 1024 * 1024
+
 /**
  * Unpacks a multi-file result (split parts, page images) next to the exports so the files can be shared one by one:
  * chat apps take ten pages, not a zip. Entry names are reduced to their last segment, so a crafted entry cannot
@@ -136,14 +139,25 @@ internal fun unpackForSharing(cacheDir: File, zip: File): List<File>? = runCatch
         mkdirs()
     }
     val parts = mutableListOf<File>()
+    var total = 0L
     java.util.zip.ZipInputStream(zip.inputStream().buffered()).use { input ->
         while (true) {
             val entry = input.nextEntry ?: break
             if (entry.isDirectory) continue
             if (parts.size >= MAX_SHARED_PARTS) return@runCatching null
-            val name = File(entry.name).name.ifBlank { "part_${parts.size + 1}" }
-            val out = File(dir, name)
-            out.outputStream().use { input.copyTo(it) }
+            // A counter prefix on a repeated name keeps two entries from overwriting each other.
+            val base = File(entry.name).name.ifBlank { "part_${parts.size + 1}" }
+            val out = File(dir, base).takeIf { !it.exists() } ?: File(dir, "${parts.size + 1}_$base")
+            out.outputStream().use { sink ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    total += read
+                    if (total > MAX_SHARED_BYTES) return@runCatching null
+                    sink.write(buffer, 0, read)
+                }
+            }
             parts += out
         }
     }
