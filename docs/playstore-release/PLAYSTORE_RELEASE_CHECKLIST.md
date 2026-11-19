@@ -52,7 +52,7 @@ Related: [Compliance audit](PLAYSTORE_COMPLIANCE_AUDIT.md) · [Manual actions](P
 |---|---|---|
 | Every permission has a purpose and denial handling | PASS (code) | [Permissions §1](PLAYSTORE_PERMISSIONS_AUDIT.md) |
 | Merged manifest reviewed | NOT VERIFIED | Release check section 3 not run |
-| All files access: declaration filed **or** build without it | FAIL | Not filed; switch exists (`123b048`) but Files cards ungated (PS-11) |
+| All files access: declaration filed **or** build without it | PASS (build without it, F225) | Owner decision 2026-11-19; `bundleRelease` stops unless `-Pscanpro.allFilesAccess=false` (or an explicit `=true`) is passed and checks the bundle's manifest; a bundle built that way in the cloud container has no `MANAGE_EXTERNAL_STORAGE`; cards are gated by `PhonePdfSource.available`. Not seen on a phone |
 | No restricted permissions beyond the above | PASS (app manifest) | `app/src/main/AndroidManifest.xml` |
 
 ## Gate F: privacy policy

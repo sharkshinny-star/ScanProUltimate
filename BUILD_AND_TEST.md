@@ -23,6 +23,8 @@ had ever been built).
 ./gradlew :app:testDebugUnitTest                  # JVM unit tests
 ./gradlew :app:lintDebug                          # Android lint (config: app/lint.xml)
 ./gradlew :app:bundleRelease                      # Play bundle, R8 on, with :translate as on-demand module
+#   for upload: add -Pscanpro.allFilesAccess=false -Pscanpro.privacyPolicyUrl=https://... (the task stops without both, F225);
+#   a test bundle that will not be uploaded: -Pscanpro.allowMissingPolicy=true (what CI passes)
 bash scripts/setup-upload-key.sh                  # once, on the owner's computer: upload key + SCANPRO_* signing values (outside the repo)
 ./gradlew -Pscanpro.sideload=true :app:assembleRelease   # per-ABI + universal APKs, translation built in
 scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release
@@ -50,6 +52,13 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 **F189, F190, F192 (2026-11-18, cloud container): not compiled and not run**, for the same reason as F188 below.
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
+
+## Latest results (2026-11-19, F225 Play bundle without All files access, cloud container, SDK installed in the session)
+
+- On the merge `e44128fc` (F221–F224 of other sessions plus F225): `:app:testDebugUnitTest` **1,145 tests, 0 failed, 155 skipped** (result XML, screenshots flag off).
+- `:app:bundleRelease -Pscanpro.allFilesAccess=false -Pscanpro.privacyPolicyUrl=https://sharkshinny-star.github.io/scanpro-privacy/`: passed; `app-release.aab` 50,723,672 bytes (48.4 MiB), unsigned (no key here). The task's own check printed that the bundle does not declare `MANAGE_EXTERNAL_STORAGE`; read back from the bundle's base manifest: 0 occurrences; its storage permission is `READ_EXTERNAL_STORAGE` only (Android 10 and older).
+- The guard, with the packaging tasks excluded: an upload bundle without `-Pscanpro.allFilesAccess` stops with the new message; `-Pscanpro.allowMissingPolicy=true` (CI's command) passes; an explicit `=true` passes.
+- NOT run: `:app:lintDebug`, the sideload build, instrumented tests, anything on a device (the Files tab of the build without the access has never been seen on a phone).
 
 ## Latest results (2026-11-19, F221 task banner and Files top bar, cloud container with the Android SDK)
 
