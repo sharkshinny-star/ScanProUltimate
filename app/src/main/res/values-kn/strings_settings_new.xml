@@ -32,9 +32,4 @@
         <item quantity="other">%d ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</item>
     </plurals>
     <string name="settings_recycle_bin_summary">%1$s · %2$s ಇರಿಸಲಾಗುತ್ತದೆ</string>
-    <string name="settings_library_summary">%1$s · %2$s ಬಳಕೆ</string>
-    <plurals name="settings_library_documents">
-        <item quantity="one">%d ಡಾಕ್ಯುಮೆಂಟ್</item>
-        <item quantity="other">%d ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</item>
-    </plurals>
 </resources>

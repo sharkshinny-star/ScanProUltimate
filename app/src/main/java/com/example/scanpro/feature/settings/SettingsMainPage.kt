@@ -1,9 +1,7 @@
 package com.example.scanpro.feature.settings
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.CameraAlt
@@ -36,12 +33,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.BuildConfig
 import com.example.scanpro.R
@@ -68,17 +66,19 @@ internal enum class SettingsPage(@StringRes val title: Int, val icon: ImageVecto
         listOf(R.string.settings_trash_retention_title)),
     PRIVACY(R.string.settings_section_privacy, Icons.Rounded.Fingerprint, TileTone.Rose, 1,
         listOf(R.string.settings_app_lock_title, R.string.settings_privacy_title)),
-    SHORTCUTS(R.string.settings_section_shortcuts, Icons.Rounded.Widgets, TileTone.Sky, 2,
+    SHORTCUTS(R.string.settings_section_shortcuts, Icons.Rounded.Widgets, TileTone.Sky, MORE_GROUP,
         listOf(R.string.settings_shortcuts_summary)),
-    SUPPORT(R.string.settings_section_support, Icons.Rounded.Feedback, TileTone.Coral, 2,
+    SUPPORT(R.string.settings_section_support, Icons.Rounded.Feedback, TileTone.Coral, MORE_GROUP,
         listOf(R.string.settings_whats_new_title, R.string.settings_report_issue_title, R.string.settings_rate_title)),
-    // Group 3 is "More" on the main page, with Share ScanPro under it (2026-11-19, owner's request).
-    ABOUT(R.string.settings_section_about, Icons.Rounded.Info, TileTone.Slate, 3,
+    ABOUT(R.string.settings_section_about, Icons.Rounded.Info, TileTone.Slate, MORE_GROUP,
         listOf(R.string.settings_about_open_source))
 }
 
-/** The main page's last group: About, then Share ScanPro straight from the list. */
-private const val MORE_GROUP = 3
+/** The main page's last group: shortcuts, support and About, then Share ScanPro straight from the list. */
+private const val MORE_GROUP = 2
+
+/** The name over each group on the main page (2026-11-19): three named groups read faster than four unnamed ones. */
+private val GROUP_HEADERS = listOf(R.string.settings_group_general, R.string.settings_group_data, R.string.settings_group_more)
 
 /** What the main page shows besides the list of pages. */
 internal class SettingsOverview(
@@ -110,7 +110,7 @@ internal fun SettingsMainPage(
     LibraryCard(overview, onOpenFiles, onFreeUpSpace, onDismissFreeSpace)
     val context = LocalContext.current
     SettingsPage.entries.groupBy { it.group }.forEach { (group, pages) ->
-        SettingsGroup(header = if (group == MORE_GROUP) stringResource(R.string.settings_group_more) else null) {
+        SettingsGroup(header = GROUP_HEADERS.getOrNull(group)?.let { stringResource(it) }) {
             pages.forEach { page ->
                 val state = pageSummary(page, overview)
                 SettingsRow(
@@ -148,8 +148,7 @@ private fun pageSummary(page: SettingsPage, overview: SettingsOverview): String?
         pluralStringResource(R.plurals.settings_trash_retention_days, overview.trashRetentionDays, overview.trashRetentionDays)
     )
     SettingsPage.NOTIFICATIONS -> if (overview.canPostNotifications) null else stringResource(R.string.settings_notifications_off_title)
-    SettingsPage.ABOUT -> stringResource(R.string.settings_version, BuildConfig.VERSION_NAME) + " · " +
-        stringResource(R.string.settings_about_open_source)
+    SettingsPage.ABOUT -> stringResource(R.string.settings_version, BuildConfig.VERSION_NAME)
     SettingsPage.SCANNING -> scanningSummary(overview.defaultScanMode, overview.pdfQuality, overview.defaultOcrScript)
     else -> null
 }
@@ -171,14 +170,15 @@ private fun LibraryCard(overview: SettingsOverview, onOpenFiles: () -> Unit, onF
             title = stringResource(R.string.settings_library_title),
             icon = Icons.Rounded.Storage,
             tone = TileTone.Indigo,
-            summary = stringResource(
-                R.string.settings_library_summary,
-                pluralStringResource(R.plurals.settings_library_documents, overview.documentCount, overview.documentCount),
-                formatBytes(context, overview.storageBytes)
-            ),
             trailing = { Chevron() },
             onClick = onOpenFiles
         )
+        // The library in three figures (2026-11-19); it was one line of small text under the title.
+        Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LibraryStat(overview.documentCount.toString(), stringResource(R.string.settings_stat_documents), Modifier.weight(1f))
+            LibraryStat(formatBytes(context, overview.storageBytes), stringResource(R.string.settings_stat_storage), Modifier.weight(1f))
+            LibraryStat(overview.trashCount.toString(), stringResource(R.string.settings_stat_recycle_bin), Modifier.weight(1f))
+        }
         val reclaimable = overview.reclaimable
         // Scans from older versions were saved as lossless PDFs, many times larger than they need to be.
         if (reclaimable != null) {
@@ -222,6 +222,17 @@ private fun LibraryCard(overview: SettingsOverview, onOpenFiles: () -> Unit, onF
     }
 }
 
+/** One figure about the library and what it counts. The pair is read out as one phrase. */
+@Composable
+private fun LibraryStat(value: String, label: String, modifier: Modifier = Modifier) {
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = modifier.semantics(mergeDescendants = true) {}) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+        }
+    }
+}
+
 /** Brand sign-off at the end of the main page. */
 @Composable
 private fun AboutFooter() {
@@ -233,10 +244,12 @@ private fun AboutFooter() {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondary))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.settings_footer_privacy), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        Text(
+            stringResource(R.string.settings_footer_privacy),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        )
     }
 }

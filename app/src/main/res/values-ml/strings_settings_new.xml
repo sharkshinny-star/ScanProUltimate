@@ -32,9 +32,4 @@
         <item quantity="other">%d ഡോക്യുമെന്റുകൾ</item>
     </plurals>
     <string name="settings_recycle_bin_summary">%1$s · %2$s സൂക്ഷിക്കും</string>
-    <string name="settings_library_summary">%1$s · %2$s ഉപയോഗിച്ചു</string>
-    <plurals name="settings_library_documents">
-        <item quantity="one">%d ഡോക്യുമെന്റ്</item>
-        <item quantity="other">%d ഡോക്യുമെന്റുകൾ</item>
-    </plurals>
 </resources>
