@@ -41,7 +41,10 @@ private val CREDITS = listOf(
     Credit("Android Jetpack (Compose, CameraX, Room, WorkManager)", APACHE_2),
     Credit("Kotlin and kotlinx.coroutines", APACHE_2),
     Credit("Dagger Hilt", APACHE_2),
-    Credit("Google ML Kit", "ML Kit Terms of Service")
+    Credit("Google ML Kit", "ML Kit Terms of Service"),
+    // The fonts Edit PDF carries (F207); their licence texts ship in assets/licences.
+    Credit("Roboto font", APACHE_2),
+    Credit("Inter, Montserrat and Gelasio fonts", "SIL Open Font License 1.1")
 )
 
 /** About ScanPro: who the app is, its version, how it treats your data, sharing, and the software it is built on. */

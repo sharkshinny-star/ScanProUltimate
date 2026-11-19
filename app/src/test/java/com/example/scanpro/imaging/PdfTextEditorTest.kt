@@ -541,4 +541,38 @@ class PdfTextEditorTest {
             assertEquals(0, PdfTextEditor.apply(doc, listOf(PdfTextEditor.Edit(0, total.index, "Total: 200", bold = true, italic = false, size = 18f)), shaper = shaper).shaped)
         }
     }
+
+    @Test fun aCarriedFontIsEmbeddedWhenAskedFor() {
+        val fonts = CarriedFonts(org.robolectric.RuntimeEnvironment.getApplication())
+        sample().use { doc0 ->
+            val hello = PdfTextEditor.spans(doc0, 0)[0]
+            // The rupee sign is in the carried fonts; no standard PDF font has it.
+            val outcome = PdfTextEditor.apply(
+                doc0, listOf(PdfTextEditor.Edit(0, hello.index, "Hello \u20B9500", family = PdfTextEditor.Family.ROBOTO, bold = true, italic = false, size = 12f)), fonts = fonts
+            )
+            assertEquals(1, outcome.sameFont)
+            assertEquals(0, outcome.similarFont)
+            assertEquals(0, outcome.skipped)
+            reload(doc0).use { doc ->
+                val span = PdfTextEditor.spans(doc, 0).first { it.text == "Hello \u20B9500" }
+                assertTrue(span.fontName, span.fontName.contains("Roboto"))
+                assertTrue(span.bold)
+                assertEquals(hello.left, span.left, 0.6f)
+            }
+        }
+        // Every family has a file for every weight and slant, and each loads.
+        for (family in PdfTextEditor.Family.values().filter { it.carried }) for (bold in listOf(false, true)) for (italic in listOf(false, true)) {
+            PDDocument().use { doc ->
+                val font = fonts.load(doc, family, bold, italic)
+                assertTrue("$family bold=$bold italic=$italic", font != null && PdfTextEditor.canShow(font, "Quick brown fox, 0123456789 \u00A3\u20AC\u20B9"))
+            }
+        }
+        // Without the files (or for letters they lack) the edit still goes in, in a standard font.
+        sample().use { doc ->
+            val hello = PdfTextEditor.spans(doc, 0)[0]
+            val outcome = PdfTextEditor.apply(doc, listOf(PdfTextEditor.Edit(0, hello.index, "Plain words", family = PdfTextEditor.Family.GELASIO, bold = false, italic = false, size = 12f)))
+            assertEquals(1, outcome.applied)
+            assertEquals("Times-Roman", PdfTextEditor.spans(doc, 0).first { it.text == "Plain words" }.fontName)
+        }
+    }
 }

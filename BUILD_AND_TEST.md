@@ -99,6 +99,13 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - Rendered and looked at: `settings_light_main`, `settings_light_about`, `files-08-overview-{light,dark}`. This run also compiled and tested F216 for the first time.
 - NOT run: `bundleRelease` (left to CI), anything on a device.
 
+## Latest results (2026-11-19, F207 Edit PDF fonts: Roboto, Inter, Gelasio, Montserrat; cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,122 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 31/31. Source audit PASS. `edit-pdf-02-font-light.png` looked at.
+- The font files were made with fontTools (`pyftsubset --no-hinting --layout-features=kern,liga`, Latin, punctuation and money signs) from the projects' own TTFs; the sources and licences are named in `ARCHITECTURE.md`.
+- After merging F221–F225 (other sessions): `:app:testDebugUnitTest :app:lintDebug` on the merged code: 1,146 tests, 0 failed (screenshot renders skipped in this run); lint 0 errors; source audit PASS.
+- NOT run: anything on a device (R71); release builds, so the APK size with the fonts was not measured (the 16 files are 1.1 MB before the APK's own compression).
+
 ## Latest results (2026-11-19, F206 Edit PDF: remaining limits and the Word-like workspace; cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,101 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 30/30, `PhoneTextShaperTest` 2/2, `EditPdfScreenshotTest` 38/38. Source audit PASS.
