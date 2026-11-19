@@ -310,4 +310,9 @@
     <string name="settings_about_tagline">A document scanner and PDF toolkit that works offline, on your phone.</string>
     <string name="settings_about_open_source">Open-source software</string>
     <string name="settings_about_open_source_body">ScanPro is built on these libraries. Thank you to everyone who works on them.</string>
+    <string name="settings_group_general">General</string>
+    <string name="settings_group_data">Data &amp; privacy</string>
+    <string name="settings_stat_documents">Documents</string>
+    <string name="settings_stat_storage">Storage used</string>
+    <string name="settings_stat_recycle_bin">In recycle bin</string>
 </resources>

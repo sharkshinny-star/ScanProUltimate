@@ -50,6 +50,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F217 Settings and Files layout, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true`: **1,053 tests, 0 failed, 2 skipped** (result XML). `./gradlew :app:lintDebug`: **0 errors**, 159 warnings (none new in the changed files). Quality audit PASS.
+- Rendered and looked at: `settings_light_main`, `settings_light_about`, `files-08-overview-{light,dark}`. This run also compiled and tested F216 for the first time.
+- NOT run: `bundleRelease` (left to CI), anything on a device.
+
 ## Latest results (2026-11-19, F205 Edit PDF zoom, find and replace, changes list, Save name; cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,055 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 22/22. Source audit PASS.

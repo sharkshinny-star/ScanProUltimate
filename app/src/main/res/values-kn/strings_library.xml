@@ -261,4 +261,9 @@
     <string name="settings_about_tagline">ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಕೆಲಸ ಮಾಡುವ ಡಾಕ್ಯುಮೆಂಟ್ ಸ್ಕ್ಯಾನರ್ ಮತ್ತು PDF ಟೂಲ್‌ಕಿಟ್.</string>
     <string name="settings_about_open_source">ಓಪನ್-ಸೋರ್ಸ್ ಸಾಫ್ಟ್‌ವೇರ್</string>
     <string name="settings_about_open_source_body">ScanPro ಈ ಲೈಬ್ರರಿಗಳ ಮೇಲೆ ನಿರ್ಮಿತವಾಗಿದೆ. ಇವುಗಳಲ್ಲಿ ಕೆಲಸ ಮಾಡುವ ಎಲ್ಲರಿಗೂ ಧನ್ಯವಾದಗಳು.</string>
+    <string name="settings_group_general">ಸಾಮಾನ್ಯ</string>
+    <string name="settings_group_data">ಡೇಟಾ ಮತ್ತು ಗೌಪ್ಯತೆ</string>
+    <string name="settings_stat_documents">ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</string>
+    <string name="settings_stat_storage">ಬಳಸಿದ ಸಂಗ್ರಹಣೆ</string>
+    <string name="settings_stat_recycle_bin">ರೀಸೈಕಲ್ ಬಿನ್‌ನಲ್ಲಿ</string>
 </resources>

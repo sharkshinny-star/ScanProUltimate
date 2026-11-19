@@ -17,6 +17,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -80,10 +82,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -98,6 +101,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -374,7 +378,7 @@ internal fun PhoneFilesList(
     onSelectionAction: (SelectionAction) -> Unit,
     onOpenFolder: (String?) -> Unit = {},
     onGridChange: (Boolean) -> Unit = {},
-    /** How many files the tools have made, for the Processed files entry; null hides the storage overview. */
+    /** How many files the tools have made, for the Made in ScanPro entry; null hides the storage overview. */
     processedCount: Int? = null,
     onOpenProcessed: () -> Unit = {},
     onOpenCloud: () -> Unit = {}
@@ -387,7 +391,8 @@ internal fun PhoneFilesList(
         if (selecting) {
             SelectionBar(state.selection, onClear = onClearSelection, onAction = onSelectionAction)
         } else {
-            OutlinedTextField(
+            // The same filled pill as the Settings search (2026-11-19), so the two tabs read as one app.
+            TextField(
                 value = state.query,
                 onValueChange = onQueryChange,
                 singleLine = true,
@@ -398,7 +403,13 @@ internal fun PhoneFilesList(
                     }
                 },
                 placeholder = { Text(stringResource(R.string.phone_pdfs_search_hint)) },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
@@ -418,42 +429,20 @@ internal fun PhoneFilesList(
                 FilterChip(selected = state.filter == filter, onClick = { onFilterChange(filter) }, label = { Text(stringResource(filterLabel(filter))) })
             }
         }
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items(PhoneFileSort.entries) { sort ->
-                val selected = state.sort == sort
-                FilterChip(
-                    selected = selected,
-                    onClick = { onSortChange(sort) },
-                    label = { Text(stringResource(sortLabel(sort))) },
-                    trailingIcon = if (selected) {
-                        {
-                            Icon(
-                                if (state.ascending) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward,
-                                contentDescription = stringResource(if (state.ascending) R.string.phone_pdfs_sort_ascending else R.string.phone_pdfs_sort_descending),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    } else null
-                )
-            }
-            item {
-                IconButton(onClick = { onGridChange(!state.grid) }) {
-                    Icon(
-                        if (state.grid) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
-                        contentDescription = stringResource(if (state.grid) R.string.phone_files_show_list else R.string.phone_files_show_grid)
-                    )
-                }
-            }
-            if (shown != null) item {
-                Text(
-                    pluralStringResource(R.plurals.phone_files_count, shown.size, shown.size),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp)
+        // One line under the chips (2026-11-19): how many files, then the sort order and the list/grid switch. It was a
+        // second row of chips, which pushed the files down and scrolled sideways on a narrow phone.
+        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (shown != null) pluralStringResource(R.plurals.phone_files_count, shown.size, shown.size) else "",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+            SortMenu(state.sort, state.ascending, onSortChange)
+            IconButton(onClick = { onGridChange(!state.grid) }) {
+                Icon(
+                    if (state.grid) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                    contentDescription = stringResource(if (state.grid) R.string.phone_files_show_list else R.string.phone_files_show_grid)
                 )
             }
         }
@@ -536,14 +525,67 @@ private fun StorageOverview(
     val downloadsCount = remember(all, downloads) { downloads?.let { PhoneFiles.countUnder(all, it) } ?: 0 }
     Column(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
         OverviewHeading(stringResource(R.string.phone_files_my_storage))
-        StorageRow(Icons.Rounded.PhoneAndroid, TileTone.Indigo, stringResource(R.string.phone_files_internal_storage), all.size.toString()) { onOpenFolder("") }
-        if (downloads != null) {
-            StorageRow(Icons.Rounded.Download, TileTone.Sky, stringResource(R.string.phone_files_downloads), downloadsCount.toString()) { onOpenFolder(downloads) }
+        // Side by side (2026-11-19): three stacked rows and the cloud row filled the screen before the first file.
+        Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StorageTile(Icons.Rounded.PhoneAndroid, TileTone.Indigo, stringResource(R.string.phone_files_internal_storage), all.size, Modifier.weight(1f).fillMaxHeight()) { onOpenFolder("") }
+            if (downloads != null) {
+                StorageTile(Icons.Rounded.Download, TileTone.Sky, stringResource(R.string.phone_files_downloads), downloadsCount, Modifier.weight(1f).fillMaxHeight()) { onOpenFolder(downloads) }
+            }
+            StorageTile(Icons.Rounded.TaskAlt, TileTone.Teal, stringResource(R.string.phone_files_processed), processedCount, Modifier.weight(1f).fillMaxHeight(), onOpenProcessed)
         }
-        StorageRow(Icons.Rounded.TaskAlt, TileTone.Teal, stringResource(R.string.phone_files_processed), processedCount.toString(), onClick = onOpenProcessed)
-        OverviewHeading(stringResource(R.string.phone_files_cloud_title))
+        Spacer(Modifier.height(5.dp))
         StorageRow(Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_open), null, subtitle = stringResource(R.string.phone_files_cloud_hint), onClick = onOpenCloud)
         OverviewHeading(stringResource(R.string.phone_files_all_files))
+    }
+}
+
+/** One place files are kept, as a tile: its icon, how many files, its name. Three sit side by side. */
+@Composable
+private fun StorageTile(icon: ImageVector, tone: TileTone, title: String, count: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    Surface(
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier.clip(shape).clickable(role = Role.Button, onClick = onClick)
+    ) {
+        Column(Modifier.heightIn(min = 104.dp).padding(12.dp)) {
+            IconTile(icon, tone, size = 36.dp, corner = 12.dp, iconSize = 18.dp)
+            Spacer(Modifier.height(8.dp))
+            Text(count.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** The sort order as one button: it names the order and its direction; picking the current order again turns it round. */
+@Composable
+private fun SortMenu(sort: PhoneFileSort, ascending: Boolean, onSortChange: (PhoneFileSort) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val arrow = if (ascending) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward
+    val direction = stringResource(if (ascending) R.string.phone_pdfs_sort_ascending else R.string.phone_pdfs_sort_descending)
+    Box {
+        TextButton(onClick = { open = true }) {
+            Text(stringResource(sortLabel(sort)))
+            Spacer(Modifier.width(4.dp))
+            Icon(arrow, contentDescription = direction, modifier = Modifier.size(18.dp))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            PhoneFileSort.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(sortLabel(option)), fontWeight = if (option == sort) FontWeight.SemiBold else null) },
+                    trailingIcon = if (option == sort) {
+                        { Icon(arrow, contentDescription = direction, modifier = Modifier.size(18.dp)) }
+                    } else null,
+                    onClick = { onSortChange(option); open = false }
+                )
+            }
+        }
     }
 }
 

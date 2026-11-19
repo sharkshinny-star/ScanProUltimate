@@ -3,12 +3,13 @@
 Everything still open on `claude/awesome-clarke-ussjo3`. Section 2 is written by `scripts/remaining-work.py` from the
 "Open" table in `AUDIT_FINDINGS.md`, which holds the full problem description and evidence for each ID and is the
 source of truth. After changing that table, run `python3 -I scripts/remaining-work.py`. The other sections are written
-by hand (last reviewed 2026-11-19, after F216 and F205).
+by hand (last reviewed 2026-11-19, after F217 and F205).
 
 Nearly every item is a check on a phone: cloud sessions have no device, so recent work is verified by unit tests,
 JVM renders and the desktop scan benchmark only. Several rows say "not compiled" because their session had no Android
-SDK; everything up to F215 has since been built and unit-tested (full local run on F205, `6bb662b`: 1,055 tests,
-0 failed, 2 skipped, lint 0 errors). F216 was not in that run (R85).
+SDK; everything up to F217 has since been built and unit-tested in one of two full local runs, each with 0 failed and
+lint 0 errors: F205 (`6bb662b`, 1,055 tests) and F217 (`8d6bf7b`, 1,053 tests, which includes F216). No run of
+the two trees merged is recorded.
 
 ## 1. Needs the owner
 
@@ -102,8 +103,8 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 ### P3
 
-- **R85** (Device check (F216); `feature/settings/SettingsAboutPage.kt`, `SettingsMainPage.kt`). About ScanPro page and the More group (About, Share ScanPro) were written in a container with no Android SDK: not compiled, not run, not seen.
-  - Next: CI compiles it and `SettingsPagesScreenshotTest` opens the new page (it walks every `SettingsPage`); look at the page on a phone in light, dark and Hindi.
+- **R85** (Device check (F216, F217); `feature/settings/SettingsAboutPage.kt`, `SettingsMainPage.kt`, …). The About page, the Settings main page (library figures, named groups) and the Files controls and storage tiles were compiled, unit-tested and rendered by Robolectric (light and dark), not seen on a phone.
+  - Next: Look at Settings and Files on a phone in light, dark and one Indian language; have a native speaker read the new strings.
 - **R84** (Known limit; F213, `scripts/scan-bench` scene `k_card_in_guide_wood`). A card filling ID card mode's guide on a grained desk: in about a third of noisy frames the whole-card outline is not found (its contour joins the wood grain and reaches the frame edge), so the detector returns the card's face.
   - Next: Needs real camera frames before more tuning; a straight-edge search for the enclosing outline when the winner touches a strong inner edge is the likely fix.
 - **R72** (Look check; F200, F203). The regrouped Tools tab was rendered (light, dark, Hindi) and looks right there; not yet seen on a phone.

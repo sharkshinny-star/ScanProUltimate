@@ -69,7 +69,7 @@
     <string name="phone_files_my_storage">నా స్టోరేజ్</string>
     <string name="phone_files_internal_storage">ఇంటర్నల్ స్టోరేజ్</string>
     <string name="phone_files_downloads">డౌన్‌లోడ్‌లు</string>
-    <string name="phone_files_processed">ప్రాసెస్ చేసిన ఫైల్‌లు</string>
+    <string name="phone_files_processed">ScanPro లో తయారైనవి</string>
     <string name="phone_files_cloud_title">క్లౌడ్ డ్రైవ్‌లు మరియు ఇతర యాప్‌లు</string>
     <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… నుండి తెరవండి</string>
     <string name="phone_files_cloud_hint">మీ ఫోన్ ఫైల్ పికర్‌ను వాడుతుంది. ScanPro దేనికీ సైన్ ఇన్ చేయదు.</string>
