@@ -42,6 +42,22 @@ class ResultShareTest {
     }
 
     @Test
+    fun absoluteAndDotEntryNamesStayInsideTheFolder() {
+        val cache = tmp.newFolder("cache")
+        val outside = File(tmp.root, "outside.pdf")
+        val parts = unpackForSharing(cache, zipOf(
+            outside.absolutePath to "absolute",
+            ".." to "parent",
+            "." to "current",
+            "../pages-sibling/other.pdf" to "sibling"
+        ))!!
+        val destination = File(cache, "exports/shared_parts/pages").canonicalFile
+        assertEquals(listOf("absolute", "parent", "current", "sibling"), parts.map { it.readText() })
+        assertTrue(parts.all { it.canonicalFile.parentFile == destination })
+        assertTrue(!outside.exists())
+    }
+
+    @Test
     fun tooManyFilesFallsBackToTheZip() {
         val cache = tmp.newFolder("cache")
         val entries = (1..MAX_SHARED_PARTS + 1).map { "p$it.png" to "x" }.toTypedArray()

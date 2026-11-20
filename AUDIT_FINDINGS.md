@@ -48,6 +48,26 @@ Last updated: 2026-11-19: F229 snake loading strip reverted to the F221 bar at t
 | R44 | P1 | Testing / Release | QR scanner (`scanner/ScannedCode.kt`, `QrOverlay.kt`, `feature/qr/*`, `data/ScanHistoryStore.kt`), Sign PDF (`imaging/SignPdfEngine.kt`, `feature/tools/SignPdf*`), PDF to Word or text (`imaging/PdfToTextEngine.kt`), Insert pages (`imaging/InsertPagesEngine.kt`) | F134 to F136 compiled and passed their unit tests and lint in CI run 120 (`35bbe79`), but nothing has been tried on a device, and the new screens have no UI test. The translations of every new string (`strings_qr.xml`, `strings_sign_pdf.xml`, `strings_pdf_text_insert.xml`, five languages) were written by the assistant and have not been read by a speaker. Scan history is encrypted at rest with Android Keystore AES-GCM (`ScanHistoryProtection`); search skips passwords and the list shows only the network name. The multi-code outlines assume the preview and analysis share the same 4:3 field of view and FIT_CENTER. `SignPdfViewModel` refreshes working copy timestamps during active sessions to prevent premature deletion. | Try on a phone: several codes in one frame, history, generator round trip with another scanner, signing a rotated PDF, text and OCR conversion of a scanned PDF, insert pages with a protected second PDF. Have a speaker read the new strings. |
 | R50 | P1 | Privacy / Owner decision | `AndroidManifest.xml`, `AppViewModel.kt`, `data/LibraryRecovery.kt` (in `git stash`, not on the branch) | An uncommitted change added `READ_MEDIA_IMAGES`, `READ_MEDIA_VISUAL_USER_SELECTED` and `READ_EXTERNAL_STORAGE`, and ran document recovery at every launch over external storage. Held back on 2026-11-15: the permissions are never requested, contradict the no-storage-permission design and the Data safety form, and launch-time recovery can race an unfinished import. Owner decides: drop it, or say what it was meant to recover. | |
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:669d64be2108601c71bf1be52a8e6447d87a21214ddf4bd9fde6fe464cbe08e0 -->
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:0c754a549dc23d067c3c2e076c8847db6a7e3f60e29cebfb5429fa51377cc6fb -->
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:f36d182b3b84290437011ce29573718f9ae9a3e3a1a5deffb66bf193ae1a1027 -->
+
+**F251 — PR 18 archive containment (2026-11-20):** Added an explicit canonical destination check before writing shared ZIP entries in `ToolResultDialog.kt`. Basename flattening, duplicate handling and limits remain. Six `ResultShareTest` cases pass standalone with the exact extracted production function; Gradle sharing tests (6/6) and app lint passed.
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+<!-- /coderabbit-ai-generated:v1 -->
+
 ## Fixed
 
 | ID | Priority | Category | Location | Problem → fix | Commit | Evidence |
