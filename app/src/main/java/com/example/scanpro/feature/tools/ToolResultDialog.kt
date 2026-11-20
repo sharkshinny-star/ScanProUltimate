@@ -138,6 +138,7 @@ internal fun unpackForSharing(cacheDir: File, zip: File): List<File>? = runCatch
         deleteRecursively()
         mkdirs()
     }
+    val destinationPrefix = dir.canonicalPath + File.separator
     val parts = mutableListOf<File>()
     var total = 0L
     java.util.zip.ZipInputStream(zip.inputStream().buffered()).use { input ->
@@ -151,6 +152,8 @@ internal fun unpackForSharing(cacheDir: File, zip: File): List<File>? = runCatch
             var out = File(dir, base)
             var attempt = 1
             while (out.exists()) out = File(dir, "${attempt++}_$base")
+            // Check the final destination, including any symbolic links, before opening the file.
+            if (!out.canonicalPath.startsWith(destinationPrefix)) return@runCatching null
             out.outputStream().use { sink ->
                 val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                 while (true) {
