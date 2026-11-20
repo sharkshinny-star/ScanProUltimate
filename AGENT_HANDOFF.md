@@ -42,7 +42,21 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 <!-- coderabbit-ai-generated-section:v1:2066be1bec7bddd207641f47cb92997793d233ec7cb9942aa1326ae206119c7e -->
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:67825218d3ec340cfea0738cc797a69e301534fa1df367fcaa175b986a868117 -->
+
 ## 2. Completed work (newest first)
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:82b475149fcb0f97bb594bc8515f8cfc354e7620ddf00579ea17499760915d7a -->
+
+- PR 18 round 2 on `619d0ac4`: CodeQL now flags backup restore. Its existing canonical containment invariant is preserved; rejection uses an explicit conditional throw instead of `require` so analysis can follow the guard. Added a sibling-prefix directory traversal/cleanup test. 30 focused package/import/backup tests and app lint passed; provider CodeQL confirmation remains outstanding. No new unresolved product issue.
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 <!-- coderabbit-ai-generated:v1 -->
 

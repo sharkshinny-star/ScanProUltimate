@@ -68,7 +68,21 @@ Last updated: 2026-11-19: F229 snake loading strip reverted to the F221 bar at t
 
 <!-- /coderabbit-ai-generated:v1 -->
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:4bc6dfbd802fb38ee19e71152ce6893baf492bae2f6a27e6a97d521a56fc2029 -->
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:c6668fcf64d203146d9f788bb43c11cc13b747b14c6993369cf341c4fe1dc9d8 -->
+
+**F252 — Backup extraction guard (PR 18 round 2, 2026-11-20):** CodeQL on `619d0ac4` flags `EncryptedDocumentPackage.kt:273`. Canonical containment already preceded writes through `require`; an explicit conditional throw now exposes that control flow to analysis without changing the rejection message or backup format. Added a regression for directory entries targeting a sibling with the same path prefix, including cleanup. 30 focused package/import/backup tests and app lint passed; provider CodeQL result unverified.
+
+<!-- /coderabbit-ai-generated:v1 -->
+
 ## Fixed
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 | ID | Priority | Category | Location | Problem → fix | Commit | Evidence |
 |---|---|---|---|---|---|---|
