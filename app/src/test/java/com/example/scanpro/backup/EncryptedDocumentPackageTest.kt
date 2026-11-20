@@ -313,6 +313,21 @@ class EncryptedDocumentPackageTest {
     }
 
     @Test
+    fun `a directory entry cannot escape into a sibling with the same prefix`() {
+        val outDir = File(tmp.root, "restore")
+        val sibling = File(tmp.root, "restore-sibling")
+        val file = craft(password, entries = listOf("../restore-sibling/" to byteArrayOf()))
+        try {
+            restore(file, outDir = outDir)
+            fail("unsafe directory entry accepted")
+        } catch (expected: UserFacingException) {
+            assertTrue(expected.cause?.message.orEmpty().contains("Unsafe backup entry"))
+        }
+        assertFalse(sibling.exists())
+        assertFalse(outDir.exists())
+    }
+
+    @Test
     fun `a manifest pointing outside the restore folder is refused`() {
         val manifest = """{"title":"x","pages":[{"file":"../../outside.jpg"}]}"""
         val file = craft(password, entries = listOf("manifest.json" to manifest.toByteArray(), "pages/0000.jpg" to bytes(1, 10)))

@@ -49,7 +49,19 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:aace4a40f4e51dbeb82930502b1f9640430e87df5592dc693c3286089213c40d -->
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
+
+## Latest results (2026-11-20, PR 18 round 2 on `619d0ac4` plus working patch)
+
+- `./gradlew --no-daemon :app:testDebugUnitTest --tests '*EncryptedDocumentPackageTest' --tests '*ChunkedAeadTest' :app:lintDebug`: PASS in 7m 35s; 20 package tests, zero failures/errors/skips; lint passed. The ChunkedAeadTest filter matched no class; package tests exercise encrypted round trips.
+- `./gradlew --no-daemon :app:testDebugUnitTest --tests '*ImportBackupTest' --tests '*BackupAllTest'`: PASS in 59s; 10 caller tests, zero failures/errors/skips. Lint and package passes reused for unchanged inputs.
+- Same Java 25.0.2 / Gradle 9.9.0 / Android 37.0 r2 toolchain as round 1. No broad suite or release build; CodeQL on the published patch remains unverified locally.
+
 ## Latest results (2026-11-20, PR 18 repair on `b240676d` plus working patch)
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 - `./gradlew --no-daemon :app:testDebugUnitTest --tests '*ResultShareTest' :app:lintDebug`: PASS (7m 9s), six tests, zero failures/errors/skips; lint completed successfully. App and test Kotlin compilation passed as dependencies. No full test suite or release/package build run for this scoped repair.
 - Exact extraction function and `ResultShareTest` also compiled standalone: six JUnit tests passed (Kotlin 2.4.21, Java 25.0.2).

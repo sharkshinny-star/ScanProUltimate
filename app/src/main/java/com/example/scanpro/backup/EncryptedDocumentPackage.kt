@@ -271,7 +271,10 @@ class EncryptedDocumentPackage(private val context: Context) {
                         while (entry != null) {
                             if (++entries > MAX_ENTRIES) throw BackupTooLargeException()
                             val safe = File(outDir, entry.name).canonicalFile
-                            require(safe.path.startsWith(outDir.canonicalPath + File.separator)) { "Unsafe backup entry" }
+                            // Keep rejection explicit so static analysis can follow the guard to every file operation.
+                            if (!safe.canonicalPath.startsWith(outDir.canonicalPath + File.separator)) {
+                                throw IllegalArgumentException("Unsafe backup entry")
+                            }
                             if (entry.isDirectory) {
                                 safe.mkdirs()
                             } else {
