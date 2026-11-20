@@ -26,6 +26,7 @@ class BookSplitTest : RepositoryTestBase() {
         return doc
     }
 
+    /** Splitting a spread replaces that page with two half pages in its place (positions stay 0 to n-1), reads each half's text, marks the document as a book, and keeps the files of every page. */
     @Test fun splittingASpreadMakesTwoPagesInItsPlaceAndMarksTheDocumentAsABook() = runBlocking {
         val doc = spreadDocument()
         ocr.text = "half"

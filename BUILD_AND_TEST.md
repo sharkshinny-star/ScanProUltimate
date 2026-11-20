@@ -51,6 +51,7 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - Run 289 (`b222f194`): source audit and Room schema check passed; `:app:compileDebugKotlin` FAILED with one error (an internal type exposed by the public `PageNumbersConfig`, F242). Fixed in F246. Unit tests and lint were not reached. Not yet known: whether anything else in F234-F244 fails to compile or fails a test.
 - Run 291 (`d0cd51ea`, 6 min 51 s): audit, Room check and `:app:compileDebugKotlin` PASSED (the app code of F234-F246 compiles, with the usual deprecation and unnecessary-safe-call warnings); `:app:compileDebugUnitTestKotlin` FAILED with one error in a test I wrote (F242, a missing `suspend`). Fixed in F247. Unit tests and lint still not reached.
 - Run 293 (`c0b4c1ff`, 5 min): audit, compile and the unit-test compile passed; `:app:testDebugUnitTest` ran and reported no failure; `:app:lintDebug` FAILED with 6 errors (5 plurals untranslated, F248; the sixth not shown in the log). Play bundle and APK steps skipped.
+- Run 295 (`0d83572a`, 4 min 26 s): audit, compile, unit-test compile and `:app:testDebugUnitTest` as in run 293; `:app:lintDebug` FAILED with 1 error, ByteOrderMark in `FileFormat.kt` (a stray invisible character), fixed in F249. The five untranslated plurals of run 293 are gone. Play bundle and APK steps still skipped.
 
 ## Latest results (2026-11-19, F234 Files search in the top bar, Linux cloud container)
 

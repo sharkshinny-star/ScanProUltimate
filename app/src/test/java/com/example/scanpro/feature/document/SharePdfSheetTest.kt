@@ -10,7 +10,6 @@ import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.test.core.app.ApplicationProvider
 import android.text.format.Formatter
 import androidx.compose.ui.test.onFirst

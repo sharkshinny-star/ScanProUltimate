@@ -2,10 +2,7 @@ package com.example.scanpro.ui.screenshots
 
 import android.app.Application
 import android.graphics.Bitmap
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
