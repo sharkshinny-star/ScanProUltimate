@@ -26,7 +26,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 ## 2. Completed work (newest first)
 
-- **F250** (2026-11-20): triage of the CodeAnt AI GitHub issues (535 and rising): what was fixed and why the rest was left is in `AUDIT_FINDINGS.md` F250; the bot setting to change is R93.
+- **F250** (2026-11-20): triage of the CodeAnt AI GitHub issues (931, #19 to #950; the 38 that were fixed are closed, 893 open): what was fixed and why the rest was left is in `AUDIT_FINDINGS.md` F250; the bot setting to change is R93.
 - **F249** (2026-11-20): CI lint error (an invisible BOM in `FileFormat.kt`) fixed. Check the next CI run: if lint is clean it is the first with every step before the bundle green.
 
 - **F248** (2026-11-19): five plurals translated into hi, kn, ml, ta, te for lint. CI run 293: tests ran, lint failed (6 errors, one unidentified). Check the next run.
