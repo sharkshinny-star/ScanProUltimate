@@ -192,7 +192,6 @@ import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.designsystem.TopBarWithProgress
 import com.example.scanpro.core.ui.ContactDraft
 import com.example.scanpro.core.ui.FilterStrip
-import com.example.scanpro.core.ui.copyFileToUri
 import com.example.scanpro.core.ui.copyText
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.openNewContactForm

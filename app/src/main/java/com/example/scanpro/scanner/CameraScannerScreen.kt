@@ -1141,7 +1141,8 @@ fun CameraScannerScreen(
                 sy += (y - sy) * 0.2f
                 tilt = Offset(sx, sy)
             }
-            override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
+            // Only the readings matter for the bubble level; a change in the sensor's accuracy needs no reaction.
+            override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) { /* the level only needs the readings */ }
         }
         // Registered only while the bubble is on screen: at SENSOR_DELAY_UI the callback runs dozens of
         // times a second, which is pure waste while nothing shows the readings.

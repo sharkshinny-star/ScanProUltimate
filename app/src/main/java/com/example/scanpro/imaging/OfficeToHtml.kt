@@ -10,7 +10,6 @@ import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.SAXParserFactory
 import org.w3c.dom.Element
-import org.w3c.dom.Node
 import org.xml.sax.Attributes
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler

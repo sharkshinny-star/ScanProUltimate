@@ -14,7 +14,6 @@ import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.ThemeMode
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

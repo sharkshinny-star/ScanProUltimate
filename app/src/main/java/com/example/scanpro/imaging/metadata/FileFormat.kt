@@ -231,7 +231,7 @@ object FileFormat {
     }
 
     private fun looksLikeSvg(head: ByteArray): Boolean {
-        val text = String(head, Charsets.UTF_8).trimStart('﻿', ' ', '\n', '\r', '\t').lowercase()
+        val text = String(head, Charsets.UTF_8).trimStart('\uFEFF', ' ', '\n', '\r', '\t').lowercase()
         return text.startsWith("<svg") || (text.startsWith("<?xml") || text.startsWith("<!doctype svg")) && text.contains("<svg")
     }
 
