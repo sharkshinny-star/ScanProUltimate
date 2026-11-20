@@ -90,4 +90,12 @@
     <string name="edit_crop_status_shared_page">എല്ലാ പേജുകളുടെയും ക്രോപ്പ് ഉപയോഗിക്കുന്നു; വലിച്ചാൽ ഇതിന് സ്വന്തം ക്രോപ്പ് ലഭിക്കും</string>
     <string name="edit_crop_status_whole">ഈ പേജ് മുഴുവനായി നിലനിർത്തിയിരിക്കുന്നു</string>
     <string name="edit_crop_use_shared">എല്ലാ പേജുകളുടെയും ക്രോപ്പ് ഉപയോഗിക്കുക</string>
+    <plurals name="edit_crop_own_count">
+        <item quantity="one">%1$d പേജിന് സ്വന്തം ക്രോപ്പ് ഉണ്ട്, അത് നിലനിർത്തും</item>
+        <item quantity="other">%1$d പേജുകൾക്ക് സ്വന്തം ക്രോപ്പ് ഉണ്ട്, അവ നിലനിർത്തും</item>
+    </plurals>
+    <plurals name="edit_crop_pages_cropped">
+        <item quantity="one">%2$d പേജിൽ %1$d ക്രോപ്പ് ചെയ്യും</item>
+        <item quantity="other">%2$d പേജുകളിൽ %1$d എണ്ണം ക്രോപ്പ് ചെയ്യും</item>
+    </plurals>
 </resources>

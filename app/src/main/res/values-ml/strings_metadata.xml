@@ -54,4 +54,12 @@
     <string name="meta_section_privacy">സ്വകാര്യത</string>
     <string name="meta_show_fewer">കുറച്ച് കാണിക്കുക</string>
     <string name="meta_will_be_removed">നീക്കം ചെയ്യും</string>
+    <plurals name="meta_action_save_changes">
+        <item quantity="one">%1$d മാറ്റത്തോടെ പകർപ്പ് സേവ് ചെയ്യുക</item>
+        <item quantity="other">%1$d മാറ്റങ്ങളോടെ പകർപ്പ് സേവ് ചെയ്യുക</item>
+    </plurals>
+    <plurals name="meta_show_all">
+        <item quantity="one">എല്ലാം (%1$d) കാണിക്കുക</item>
+        <item quantity="other">എല്ലാം (%1$d) കാണിക്കുക</item>
+    </plurals>
 </resources>

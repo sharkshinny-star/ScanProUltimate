@@ -209,4 +209,8 @@
     <string name="cvt_ximg_tick">ഈ ചിത്രം തിരഞ്ഞെടുക്കുക</string>
     <string name="cvt_ximg_untick">തിരഞ്ഞെടുപ്പിൽ നിന്ന് നീക്കുക</string>
     <string name="cvt_ximg_view_larger">ചിത്രം വലുതായി കാണുക</string>
+    <plurals name="cvt_ximg_pick_done">
+        <item quantity="one">പൂർത്തിയായി · %1$d തിരഞ്ഞെടുത്തു</item>
+        <item quantity="other">പൂർത്തിയായി · %1$d തിരഞ്ഞെടുത്തു</item>
+    </plurals>
 </resources>

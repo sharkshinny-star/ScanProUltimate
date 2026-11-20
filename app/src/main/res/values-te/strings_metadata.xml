@@ -54,4 +54,12 @@
     <string name="meta_section_privacy">గోప్యత</string>
     <string name="meta_show_fewer">తక్కువ చూపండి</string>
     <string name="meta_will_be_removed">తొలగించబడుతుంది</string>
+    <plurals name="meta_action_save_changes">
+        <item quantity="one">%1$d మార్పుతో కాపీని సేవ్ చేయండి</item>
+        <item quantity="other">%1$d మార్పులతో కాపీని సేవ్ చేయండి</item>
+    </plurals>
+    <plurals name="meta_show_all">
+        <item quantity="one">మొత్తం %1$d చూపండి</item>
+        <item quantity="other">మొత్తం %1$d చూపండి</item>
+    </plurals>
 </resources>
