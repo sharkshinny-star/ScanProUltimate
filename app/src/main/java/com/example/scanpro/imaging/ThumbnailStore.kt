@@ -68,7 +68,7 @@ object ThumbnailStore {
         // Earlier versions of this page at the same size are stale now.
         folder.listFiles { file -> file.name.startsWith("$maxDimension-") && file != target }?.forEach { it.delete() }
         val temp = File(folder, "${target.name}.tmp")
-        FileOutputStream(temp).use { out -> check(bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)) }
+        FileOutputStream(temp).buffered().use { out -> check(bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)) }
         if (!temp.renameTo(target)) temp.delete()
     }
 

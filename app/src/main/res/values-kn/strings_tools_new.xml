@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_organizer_extract_short_title">ಪುಟಗಳನ್ನು ಹೊರತೆಗೆಯಿರಿ</string>
+
+    <string name="tools_card_blank_pages">ಖಾಲಿ ಪುಟಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</string>
+    <string name="tools_tile_blank_pages">ಖಾಲಿ ಪುಟಗಳು</string>
+    <string name="tools_desc_blank_pages">ಖಾಲಿ ಪುಟಗಳನ್ನು ಹುಡುಕಿ ಅಳಿಸಿ</string>
+    <string name="tools_card_greyscale">ಗ್ರೇಸ್ಕೇಲ್ PDF</string>
+    <string name="tools_tile_greyscale">ಗ್ರೇಸ್ಕೇಲ್</string>
+    <string name="tools_desc_greyscale">ಬಣ್ಣದ ಪುಟಗಳನ್ನು ಬೂದು ಮಾಡಿ</string>
+    <string name="tools_card_flatten">PDF ಫ್ಲ್ಯಾಟನ್ ಮಾಡಿ</string>
+    <string name="tools_tile_flatten">ಫ್ಲ್ಯಾಟನ್</string>
+    <string name="tools_desc_flatten">ಫಾರ್ಮ್ ಉತ್ತರಗಳು ಮತ್ತು ಕಾಮೆಂಟ್‌ಗಳನ್ನು ಪುಟದ ಭಾಗವಾಗಿಸಿ</string>
+    <string name="tools_card_extract_images">ಚಿತ್ರಗಳನ್ನು ಹೊರತೆಗೆಯಿರಿ</string>
+    <string name="tools_desc_extract_images">PDF ಒಳಗಿನ ಚಿತ್ರಗಳನ್ನು ಉಳಿಸಿ</string>
+    <string name="tools_card_pdf_info">PDF ಮಾಹಿತಿ ಮತ್ತು ಮೆಟಾಡೇಟಾ</string>
+    <string name="tools_tile_pdf_info">ಮಾಹಿತಿ ಮತ್ತು ಮೆಟಾಡೇಟಾ</string>
+    <string name="tools_desc_pdf_info">ಮರೆಯಾದ ವಿವರಗಳನ್ನು ನೋಡಿ, ಬದಲಿಸಿ ಅಥವಾ ತೆಗೆದುಹಾಕಿ</string>
+
+    <string name="tools_new_progress_page">ಪುಟ %1$d / %2$d</string>
+
+    <string name="tools_blank_progress_scanning">ಖಾಲಿ ಪುಟಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_blank_progress_removing">ಖಾಲಿ ಪುಟಗಳನ್ನು ತೆಗೆದುಹಾಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_blank_err_failed">ಈ PDF ನಲ್ಲಿ ಖಾಲಿ ಪುಟಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_blank_err_all">PDF ನಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪುಟ ಉಳಿಯಬೇಕು.</string>
+    <string name="tools_blank_none_title">ಖಾಲಿ ಪುಟಗಳಿಲ್ಲ</string>
+    <string name="tools_blank_none_body">ಈ PDF ನ ಪ್ರತಿ ಪುಟದಲ್ಲೂ ಏನಾದರೂ ಇದೆ, ಆದ್ದರಿಂದ ತೆಗೆದುಹಾಕಲು ಏನೂ ಇಲ್ಲ.</string>
+    <string name="tools_blank_found_title">ಖಾಲಿ ಪುಟಗಳು ಸಿಕ್ಕಿವೆ</string>
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತದೆ: ಪುಟ %3$s. ಅದನ್ನು ಹೊಸ ಪ್ರತಿಯಲ್ಲಿ ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ; ಮೂಲ ಫೈಲ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.</item>
+        <item quantity="other">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತವೆ: ಪುಟಗಳು %3$s. ಅವುಗಳನ್ನು ಹೊಸ ಪ್ರತಿಯಲ್ಲಿ ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ; ಮೂಲ ಫೈಲ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.</item>
+    </plurals>
+    <string name="tools_blank_all_blank">ಎಲ್ಲ ಪುಟಗಳೂ ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತವೆ. PDF ಗೆ ಕನಿಷ್ಠ ಒಂದು ಪುಟ ಬೇಕು, ಆದ್ದರಿಂದ ಏನನ್ನೂ ತೆಗೆದುಹಾಕಲಾಗುವುದಿಲ್ಲ.</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">%1$d ಪುಟ ತೆಗೆದುಹಾಕಿ</item>
+        <item quantity="other">%1$d ಪುಟಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">%1$d ಖಾಲಿ ಪುಟ ತೆಗೆದುಹಾಕಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಖಾಲಿ ಪುಟಗಳನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ</item>
+    </plurals>
+
+    <string name="tools_grey_confirm_body">ಪ್ರತಿ ಪುಟವನ್ನು %1$d dpi ನಲ್ಲಿ ಬೂದು ಛಾಯೆಗಳಲ್ಲಿ ಮತ್ತೆ ಚಿತ್ರಿಸಲಾಗುತ್ತದೆ. ಪಠ್ಯವು ಪುಟದ ಚಿತ್ರದ ಭಾಗವಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಅದನ್ನು ಹುಡುಕಲು ಅಥವಾ ನಕಲಿಸಲು ನಂತರ \"ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ\" ಬಳಸಿ. ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="tools_grey_confirm_action">ಗ್ರೇಸ್ಕೇಲ್ ಮಾಡಿ</string>
+    <string name="tools_grey_progress">ಗ್ರೇಸ್ಕೇಲ್‌ಗೆ ಪರಿವರ್ತಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_grey_err_failed">ಈ PDF ಅನ್ನು ಗ್ರೇಸ್ಕೇಲ್‌ಗೆ ಪರಿವರ್ತಿಸಲು ಆಗಲಿಲ್ಲ.</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">%1$d ಪುಟವನ್ನು ಗ್ರೇಸ್ಕೇಲ್‌ಗೆ ಪರಿವರ್ತಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳನ್ನು ಗ್ರೇಸ್ಕೇಲ್‌ಗೆ ಪರಿವರ್ತಿಸಲಾಗಿದೆ</item>
+    </plurals>
+
+    <string name="tools_flatten_confirm_body">ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳು, ಕಾಮೆಂಟ್‌ಗಳು, ಹೈಲೈಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳನ್ನು ಪುಟಗಳಲ್ಲೇ ಚಿತ್ರಿಸಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಅವುಗಳನ್ನು ಇನ್ನು ಬದಲಿಸಲು ಅಥವಾ ತೆಗೆದುಹಾಕಲು ಆಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ಗಳು ಕೆಲಸ ಮಾಡುತ್ತವೆ. ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="tools_flatten_confirm_action">ಫ್ಲ್ಯಾಟನ್ ಮಾಡಿ</string>
+    <string name="tools_flatten_progress">ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_flatten_err_failed">ಈ PDF ಅನ್ನು ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_flatten_nothing">ಈ PDF ನಲ್ಲಿ ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲು ಯಾವುದೇ ಫಾರ್ಮ್ ಫೀಲ್ಡ್ ಅಥವಾ ಕಾಮೆಂಟ್ ಇಲ್ಲ.</string>
+    <string name="tools_flatten_done">ಫ್ಲ್ಯಾಟನ್ ಆಯಿತು. ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳು: %1$d, ಕಾಮೆಂಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳು: %2$d</string>
+
+    <string name="tools_ximg_progress">ಚಿತ್ರಗಳನ್ನು ಹೊರತೆಗೆಯಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_ximg_err_failed">ಈ PDF ನಿಂದ ಚಿತ್ರಗಳನ್ನು ಹೊರತೆಗೆಯಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_ximg_err_none">ಈ PDF ನಲ್ಲಿ ಉಳಿಸಬಹುದಾದ ಚಿತ್ರಗಳಿಲ್ಲ. ಪೂರ್ಣ ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ಉಳಿಸಲು \"PDF ನಿಂದ ಚಿತ್ರಗಳು\" ಬಳಸಿ.</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">%1$d ಚಿತ್ರವನ್ನು ಹೊರತೆಗೆಯಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಚಿತ್ರಗಳನ್ನು ಹೊರತೆಗೆಯಲಾಗಿದೆ</item>
+    </plurals>
+
+    <string name="tools_info_progress">PDF ವಿವರಗಳನ್ನು ಓದಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_info_err_failed">ಈ PDF ನ ವಿವರಗಳನ್ನು ಓದಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_info_pages">ಪುಟಗಳು</string>
+    <string name="tools_info_version">PDF ಆವೃತ್ತಿ</string>
+    <string name="tools_info_size">ಫೈಲ್ ಗಾತ್ರ</string>
+    <string name="tools_info_created">ರಚಿಸಲಾಗಿದೆ</string>
+    <string name="tools_info_modified">ಬದಲಿಸಲಾಗಿದೆ</string>
+    <string name="tools_info_creator">ಇದರಿಂದ ರಚಿಸಲಾಗಿದೆ</string>
+    <string name="tools_info_producer">ತಯಾರಕ</string>
+    <string name="tools_info_not_set">ಹೊಂದಿಸಿಲ್ಲ</string>
+    <string name="tools_info_edit_heading">ನೀವು ಬದಲಿಸಬಹುದಾದ ವಿವರಗಳು</string>
+    <string name="tools_info_field_title">ಶೀರ್ಷಿಕೆ</string>
+    <string name="tools_info_field_author">ಲೇಖಕ</string>
+    <string name="tools_info_field_subject">ವಿಷಯ</string>
+    <string name="tools_info_field_keywords">ಕೀವರ್ಡ್‌ಗಳು</string>
+    <string name="tools_info_save">ಪ್ರತಿ ಉಳಿಸಿ</string>
+    <string name="tools_info_remove_all">ಎಲ್ಲ ಮೆಟಾಡೇಟಾ ತೆಗೆದುಹಾಕಿ</string>
+    <string name="tools_info_remove_all_hint">ಗೌಪ್ಯತೆಗಾಗಿ: ಶೀರ್ಷಿಕೆ, ಲೇಖಕ, ಆ್ಯಪ್‌ಗಳು, ದಿನಾಂಕಗಳು ಮತ್ತು ಇತರ ಮರೆಯಾದ ವಿವರಗಳನ್ನು ಹೊಸ ಪ್ರತಿಯಲ್ಲಿ ತೆಗೆದುಹಾಕುತ್ತದೆ.</string>
+    <string name="tools_info_xmp_note">ಈ PDF ತನ್ನ ವಿವರಗಳ ಎರಡನೇ (XMP) ಪ್ರತಿಯನ್ನೂ ಹೊಂದಿದೆ. ಉಳಿಸಿದಾಗ ಅದನ್ನು ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಎಲ್ಲ ರೀಡರ್‌ಗಳು ಒಂದೇ ವಿವರಗಳನ್ನು ತೋರಿಸುತ್ತವೆ.</string>
+    <string name="tools_info_saving">ವಿವರಗಳನ್ನು ಉಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_info_save_failed">ಹೊಸ ವಿವರಗಳನ್ನು ಉಳಿಸಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_info_saved">ವಿವರಗಳನ್ನು ನವೀಕರಿಸಲಾಗಿದೆ</string>
+    <string name="tools_info_removed">ಎಲ್ಲ ಮೆಟಾಡೇಟಾವನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ</string>
+
+    <string name="hint_tool_blank_pages">ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ PDF ನ ಖಾಲಿ ಪುಟಗಳನ್ನು ಹುಡುಕಿ, ಪಟ್ಟಿಯನ್ನು ಪರಿಶೀಲಿಸಿದ ನಂತರ ತೆಗೆದುಹಾಕಿ.</string>
+    <string name="hint_tool_greyscale">ಕಡಿಮೆ ವೆಚ್ಚದ ಮುದ್ರಣ ಅಥವಾ ಚಿಕ್ಕ ಫೈಲ್‌ಗಾಗಿ ಬಣ್ಣದ PDF ಅನ್ನು ಬೂದು ಛಾಯೆಗಳಿಗೆ ಬದಲಿಸಿ.</string>
+    <string name="hint_tool_flatten">ಫಾರ್ಮ್ ಉತ್ತರಗಳು, ಕಾಮೆಂಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳನ್ನು ಪುಟಗಳಲ್ಲೇ ಚಿತ್ರಿಸಿ, ಅವುಗಳನ್ನು ಫೀಲ್ಡ್ ಅಥವಾ ಕಾಮೆಂಟ್ ಆಗಿ ಇನ್ನು ಬದಲಿಸಲಾಗದು. PDF ಎಡಿಟರ್‌ನಿಂದ ಪುಟವನ್ನೇ ಇನ್ನೂ ಬದಲಿಸಬಹುದು.</string>
+    <string name="hint_tool_extract_images">PDF ಒಳಗಿನ ಪ್ರತಿ ಚಿತ್ರವನ್ನು ಪ್ರತ್ಯೇಕ ಚಿತ್ರ ಫೈಲ್ ಆಗಿ ಉಳಿಸಿ.</string>
+    <string name="hint_tool_pdf_info">PDF ನ ಮರೆಯಾದ ವಿವರಗಳನ್ನು ನೋಡಿ, ಶೀರ್ಷಿಕೆ ಅಥವಾ ಲೇಖಕರನ್ನು ಬದಲಿಸಿ, ಅಥವಾ ಗೌಪ್ಯತೆಗಾಗಿ ಎಲ್ಲವನ್ನೂ ತೆಗೆದುಹಾಕಿ.</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಿ</string>
+    <string name="tools_tile_crop_pdf">ಪುಟ ಕತ್ತರಿಸು</string>
+    <string name="tools_desc_crop_pdf">ಅಂಚುಗಳು ಅಥವಾ ಖಾಲಿ ಜಾಗ ತೆಗೆಯಿರಿ</string>
+    <string name="hint_tool_crop_pdf">ಪ್ರತಿ ಪುಟದ ಅಂಚುಗಳನ್ನು ಕತ್ತರಿಸಿ: ವಿಷಯದ ಸುತ್ತ ತಾನಾಗಿ, ಅಥವಾ ಮಿಲಿಮೀಟರ್‌ನಲ್ಲಿ. ಪಠ್ಯ ಪದರ ಉಳಿಯುತ್ತದೆ.</string>
+    <string name="tools_crop_pdf_body">ಸ್ವಯಂ ಪ್ರತಿ ಪುಟವನ್ನು ವಿಷಯದ ಸುತ್ತ ಸ್ವಲ್ಪ ಜಾಗ ಬಿಟ್ಟು ಕತ್ತರಿಸುತ್ತದೆ; ಅಂಚುಗಳು ನೀವು ನಿಗದಿಪಡಿಸಿದ ಪ್ರಮಾಣವನ್ನು ಪ್ರತಿ ಪುಟದಿಂದ ತೋರಿಸಿದಂತೆ ಕತ್ತರಿಸುತ್ತದೆ. ಏನನ್ನೂ ಅಳಿಸಲಾಗುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ನಂತರ ದುರಸ್ತಿ ಮೂಲಕ ಪುಟಗಳನ್ನು ಮರಳಿ ಪಡೆಯಬಹುದು.</string>
+    <string name="tools_crop_pdf_mode_auto">ಸ್ವಯಂ ಕತ್ತರಿಸು</string>
+    <string name="tools_crop_pdf_mode_margins">ಅಂಚುಗಳು</string>
+    <string name="tools_crop_pdf_padding">ವಿಷಯದ ಸುತ್ತ ಜಾಗ</string>
+    <string name="tools_crop_pdf_top">ಮೇಲೆ</string>
+    <string name="tools_crop_pdf_bottom">ಕೆಳಗೆ</string>
+    <string name="tools_crop_pdf_left">ಎಡ</string>
+    <string name="tools_crop_pdf_right">ಬಲ</string>
+    <string name="tools_crop_pdf_mm">%1$d ಮಿಮೀ</string>
+    <string name="tools_crop_pdf_action">ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಿ</string>
+    <string name="tools_crop_pdf_progress">ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_crop_pdf_err_failed">ಈ PDF ಅನ್ನು ಕತ್ತರಿಸಲಾಗಲಿಲ್ಲ.</string>
+    <string name="tools_crop_pdf_err_nothing">ಕತ್ತರಿಸಲು ಏನೂ ಇಲ್ಲ: ಪ್ರತಿ ಪುಟವೂ ಈಗಾಗಲೇ ಸಾಧ್ಯವಾದಷ್ಟು ಬಿಗಿಯಾಗಿದೆ, ಅಥವಾ ಕತ್ತರಿಸಿದರೆ ಬಹಳ ಕಡಿಮೆ ಉಳಿಯುತ್ತದೆ.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d ಪುಟ ಕತ್ತರಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಲಾಗಿದೆ</item>
+    </plurals>
+    <string name="tools_card_redact">ಪಠ್ಯ ಮರೆಮಾಡಿ</string>
+    <string name="tools_tile_redact">ಮರೆಮಾಡು</string>
+    <string name="tools_desc_redact">ಪದಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ಕಪ್ಪಾಗಿಸಿ</string>
+    <string name="hint_tool_redact">ಹೆಸರುಗಳು, ಸಂಖ್ಯೆಗಳು ಅಥವಾ ಯಾವುದೇ ಪದಗಳನ್ನು ಎಲ್ಲಿದ್ದರೂ ಕಪ್ಪಾಗಿಸಿ. ಹೊಂದಿಕೆಯಾದ ಪುಟಗಳು ಚಿತ್ರಗಳಾಗುತ್ತವೆ, ಆದ್ದರಿಂದ ಪದಗಳು ನಿಜವಾಗಿಯೂ ಹೋಗುತ್ತವೆ, ಕೇವಲ ಮುಚ್ಚಲ್ಪಡುವುದಿಲ್ಲ.</string>
+    <string name="tools_redact_body">ಪ್ರತಿ ಹೊಂದಿಕೆಯನ್ನು ಕಪ್ಪಾಗಿ ಬಣ್ಣಿಸಲಾಗುತ್ತದೆ ಮತ್ತು ಹೊಂದಿಕೆ ಇರುವ ಪ್ರತಿ ಪುಟವನ್ನು ಚಿತ್ರವಾಗಿ ಮರುರಚಿಸಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಪಠ್ಯವನ್ನು ಮರಳಿ ಪಡೆಯಲಾಗದು. ಹೊಂದಿಕೆ ಇಲ್ಲದ ಪುಟಗಳು ತಮ್ಮ ಪಠ್ಯ ಉಳಿಸಿಕೊಳ್ಳುತ್ತವೆ. ಪಠ್ಯ ಮತ್ತೆ ಬೇಕಿದ್ದರೆ ನಂತರ “ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ” ಬಳಸಿ.</string>
+    <string name="tools_redact_terms_label">ಕಪ್ಪಾಗಿಸಬೇಕಾದ ಪದಗಳು</string>
+    <string name="tools_redact_terms_hint">ಸಾಲಿಗೆ ಒಂದು, ಅಥವಾ ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ</string>
+    <string name="tools_redact_match_case">ದೊಡ್ಡ ಮತ್ತು ಸಣ್ಣ ಅಕ್ಷರ ಹೊಂದಿಸಿ</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d ಪದವನ್ನು ಹುಡುಕಲಾಗುವುದು</item>
+        <item quantity="other">%1$d ಪದಗಳನ್ನು ಹುಡುಕಲಾಗುವುದು</item>
+    </plurals>
+    <string name="tools_redact_action">ಮರೆಮಾಡಿ</string>
+    <string name="tools_redact_progress">ಮರೆಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_redact_progress_searching">ಪದಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_redact_err_failed">ಈ PDF ಅನ್ನು ಮರೆಮಾಡಲಾಗಲಿಲ್ಲ.</string>
+    <string name="tools_redact_err_no_matches">ಈ ಪದಗಳಲ್ಲಿ ಯಾವುದೂ ಈ PDF ಪಠ್ಯದಲ್ಲಿ ಸಿಗಲಿಲ್ಲ. ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟಕ್ಕೆ ಮೊದಲು “ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ” ಬೇಕು.</string>
+    <string name="tools_redact_done">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಹೊಂದಿಕೆಗಳನ್ನು ಕಪ್ಪಾಗಿಸಲಾಗಿದೆ</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">ಒಂದು ಹಾಳೆಯಲ್ಲಿ ಹಲವು ಪುಟಗಳು (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">ಒಂದು ಹಾಳೆಯಲ್ಲಿ 2 ಅಥವಾ 4 ಪುಟಗಳು</string>
+    <string name="hint_tool_nup">ಪ್ರತಿ ಹಾಳೆಯಲ್ಲಿ ಎರಡು ಅಥವಾ ನಾಲ್ಕು ಪುಟಗಳು, ಓದುವ ಕ್ರಮದಲ್ಲಿ: ಕರಡುಗಳು, ಸ್ಲೈಡ್‌ಗಳು ಅಥವಾ ಕೈಪಿಡಿಗಳನ್ನು ಮುದ್ರಿಸಲು.</string>
+    <string name="tools_nup_body">ಪುಟಗಳನ್ನು ಚಿಕ್ಕದಾಗಿಸಿ ಓದುವ ಕ್ರಮದಲ್ಲಿ ಪಕ್ಕಪಕ್ಕ ಇಡಲಾಗುತ್ತದೆ. ಪಠ್ಯ ಮತ್ತು ಚಿತ್ರಗಳು ಸ್ಪಷ್ಟವಾಗಿ ಉಳಿಯುತ್ತವೆ: ಏನನ್ನೂ ಮರುಬರೆಯುವುದಿಲ್ಲ, ಸರಿಸಿ ಕುಗ್ಗಿಸಲಾಗುತ್ತದೆ ಅಷ್ಟೇ.</string>
+    <string name="tools_nup_two">ಹಾಳೆಗೆ 2</string>
+    <string name="tools_nup_four">ಹಾಳೆಗೆ 4</string>
+    <string name="tools_nup_action">ಹಾಳೆಗಳನ್ನು ಮಾಡಿ</string>
+    <string name="tools_nup_progress">ಹಾಳೆಗಳನ್ನು ಜೋಡಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_nup_err_failed">ಈ PDF ಅನ್ನು ಜೋಡಿಸಲಾಗಲಿಲ್ಲ.</string>
+    <string name="tools_nup_err_one_page">ಈ PDF ನಲ್ಲಿ ಒಂದೇ ಪುಟವಿದೆ, ಪಕ್ಕಪಕ್ಕ ಇಡಲು ಏನೂ ಇಲ್ಲ.</string>
+    <string name="tools_nup_done">%2$d ಹಾಳೆಗಳಲ್ಲಿ %1$d ಪುಟಗಳನ್ನು ಇಡಲಾಗಿದೆ</string>
+    <string name="tools_card_header_footer">ಹೆಡರ್ ಮತ್ತು ಫೂಟರ್</string>
+    <string name="tools_tile_header_footer">ಹೆಡರ್/ಫೂಟರ್</string>
+    <string name="tools_desc_header_footer">ಮೇಲೆ ಅಥವಾ ಕೆಳಗೆ ಪಠ್ಯ</string>
+    <string name="hint_tool_header_footer">ಪ್ರತಿ ಪುಟದ ಮೇಲೆ ಅಥವಾ ಕೆಳಗೆ ಒಂದು ಸಾಲು: ಶೀರ್ಷಿಕೆ, ದಿನಾಂಕ ಅಥವಾ ಫೈಲ್ ಉಲ್ಲೇಖ.</string>
+    <string name="tools_hf_body">ಪಠ್ಯವನ್ನು ಪ್ರತಿ ಪುಟಕ್ಕೆ ಅದು ಕಾಣುವಂತೆ ಸೇರಿಸಲಾಗುತ್ತದೆ; ಉಳಿದದ್ದು ಹಾಗೆಯೇ ಇರುತ್ತದೆ. ಪುಟ ಸಂಖ್ಯೆಗೆ {page}, ಒಟ್ಟು ಪುಟಗಳಿಗೆ {total} ಬರೆಯಿರಿ.</string>
+    <string name="tools_hf_header_label">ಹೆಡರ್ (ಪುಟದ ಮೇಲೆ)</string>
+    <string name="tools_hf_footer_label">ಫೂಟರ್ (ಪುಟದ ಕೆಳಗೆ)</string>
+    <string name="tools_hf_placeholders_hint">{page} ಪುಟ ಸಂಖ್ಯೆಯಾಗುತ್ತದೆ, {total} ಒಟ್ಟು ಪುಟಗಳ ಸಂಖ್ಯೆ.</string>
+    <string name="tools_hf_align_left">ಎಡ</string>
+    <string name="tools_hf_align_centre">ಮಧ್ಯ</string>
+    <string name="tools_hf_align_right">ಬಲ</string>
+    <string name="tools_hf_skip_first">ಮೊದಲ ಪುಟವನ್ನು ಬಿಡಿ</string>
+    <string name="tools_hf_action">ಪಠ್ಯ ಸೇರಿಸಿ</string>
+    <string name="tools_hf_progress">ಪಠ್ಯ ಸೇರಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_hf_err_failed">ಹೆಡರ್ ಅಥವಾ ಫೂಟರ್ ಸೇರಿಸಲಾಗಲಿಲ್ಲ.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d ಪುಟಕ್ಕೆ ಪಠ್ಯ ಸೇರಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳಿಗೆ ಪಠ್ಯ ಸೇರಿಸಲಾಗಿದೆ</item>
+    </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">ಪ್ರದೇಶಗಳನ್ನು ಮರೆಮಾಡಿ</string>
+    <string name="tools_tile_redact_box">ಪ್ರದೇಶ ಮರೆಮಾಡು</string>
+    <string name="tools_desc_redact_box">ಕಪ್ಪಾಗಿಸಲು ಬಾಕ್ಸ್ ಎಳೆಯಿರಿ</string>
+    <string name="hint_tool_redact_box">ಪುಟದ ಯಾವುದರ ಮೇಲಾದರೂ ಬಾಕ್ಸ್ ಎಳೆಯಿರಿ: ಫೋಟೋ, ಸಹಿ, ಕೈಬರಹ. ಬಾಕ್ಸ್‌ಗಳು ಶಾಶ್ವತವಾಗಿ ಕಪ್ಪಾಗುತ್ತವೆ.</string>
+    <string name="tools_redact_box_hint">ಹೋಗಬೇಕಾದದ್ದರ ಮೇಲೆ ಎಳೆದು ಬಾಕ್ಸ್ ಮಾಡಿ. ಬಾಕ್ಸ್ ಆಯ್ಕೆಗೆ ಅದನ್ನು ಮುಟ್ಟಿ, ಕಸದ ಬುಟ್ಟಿ ಅದನ್ನು ತೆಗೆಯುತ್ತದೆ.</string>
+    <string name="tools_redact_box_remove">ಈ ಬಾಕ್ಸ್ ತೆಗೆಯಿರಿ</string>
+    <string name="tools_redact_box_undo">ಕೊನೆಯ ಬಾಕ್ಸ್ ತೆಗೆಯಿರಿ</string>
+    <string name="tools_redact_box_previous">ಹಿಂದಿನ ಪುಟ</string>
+    <string name="tools_redact_box_next">ಮುಂದಿನ ಪುಟ</string>
+    <string name="tools_redact_box_apply_empty">ಮೊದಲು ಒಂದು ಬಾಕ್ಸ್ ಎಳೆಯಿರಿ</string>
+    <string name="tools_redact_box_apply">%1$d ಪ್ರದೇಶಗಳನ್ನು ಮರೆಮಾಡಿ</string>
+    <string name="tools_redact_box_err_preview">ಈ ಪುಟಗಳನ್ನು ತೋರಿಸಲಾಗದು. PDF ಗೆ ಪಾಸ್‌ವರ್ಡ್ ಬೇಕಿದ್ದರೆ ಮೊದಲು ಅನ್‌ಲಾಕ್ ಮಾಡಿ.</string>
+    <string name="tools_redact_box_err_none">ಈ PDF ಪುಟಗಳಲ್ಲಿ ಯಾವುದೇ ಬಾಕ್ಸ್ ಎಳೆದಿಲ್ಲ.</string>
+    <string name="tools_redact_box_done">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಪ್ರದೇಶಗಳನ್ನು ಕಪ್ಪಾಗಿಸಲಾಗಿದೆ</string>
+</resources>

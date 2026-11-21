@@ -2,9 +2,11 @@ package com.example.scanpro.navigation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -55,14 +60,19 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.scanpro.R
+import com.example.scanpro.core.designsystem.FitText
 import com.example.scanpro.core.designsystem.ScanProTheme
+import com.example.scanpro.core.designsystem.cappedFontScale
+import com.example.scanpro.core.designsystem.rememberMotionEnabled
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.example.scanpro.core.designsystem.FitText
-import com.example.scanpro.core.designsystem.cappedFontScale
 
 /** Windows at least this wide (tablets, unfolded foldables, split-screen on a large display) get a side rail. */
 const val WIDE_WINDOW_DP = 600
@@ -83,8 +93,11 @@ private val tabs = listOf(
     Tab(ScanProDestinations.HOME, R.string.nav_tab_home, Icons.Outlined.Home, Icons.Rounded.Home),
     Tab(ScanProDestinations.FILES, R.string.nav_tab_files, Icons.Outlined.Folder, Icons.Rounded.Folder),
     Tab(ScanProDestinations.TOOLS, R.string.nav_tab_tools, Icons.Outlined.Handyman, Icons.Rounded.Handyman),
-    Tab(ScanProDestinations.SETTINGS, R.string.common_settings, Icons.Outlined.Settings, Icons.Rounded.Settings)
+    Tab(ScanProDestinations.SETTINGS, R.string.common_settings, Icons.Outlined.Settings, Icons.Rounded.Settings),
 )
+
+/** The tab last seen settled on screen; main thread only. A bar composed for another tab animates from it. */
+private var lastSettledTab: String? = null
 
 /** Height of the bar itself, above the navigation-bar inset. */
 private val BarHeight = 68.dp
@@ -98,6 +111,18 @@ private val ScanButtonSize = 60.dp
 @Composable
 fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit, onScan: () -> Unit = {}) {
     if (isWideWindow()) return
+    // Every tab draws its own copy of this bar, so a tab switch used to cut the highlight from one item to the other
+    // (the copies only cross-faded). A new copy now starts on the tab that was showing and moves its highlight to its
+    // own tab, which reads as one bar whose pill travels.
+    val motion = rememberMotionEnabled()
+    val cameFrom = remember { lastSettledTab?.takeIf { motion && it != selectedRoute } }
+    var highlighted by remember { mutableStateOf(cameFrom ?: selectedRoute) }
+    LaunchedEffect(selectedRoute) { highlighted = selectedRoute }
+    // Recorded only once this tab is really the one on screen (a cancelled back gesture never resumes it).
+    LifecycleResumeEffect(selectedRoute) {
+        lastSettledTab = selectedRoute
+        onPauseOrDispose { }
+    }
     Box(Modifier.fillMaxWidth()) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
@@ -115,12 +140,14 @@ fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit, onScan: () 
                     Modifier
                         .fillMaxWidth()
                         .height(BarHeight)
-                        .padding(horizontal = 6.dp),
+                        .padding(horizontal = 6.dp)
+                        // TalkBack reads the tabs as one group ("tab 2 of 4").
+                        .selectableGroup(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    tabs.take(2).forEach { tab -> BarItem(tab, selectedRoute == tab.route, Modifier.weight(1f)) { onTab(tab.route) } }
+                    tabs.take(2).forEach { tab -> BarItem(tab, selectedRoute == tab.route, highlighted == tab.route, Modifier.weight(1f)) { onTab(tab.route) } }
                     Spacer(Modifier.width(ScanButtonSize + 12.dp))
-                    tabs.drop(2).forEach { tab -> BarItem(tab, selectedRoute == tab.route, Modifier.weight(1f)) { onTab(tab.route) } }
+                    tabs.drop(2).forEach { tab -> BarItem(tab, selectedRoute == tab.route, highlighted == tab.route, Modifier.weight(1f)) { onTab(tab.route) } }
                 }
                 Spacer(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
             }
@@ -135,18 +162,27 @@ fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit, onScan: () 
 }
 
 @Composable
-private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun BarItem(tab: Tab, isSelected: Boolean, highlighted: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    val motion = rememberMotionEnabled()
+    // What is drawn follows the travelling highlight; what a screen reader hears is the real selection.
+    val selected = highlighted
     val tint by animateColorAsState(if (selected) scheme.onSecondaryContainer else scheme.onSurfaceVariant, label = "tint")
     val pill by animateColorAsState(if (selected) scheme.secondaryContainer else Color.Transparent, label = "pill")
     val pillWidth by animateDpAsState(if (selected) 56.dp else 32.dp, spring(stiffness = 600f), label = "pillWidth")
+    // Subtle bounce on tab selection icon: graphicsLayer ensures draw-phase only execution (zero recompositions).
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected && motion) 1.10f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 500f),
+        label = "tabIconScale"
+    )
     val interaction = remember { MutableInteractionSource() }
     val label = stringResource(tab.label)
     Column(
         modifier
             .clip(RoundedCornerShape(16.dp))
             .selectable(
-                selected = selected,
+                selected = isSelected,
                 role = Role.Tab,
                 interactionSource = interaction,
                 indication = ripple(bounded = true, radius = 36.dp),
@@ -163,7 +199,17 @@ private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
                 .background(pill, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+            Icon(
+                if (selected) tab.selectedIcon else tab.icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier
+                    .size(24.dp)
+                    .graphicsLayer {
+                        scaleX = iconScale
+                        scaleY = iconScale
+                    }
+            )
         }
         Spacer(Modifier.height(4.dp))
         // The bar has a fixed height and a quarter of the width: at a 150 % font size "Settings" lost its last letter
@@ -183,24 +229,34 @@ private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
 fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = ScanButtonSize) {
     val brand = ScanProTheme.colors
     val interaction = remember { MutableInteractionSource() }
+    val isPressed by interaction.collectIsPressedAsState()
+    val motion = rememberMotionEnabled()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed && motion) 0.92f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 700f),
+        label = "scanButtonScale"
+    )
     val scanLabel = stringResource(R.string.lib_scan)
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         modifier
             .size(size)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .shadow(10.dp, CircleShape, ambientColor = brand.gradientStart.copy(alpha = 0.5f), spotColor = brand.gradientEnd.copy(alpha = 0.6f))
             .background(Brush.linearGradient(listOf(brand.gradientStart, brand.gradientEnd)), CircleShape)
             .clip(CircleShape)
-            .selectable(
-                selected = false,
-                role = Role.Button,
+            // clickable, not selectable(selected = false): TalkBack read the button as "not selected".
+            .clickable(
                 interactionSource = interaction,
                 indication = ripple(bounded = true, color = Color.White),
-                onClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
-                    onClick()
-                }
-            )
+                role = Role.Button
+            ) {
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
+                onClick()
+            }
             .semantics { contentDescription = scanLabel },
         contentAlignment = Alignment.Center
     ) {
@@ -216,7 +272,7 @@ fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit, onScan
     val short = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } < SHORT_WINDOW_DP.dp
     // At a large font size on such a phone, four labelled tabs do not fit the height (the last label was cut off
     // at the bottom, R44): only the selected tab then shows its label, and the others keep it as their description.
-    val compactLabels = short && LocalDensity.current.fontScale > 1.3f
+    val compactLabels = short && (LocalDensity.current.fontScale > 1.3f)
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         header = {

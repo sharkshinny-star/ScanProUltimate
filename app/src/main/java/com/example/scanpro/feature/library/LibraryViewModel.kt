@@ -51,8 +51,14 @@ class LibraryViewModel @Inject constructor(
     private val settings: SettingsStore,
     private val savedState: SavedStateHandle,
     private val folderLock: com.example.scanpro.core.security.FolderLock,
+    recentPdfStore: com.example.scanpro.data.RecentPdfStore,
+    toolResultsStore: com.example.scanpro.data.ToolResultsStore,
     keptScans: KeptScanStore
 ) : ViewModel() {
+    /** PDFs opened in ScanPro and files the tools made, for Home's "Recent files" strip. */
+    val recentPdfs: StateFlow<List<com.example.scanpro.data.RecentPdf>> = recentPdfStore.items
+    val toolResults: StateFlow<List<com.example.scanpro.data.ToolResultFile>> = toolResultsStore.items
+
     private val _movedAside = MutableStateFlow<MovedAsideLibrary?>(null)
 
     /** A library that an older build set aside and this one can read again; the screen offers to restore it. */
@@ -200,6 +206,11 @@ class LibraryViewModel @Inject constructor(
         if (folder.isBlank()) context.getString(R.string.lib_msg_moved_out_of_folder)
         else context.getString(R.string.lib_msg_moved_to_folder, folder.trim())
     ) { ids.forEach { repository.setFolder(it, folder) } }
+
+    /** Renames one document from its card's ⋮ menu: the same rules as inside the document (a clash is allowed and said). */
+    fun renameDocument(id: String, title: String) = operations.run(null, null) {
+        if (repository.rename(id, title)) operations.showMessage(context.getString(R.string.msg_renamed_duplicate_name))
+    }
 
     /** Stars or unstars the selected documents. Queued if another job is running. */
     fun setFavorite(ids: Set<String>, favorite: Boolean) = operations.run(

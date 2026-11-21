@@ -145,6 +145,9 @@
     <string name="scan_quit_discard">ತ್ಯಜಿಸಿ</string>
     <string name="scan_detection_mode">ಆಟೋ ಕ್ಯಾಪ್ಚರ್</string>
     <string name="scan_detect_edges">ಪುಟದ ಅಂಚು ಪತ್ತೆಮಾಡಿ</string>
+    <string name="scan_hd_capture">HD ಕ್ಯಾಪ್ಚರ್</string>
+    <string name="scan_hd_on">HD ಕ್ಯಾಪ್ಚರ್ ಆನ್: ಹೆಚ್ಚು ಸ್ಪಷ್ಟ ಪುಟಗಳು, ಸ್ವಲ್ಪ ನಿಧಾನ</string>
+    <string name="scan_hd_off">HD ಕ್ಯಾಪ್ಚರ್ ಆಫ್</string>
     <string name="scan_show_grid">ಗ್ರಿಡ್</string>
     <string name="scan_show_level">ಲೆವೆಲ್</string>
     <string name="scan_more_options">ಇನ್ನಷ್ಟು ಆಯ್ಕೆಗಳು</string>
@@ -156,9 +159,19 @@
     <string name="scan_exposure">ಎಕ್ಸ್‌ಪೋಸರ್</string>
     <string name="scan_id_front_only">ಮುಂಭಾಗ ಮಾತ್ರ</string>
     <string name="scan_id_both_sides">ಎರಡೂ ಬದಿ</string>
+    <string name="scan_id_passport">ಪಾಸ್‌ಪೋರ್ಟ್</string>
+    <string name="scan_id_passport_page">ಫೋಟೋ ಪುಟ</string>
+    <string name="scan_id_side_step">%1$s · %3$d ರಲ್ಲಿ %2$d</string>
     <string name="scan_book_one_page">ಒಂದು ಪುಟ</string>
     <string name="scan_book_two_pages">ಎರಡು ಪುಟಗಳು</string>
     <string name="scan_book_two_pages_rtl">ಎರಡು ಪುಟಗಳು, ಬಲ ಮೊದಲು</string>
+    <string name="scan_book_intro_title">ಪುಸ್ತಕ ಸ್ಕ್ಯಾನ್</string>
+    <string name="scan_book_intro_body">ತೆರೆದ ಪುಸ್ತಕದ ಎಡ ಮತ್ತು ಬಲ ಪುಟಗಳನ್ನು ಒಟ್ಟಿಗೆ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ScanPro ಅವನ್ನು ಎರಡು ಪುಟಗಳಾಗಿ ವಿಭಜಿಸುತ್ತದೆ: ಮೊದಲು A, ನಂತರ B. ಬಲದಿಂದ ಎಡಕ್ಕೆ ಓದುವ ಪುಸ್ತಕಗಳಿಗೆ “ಎರಡು ಪುಟಗಳು, ಬಲ ಮೊದಲು” ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="scan_idcard_intro_title">ID ಕಾರ್ಡ್ ಸ್ಕ್ಯಾನ್</string>
+    <string name="scan_idcard_intro_body">ಕಾರ್ಡ್ ಅನ್ನು ಸರಳ, ವ್ಯತಿರಿಕ್ತ ಬಣ್ಣದ ಮೇಲ್ಮೈಯಲ್ಲಿ ಸಮತಟ್ಟಾಗಿ ಇಟ್ಟು ಫ್ರೇಮ್ ತುಂಬಿಸಿ. ಮೊದಲು ಮುಂಭಾಗ, ನಂತರ ಹಿಂಭಾಗ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ScanPro ಎರಡೂ ಬದಿಗಳನ್ನು ಒಂದೇ ಪುಟದಲ್ಲಿ, ಮುಂಭಾಗ ಮೇಲೆ ಇಡುತ್ತದೆ. ಹೊಳಪನ್ನು ತಪ್ಪಿಸಿ, ಅಂಚುಗಳ ಮೇಲೆ ಬೆರಳು ಇಡಬೇಡಿ.</string>
+    <string name="scan_doc_intro_title">ದಾಖಲೆ ಸ್ಕ್ಯಾನ್</string>
+    <string name="scan_doc_intro_body">ಪುಟವನ್ನು ಉತ್ತಮ ಬೆಳಕಿನಲ್ಲಿ ಸಮತಟ್ಟಾಗಿ ಇಟ್ಟು ಫೋನ್ ಸ್ಥಿರವಾಗಿ ಹಿಡಿಯಿರಿ. ScanPro ಅಂಚುಗಳನ್ನು ಗುರುತಿಸಿ ಪುಟವನ್ನು ನೇರಗೊಳಿಸಿ ಸ್ವಚ್ಛಗೊಳಿಸುತ್ತದೆ. ಶಟರ್ ಒತ್ತಿ, ಅಥವಾ ಆಟೋ ಕ್ಯಾಪ್ಚರ್ ಆನ್ ಮಾಡಿ ಅಲುಗಾಡದೆ ಇರಿ. ಇನ್ನಷ್ಟು ಪುಟ ಸೇರಿಸಿ, ನಂತರ ಮುಗಿದಿದೆ ಒತ್ತಿ.</string>
+    <string name="scan_book_intro_start">ಈಗ ಪ್ರಾರಂಭಿಸಿ</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">ಹರಡಿದ ಪುಟವನ್ನು %1$d ಮತ್ತು %2$d ಪುಟಗಳಾಗಿ ವಿಭಜಿಸಲಾಗಿದೆ</string>
     <string name="scan_take_photo">ಫೋಟೋ ತೆಗೆಯಿರಿ</string>
     <string name="scan_import_photos">ಫೋಟೋ ಇಂಪೋರ್ಟ್ ಮಾಡಿ</string>
@@ -204,10 +217,6 @@
     <string name="scan_error_camera_stopped">ಕ್ಯಾಮೆರಾ ಕೆಲಸ ನಿಲ್ಲಿಸಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ ಅಥವಾ ಹೊಂದಾಣಿಕೆ ಸ್ಕ್ಯಾನರ್ ಬಳಸಿ.</string>
     <string name="scan_flash_state">ಫ್ಲ್ಯಾಶ್: %1$s</string>
     <string name="scan_zoom_level">ಜೂಮ್ %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">ಬ್ಯಾಚ್‌ನಲ್ಲಿ %1$d ಪುಟ</item>
-        <item quantity="other">ಬ್ಯಾಚ್‌ನಲ್ಲಿ %1$d ಪುಟಗಳು</item>
-    </plurals>
     <string name="scan_flash_off">ಆಫ್</string>
     <string name="scan_flash_auto">ಆಟೋ</string>
     <string name="scan_flash_on">ಆನ್</string>
@@ -253,10 +262,12 @@
     <string name="scan_review_folder_label">ಫೋಲ್ಡರ್</string>
     <string name="scan_review_folder_dialog_title">ಫೋಲ್ಡರ್‌ನಲ್ಲಿ ಉಳಿಸಿ</string>
     <string name="scan_review_adjust">ಹೊಂದಿಸಿ</string>
+    <string name="scan_review_reorder">ಕ್ರಮ ಬದಲಿಸಿ</string>
     <string name="scan_guidance_glare">ಪುಟದ ಮೇಲೆ ಹೊಳಪು ಇದೆ · ಫೋನ್ ಸ್ವಲ್ಪ ಓರೆಯಾಗಿಸಿ</string>
     <string name="scan_quality_blurry">ಈ ಪುಟ ಮಸುಕಾಗಿ ಕಾಣುತ್ತದೆ: ಚಿಕ್ಕ ಪಠ್ಯ ಓದಲು ಕಷ್ಟವಾಗಬಹುದು</string>
     <string name="scan_quality_glare">ಹೊಳಪು ಈ ಪುಟದ ಒಂದು ಭಾಗವನ್ನು ಮರೆಮಾಡುತ್ತಿದೆ</string>
     <string name="scan_quality_dark">ಈ ಪುಟ ತುಂಬಾ ಕತ್ತಲಾಗಿ ಕಾಣುತ್ತದೆ</string>
+    <string name="scan_quality_blank">ಈ ಪುಟ ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತದೆ</string>
     <string name="scan_quality_retake">ಮತ್ತೆ ತೆಗೆಯಿರಿ</string>
     <string name="scan_quality_page_flagged">ಪುಟ %1$d, ಮತ್ತೆ ತೆಗೆಯಬೇಕಾಗಬಹುದು</string>
     <string name="scan_strip_delete_hint">ಅಳಿಸಲು ದೀರ್ಘವಾಗಿ ಒತ್ತಿರಿ</string>

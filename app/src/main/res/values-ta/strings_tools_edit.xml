@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Edit and secure tools (F212). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_err_cannot_read">இந்த PDF-ஐப் படிக்க முடியவில்லை. கடவுச்சொல் இருந்தால், முதலில் அதைத் திறக்கவும்.</string>
+    <string name="edit_section_what_happens">என்ன நடக்கும்</string>
+    <string name="edit_section_found">இந்த PDF-இல் கிடைத்தவை</string>
+    <string name="edit_size_mm">%1$d × %2$d மி.மீ</string>
+
+    <string name="edit_recolour_estimate_note">அளவு முதல் பக்கத்திலிருந்து கணக்கிடப்படுகிறது; புகைப்படங்கள் உள்ள பக்கங்கள் பெரிதாக வரும்.</string>
+
+    <string name="edit_flatten_marked">குறிக்கப்பட்டவை: பக்கத்தின் பகுதியாக மாறும் பக்கம் 1-இன் புலங்களும் குறிப்புகளும்.</string>
+    <string name="edit_flatten_fields">படிவப் புலங்கள்</string>
+    <string name="edit_flatten_comments">குறிப்புகளும் முத்திரைகளும்</string>
+    <string name="edit_flatten_what_happens">தனக்கென தோற்றம் உள்ள படிவ விடைகள், குறிப்புகள், சிறப்புக்குறிகள், முத்திரைகள் பக்கங்களுக்குள் வரையப்படும், அதனால் அவற்றைப் புலமாகவோ குறிப்பாகவோ திருத்த முடியாது. விடைகள் படிக்கவும் தேர்ந்தெடுக்கவும் கூடிய உரையாகவே இருக்கும், PDF திருத்தியால் பக்க உள்ளடக்கத்தை இன்னும் மாற்றலாம். இணைப்புகளும், தனித் தோற்றம் இல்லாத குறிப்புகளும் அப்படியே இருக்கும். எதுவும் மறைக்கப்படுவதில்லை: சொற்களை நீக்க Redact-ஐப் பயன்படுத்தவும்.</string>
+    <string name="edit_flatten_links">இணைப்புகள் (அப்படியே இருக்கும்)</string>
+
+    <string name="edit_crop_section_how">எப்படி வெட்டுவது</string>
+    <string name="edit_crop_err_no_margins">குறைந்தது ஒரு பக்கத்தில் ஓரம் அமைக்கவும்.</string>
+    <string name="edit_crop_err_too_small">இந்த ஓரங்களுக்குப் பிறகு முதல் பக்கத்தில் %1$d மி.மீ-க்கும் குறைவே மீதமிருக்கும்.</string>
+    <string name="edit_crop_size_change">பக்கம் 1: %1$s → %2$s</string>
+    <string name="edit_crop_first_blank">பக்கம் 1 வெறுமையாகத் தெரிகிறது, அதனால் அது அப்படியே இருக்கும். உள்ளடக்கம் உள்ள பக்கங்கள் வெட்டப்படும்.</string>
+    <string name="edit_crop_auto_hint">தானியங்கி வெட்டு பக்கம் 1-இல் எதை வைத்திருக்கும் என்பதைச் சட்டம் காட்டுகிறது; ஒவ்வொரு பக்கத்துக்கும் தனிச் சட்டம்.</string>
+    <string name="edit_crop_all_sides">எல்லாப் பக்கங்களும்</string>
+    <string name="edit_crop_not_redaction">வெட்டுவது வெட்டிய பகுதிகளை மறைக்கும், அழிக்காது; யாரும் அதைத் திரும்பப் பெறலாம். எதையாவது நிரந்தரமாக நீக்க Redact-ஐப் பயன்படுத்தவும்.</string>
+
+    <string name="edit_redact_reading">ஒவ்வொரு பக்கத்தின் உரையும் படிக்கப்படுகிறது…</string>
+    <string name="edit_redact_need_words">கருப்பாக்க வேண்டிய சொற்களைத் தட்டச்சு செய்யவும்.</string>
+    <string name="edit_redact_no_text">இந்த PDF-இல் தேடக்கூடிய உரை இல்லை (இது ஸ்கேன் போலத் தெரிகிறது). முதலில் Make searchable-ஐ இயக்கவும், அல்லது Redact areas-ஐப் பயன்படுத்தவும்.</string>
+    <string name="edit_redact_found">%2$s-இல் %1$s கிடைத்தன</string>
+    <plurals name="edit_redact_matches">
+        <item quantity="one">%1$d பொருத்தம்</item>
+        <item quantity="other">%1$d பொருத்தங்கள்</item>
+    </plurals>
+    <string name="edit_redact_none_on_first">பக்கம் 1-இல் பொருத்தம் இல்லை; அவை அடுத்த பக்கங்களில் உள்ளன.</string>
+    <string name="edit_redact_search_rules">Match case இயக்கப்படாவிட்டால் பெரிய, சிறிய எழுத்துகளும் உச்சரிப்புக் குறிகளும் கவனிக்கப்படாது. இரண்டு வரிகளில் பிரிந்த சொற்களும், குறிப்புகள், படிவப் புலங்களில் உள்ள சொற்களும் கண்டுபிடிக்கப்படும்.</string>
+
+    <string name="edit_redact_box_summary">%2$s-இல் %1$s</string>
+    <plurals name="edit_redact_box_areas">
+        <item quantity="one">%1$d பகுதி</item>
+        <item quantity="other">%1$d பகுதிகள்</item>
+    </plurals>
+
+    <string name="edit_hf_err_empty">தலைப்பு, அடிக்குறிப்பு அல்லது இரண்டையும் எழுதவும்.</string>
+    <string name="edit_hf_err_only_page_skipped">இந்த PDF-இல் ஒரே பக்கம் உள்ளது, முதல் பக்கம் தவிர்க்கப்படுகிறது.</string>
+    <string name="edit_hf_first_skipped">முதல் பக்கம் தவிர்க்கப்படுகிறது, அது அப்படியே இருக்கும்; மற்றவற்றில் உரை சேர்க்கப்படும்.</string>
+    <string name="edit_hf_shrunk">உரை பக்கத்தின் அகலத்தை விட நீளமானது, அதனால் பொருந்தும்படி சிறிதாக்கப்படுகிறது: %1$d pt.</string>
+    <string name="edit_hf_section_text">உரை</string>
+    <string name="edit_hf_quick_footer">அடிக்குறிப்புக்கான பக்க எண்கள்</string>
+    <string name="edit_hf_quick_page_of">பக்கம் {page} / {total}</string>
+    <string name="edit_hf_section_look">இடமும் அளவும்</string>
+    <string name="edit_hf_size_small">சிறியது</string>
+    <string name="edit_hf_size_medium">நடுத்தரம்</string>
+    <string name="edit_hf_size_large">பெரியது</string>
+
+    <plurals name="edit_wm_pages">
+        <item quantity="one">%2$d பக்கத்தில் %1$d-இல் நீர்க்குறி</item>
+        <item quantity="other">%2$d பக்கங்களில் %1$d-இல் நீர்க்குறி</item>
+    </plurals>
+
+    <string name="edit_protect_what_happens">கோப்பு AES-256 மூலம் மறையாக்கம் செய்யப்படும். கடவுச்சொல் உள்ளவர் அதைத் திறக்கலாம், அச்சிடலாம், நகலெடுக்கலாம், திருத்தலாம்; அது இல்லாமல் யாரும் திறக்க முடியாது. கடவுச்சொல்லைப் பத்திரமாக வைக்கவும்: அதை மீட்க முடியாது.</string>
+    <string name="edit_protect_strength">வலிமை: %1$s (சுமார் %2$d பிட்கள்)</string>
+    <string name="edit_protect_strength_weak">பலவீனம்</string>
+    <string name="edit_protect_strength_fair">பரவாயில்லை</string>
+    <string name="edit_protect_strength_good">நல்லது</string>
+    <string name="edit_protect_strength_strong">வலிமையானது</string>
+
+    <string name="edit_sign_summary">%2$s-இல் %1$s</string>
+    <plurals name="edit_sign_stamps">
+        <item quantity="one">%1$d கையொப்பம் அல்லது உரை</item>
+        <item quantity="other">%1$d கையொப்பங்கள் அல்லது உரைகள்</item>
+    </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_crop_adjust">சரிசெய்</string>
+    <string name="edit_crop_apply_to">இழுத்தால் மாறுவது</string>
+    <string name="edit_crop_drag_hint">எதை வைத்திருக்க வேண்டும் என்பதைத் தேர்வு செய்ய ஒரு மூலையை அல்லது பக்கத்தை இழுக்கவும்; சட்டத்தை நகர்த்த அதன் உள்ளே இழுக்கவும்.</string>
+    <string name="edit_crop_frame_description">செதுக்கும் சட்டத்துடன் பக்கம்; அதன் மூலைகளை அல்லது பக்கங்களை இழுக்கவும்</string>
+    <string name="edit_crop_mode_manual">கையால்</string>
+    <string name="edit_crop_nothing_chosen">எதை வைத்திருக்க வேண்டும் என்பதைத் தேர்வு செய்ய சட்டத்தை இழுக்கவும்</string>
+    <string name="edit_crop_page_size">பக்கம் %1$d: %2$s → %3$s</string>
+    <string name="edit_crop_preview">முன்னோட்டம்</string>
+    <string name="edit_crop_reset_all_pages">மீட்டமை</string>
+    <string name="edit_crop_reset_page">இந்தப் பக்கத்தை மீட்டமை</string>
+    <string name="edit_crop_same_everywhere">இந்தச் செதுக்கலை மற்றவற்றிலும் பயன்படுத்து</string>
+    <string name="edit_crop_scope_all">அனைத்துப் பக்கங்கள்</string>
+    <string name="edit_crop_scope_page">இந்தப் பக்கம்</string>
+    <string name="edit_crop_start_over">மீண்டும் தொடங்கு</string>
+    <string name="edit_crop_status_keeps_own">இந்தப் பக்கத்திற்குத் தனிச் செதுக்கல் உள்ளது; அது அப்படியே இருக்கும்</string>
+    <string name="edit_crop_status_own">இந்தப் பக்கத்திற்குத் தனிச் செதுக்கல் உள்ளது</string>
+    <string name="edit_crop_status_shared_all">எல்லாப் பக்கங்களிலும் ஒரே செதுக்கல்</string>
+    <string name="edit_crop_status_shared_page">அனைத்துப் பக்கச் செதுக்கலைப் பயன்படுத்துகிறது; இழுத்தால் தனிச் செதுக்கல் உருவாகும்</string>
+    <string name="edit_crop_status_whole">இந்தப் பக்கம் முழுமையாக வைக்கப்படும்</string>
+    <string name="edit_crop_use_shared">அனைத்துப் பக்கச் செதுக்கலைப் பயன்படுத்து</string>
+    <plurals name="edit_crop_own_count">
+        <item quantity="one">%1$d பக்கத்திற்குத் தனிச் செதுக்கல் உள்ளது; அது அப்படியே இருக்கும்</item>
+        <item quantity="other">%1$d பக்கங்களுக்குத் தனிச் செதுக்கல் உள்ளது; அவை அப்படியே இருக்கும்</item>
+    </plurals>
+    <plurals name="edit_crop_pages_cropped">
+        <item quantity="one">%2$d பக்கத்தில் %1$d செதுக்கப்படும்</item>
+        <item quantity="other">%2$d பக்கங்களில் %1$d செதுக்கப்படும்</item>
+    </plurals>
+</resources>

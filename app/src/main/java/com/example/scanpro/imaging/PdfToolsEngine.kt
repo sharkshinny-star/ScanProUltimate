@@ -1,10 +1,12 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import com.example.scanpro.core.text.userRequire
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.core.text.UserFacingPluralException
 import com.example.scanpro.core.text.UserFacingException
 import com.example.scanpro.core.text.AppStrings
+import com.example.scanpro.core.ui.formatBytes
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -18,9 +20,15 @@ import com.example.scanpro.data.ScanPage
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import com.tom_roush.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
+import com.tom_roush.pdfbox.text.PDFTextStripper
+import com.tom_roush.pdfbox.util.Matrix
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -34,7 +42,9 @@ data class PdfToolResult(
     val pageCount: Int,
     val originalSizeBytes: Long,
     val outputSizeBytes: Long,
-    val message: String
+    val message: String,
+    /** True only for the compress tools: the result card then shows the saving ('80% smaller'). Other tools show just [message]. */
+    val comparesSize: Boolean = false,
 )
 
 enum class SplitMode(@StringRes val labelRes: Int, @StringRes val descriptionRes: Int) {
@@ -45,16 +55,198 @@ enum class SplitMode(@StringRes val labelRes: Int, @StringRes val descriptionRes
 
 data class PageSpec(
     val originalIndex: Int,
-    val rotationDegrees: Int = 0
+    val rotationDegrees: Int = 0,
 )
 
 enum class ImageExportFormat(val extension: String) {
     JPEG("jpg"),
-    PNG("png")
+    PNG("png"),
+    WEBP("webp")
 }
 
 /** How a PDF is protected, as far as opening and editing it goes. */
 enum class PdfProtection { NONE, PASSWORD_REQUIRED, RESTRICTED_ONLY }
+
+data class WatermarkConfig(
+    val text: String,
+    val isDiagonal: Boolean = true,
+    val colorRgb: Int = 0x666666,
+    val opacityPercent: Int = 25,
+    val fontSizePt: Float = 48f,
+    val pageRange: String = "",
+    /** Counter-clockwise angle as the page is seen; when null it is 45 degrees if [isDiagonal], otherwise 0. */
+    val angleDegrees: Float? = null,
+    /** Where the text is centred, as a fraction of the page as seen: 0,0 is the top-left corner and 1,1 the bottom-right. */
+    val centerX: Float = 0.5f,
+    val centerY: Float = 0.5f,
+    /** Repeat the text across the whole page, in rows turned to [angleDegrees], instead of one stamp. */
+    val tiled: Boolean = false
+) {
+    val effectiveAngle: Float get() = angleDegrees ?: if (isDiagonal) 45f else 0f
+}
+
+/**
+ * Where a watermark goes on a page. Everything here is worked out in the page as it is *seen* (top-left origin, after
+ * the page's own /Rotate), then mapped back into the page's stored coordinates, so a page turned on its side gets an
+ * upright watermark in the right place.
+ */
+internal object WatermarkGeometry {
+    /** One piece of text: its centre in page coordinates, and the angle to draw it at in page coordinates (radians, anticlockwise). */
+    class Stamp(val x: Float, val y: Float, val angleRad: Double)
+
+    /** [seenX]/[seenY] are in points from the top-left of the page as seen; [width]/[height] are the stored page box. */
+    fun toPage(seenX: Float, seenY: Float, width: Float, height: Float, rotation: Int): Pair<Float, Float> = when (((rotation % 360) + 360) % 360) {
+        90 -> seenY to seenX
+        180 -> (width - seenX) to seenY
+        270 -> (width - seenY) to (height - seenX)
+        else -> seenX to (height - seenY)
+    }
+
+    fun seenSize(width: Float, height: Float, rotation: Int): Pair<Float, Float> =
+        if (((rotation % 360) + 360) % 360 % 180 == 90) height to width else width to height
+
+    /** The stamps for one page: one in the chosen spot, or a staggered grid across the page when [tiled]. */
+    fun stamps(config: WatermarkConfig, textWidth: Float, fontSize: Float, width: Float, height: Float, rotation: Int): List<Stamp> {
+        val (seenW, seenH) = seenSize(width, height, rotation)
+        val seenAngle = Math.toRadians(config.effectiveAngle.toDouble())
+        val pageAngle = seenAngle + Math.toRadians((((rotation % 360) + 360) % 360).toDouble())
+        val cx = config.centerX.coerceIn(0f, 1f) * seenW
+        val cy = config.centerY.coerceIn(0f, 1f) * seenH
+        if (!config.tiled) {
+            val (px, py) = toPage(cx, cy, width, height, rotation)
+            return listOf(Stamp(px, py, pageAngle))
+        }
+        // Rows run along the text's own direction, so a diagonal mark tiles diagonally.
+        val stepAlong = textWidth * 1.35f + fontSize
+        val stepAcross = fontSize * 3.4f
+        val reach = Math.hypot(seenW.toDouble(), seenH.toDouble()).toFloat()
+        val cos = Math.cos(seenAngle).toFloat()
+        val sin = Math.sin(seenAngle).toFloat()
+        val out = ArrayList<Stamp>()
+        val rows = (reach / stepAcross).toInt() + 1
+        val cols = (reach / stepAlong).toInt() + 1
+        for (j in -rows..rows) {
+            val stagger = if (j % 2 != 0) stepAlong / 2f else 0f
+            for (i in -cols..cols) {
+                val along = i * stepAlong + stagger
+                val across = j * stepAcross
+                // Seen coordinates have y pointing down, so an anticlockwise angle flips the sine term.
+                val sx = cx + along * cos + across * sin
+                val sy = cy - along * sin + across * cos
+                if (sx < -textWidth || sx > seenW + textWidth || sy < -fontSize * 2 || sy > seenH + fontSize * 2) continue
+                val (px, py) = toPage(sx, sy, width, height, rotation)
+                out.add(Stamp(px, py, pageAngle))
+            }
+        }
+        return out
+    }
+}
+
+/**
+ * Where a page number goes. Like [WatermarkGeometry], the spot is chosen on the page as it is *seen* (after /Rotate), so
+ * "bottom centre" is the bottom edge the reader sees and the number reads upright, then mapped to stored coordinates.
+ */
+internal object PageNumberGeometry {
+    /**
+     * The start of the number's baseline in page coordinates, relative to the visible box's lower-left corner, and the
+     * text angle (radians, anticlockwise). [width]/[height] are the stored visible box.
+     */
+    fun place(
+        position: PageNumberPosition,
+        textWidth: Float,
+        fontSize: Float,
+        margin: Float,
+        width: Float,
+        height: Float,
+        rotation: Int
+    ): WatermarkGeometry.Stamp {
+        val (seenW, seenH) = WatermarkGeometry.seenSize(width, height, rotation)
+        val seenX = when (position) {
+            PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.TOP_LEFT -> margin
+            PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.TOP_CENTER -> (seenW - textWidth) / 2f
+            PageNumberPosition.BOTTOM_RIGHT, PageNumberPosition.TOP_RIGHT -> seenW - margin - textWidth
+        }
+        // Seen y points down; this is the baseline.
+        val seenY = when (position) {
+            PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.BOTTOM_RIGHT -> seenH - margin
+            PageNumberPosition.TOP_LEFT, PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> margin + fontSize
+        }
+        val (px, py) = WatermarkGeometry.toPage(seenX, seenY, width, height, rotation)
+        return WatermarkGeometry.Stamp(px, py, Math.toRadians((((rotation % 360) + 360) % 360).toDouble()))
+    }
+
+    /**
+     * How much the number and its margin grow or shrink with the page (F210): 11 pt with a half-inch margin suits A4
+     * and Letter, but on a page made from a 3000-pixel photo (3000 pt wide) it was a speck, and on a receipt-sized
+     * page "Page 10 of 120" ran off the edge. Scaled by the page's shorter side against A4's, within 0.5 to 5 times.
+     */
+    fun sizeScale(seenWidth: Float, seenHeight: Float): Float =
+        (minOf(seenWidth, seenHeight) / A4_SHORT_SIDE_PT).coerceIn(0.5f, 5f)
+
+    /** The font size that keeps a number [widthPerPoint] wide per point of font size inside [seenWidth] between its margins. */
+    fun fittedFontSize(fontSize: Float, widthPerPoint: Float, margin: Float, seenWidth: Float): Float {
+        val room = seenWidth - 2f * margin
+        if (widthPerPoint <= 0f || room <= 0f) return fontSize
+        return minOf(fontSize, room / widthPerPoint)
+    }
+
+    /** The text written for page [page] of [total] (both from 1). The words are the same in every language: the PDF font has Latin letters only. */
+    fun text(format: PageNumberFormat, page: Int, total: Int): String = when (format) {
+        PageNumberFormat.PAGE_N_OF_M -> "Page $page of $total"
+        PageNumberFormat.N_SLASH_M -> "$page / $total"
+        PageNumberFormat.DASH -> "- $page -"
+        PageNumberFormat.SIMPLE -> "$page"
+    }
+
+    private const val A4_SHORT_SIDE_PT = 595f
+}
+
+enum class PageNumberPosition {
+    BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT, TOP_LEFT
+}
+
+/**
+ * The fonts page numbers can be written in. SANS, SERIF and MONO are the PDF standard fonts Helvetica (Arial's twin),
+ * Times (Times New Roman's) and Courier, which every reader has; the others are carried by the app and embedded.
+ * Its own list, not Edit PDF's, because [PageNumbersConfig] is public and Edit PDF's editor is not.
+ */
+enum class PageNumberFont { SANS, SERIF, MONO, ROBOTO, INTER, MONTSERRAT, GELASIO }
+
+/** The matching font of Edit PDF's editor, which has the files and the on-screen look of each. */
+internal val PageNumberFont.editorFamily: PdfTextEditor.Family
+    get() = when (this) {
+        PageNumberFont.SANS -> PdfTextEditor.Family.SANS
+        PageNumberFont.SERIF -> PdfTextEditor.Family.SERIF
+        PageNumberFont.MONO -> PdfTextEditor.Family.MONO
+        PageNumberFont.ROBOTO -> PdfTextEditor.Family.ROBOTO
+        PageNumberFont.INTER -> PdfTextEditor.Family.INTER
+        PageNumberFont.MONTSERRAT -> PdfTextEditor.Family.MONTSERRAT
+        PageNumberFont.GELASIO -> PdfTextEditor.Family.GELASIO
+    }
+
+enum class PageNumberFormat {
+    PAGE_N_OF_M,
+    N_SLASH_M,
+    DASH,
+    SIMPLE
+}
+
+data class PageNumbersConfig(
+    val position: PageNumberPosition = PageNumberPosition.BOTTOM_CENTER,
+    val format: PageNumberFormat = PageNumberFormat.PAGE_N_OF_M,
+    val skipFirstPage: Boolean = false,
+    val marginPt: Float = 36f,
+    /** On an A4 page; larger pages get it larger (see PageNumberGeometry.sizeScale). */
+    val fontSizePt: Float = 11f,
+    /** 0xAARRGGBB; the dark grey numbers always had by default. Transparency is ignored. */
+    val colourArgb: Int = DEFAULT_PAGE_NUMBER_COLOUR,
+    val font: PageNumberFont = PageNumberFont.SANS,
+    val bold: Boolean = false,
+    val italic: Boolean = false,
+    val underline: Boolean = false,
+)
+
+const val DEFAULT_PAGE_NUMBER_COLOUR: Int = 0xFF333333.toInt()
 
 /**
  * Merge reached file [index] (0-based), [uri], which needs a password to open: none was given for it, or
@@ -70,7 +262,7 @@ object PdfToolsEngine {
      * Tells whether a PDF needs a password to open (PASSWORD_REQUIRED), opens freely but has editing or
      * copying restrictions (RESTRICTED_ONLY), or has no protection at all (NONE).
      */
-    suspend fun inspectProtection(context: Context, inputUri: Uri): PdfProtection = withContext(Dispatchers.IO) {
+    suspend fun inspectProtection(context: Context, inputUri: Uri): PdfProtection = withContext(BackgroundWork.tools) {
         val tempFile = copyUriToTemp(context, inputUri, "inspect_${UUID.randomUUID()}.pdf")
         try {
             PdfSecurity.protection(tempFile)
@@ -85,14 +277,51 @@ object PdfToolsEngine {
      */
     fun outputLocation(context: Context, name: String): File {
         val dir = File(context.cacheDir, "exports").also { it.mkdirs() }
+        // A second run on the same file gets " (2)", not a silently replaced result.
+        return uniqueFile(dir, name)
+    }
+
+    /** [name] in [dir], or "name (2).ext" and so on when a file of that name is already there. */
+    fun uniqueFile(dir: File, name: String): File {
         val plain = File(dir, name)
         if (!plain.exists()) return plain
-        // A second run on the same file gets " (2)", not a silently replaced result.
         val base = name.substringBeforeLast('.')
-        val extension = name.substringAfterLast('.', "")
+        val extension = name.substringAfterLast('.', "").let { if (it.isEmpty()) "" else ".$it" }
         var n = 2
-        while (File(dir, "$base ($n)" + if (extension.isEmpty()) "" else ".$extension").exists()) n++
-        return File(dir, "$base ($n)" + if (extension.isEmpty()) "" else ".$extension")
+        while (File(dir, "$base ($n)$extension").exists()) n++
+        return File(dir, "$base ($n)$extension")
+    }
+
+    /**
+     * True when [uri] can't be opened without its password. The system renderer answers in milliseconds for a file it
+     * can open; anything else (a protected file, or a provider that gives no seekable file) is settled by PDFBox, whose
+     * answer does not depend on the Android version. A file neither can read is left to the tool, which explains it.
+     */
+    suspend fun needsOpenPassword(context: Context, uri: Uri): Boolean = withContext(BackgroundWork.tools) {
+        val opens = runCatching {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { PdfRenderer(it).close(); true }
+        }.getOrNull() == true
+        !opens && runCatching { inspectProtection(context, uri) == PdfProtection.PASSWORD_REQUIRED }.getOrDefault(false)
+    }
+
+    /**
+     * Writes [uri] without its protection to [destination], opened with [password]. False when the password is wrong;
+     * nothing is left behind then.
+     */
+    suspend fun decryptCopy(context: Context, uri: Uri, password: String, destination: File): Boolean = withContext(BackgroundWork.tools) {
+        val tempFile = copyUriToTemp(context, uri, "open_in_${UUID.randomUUID()}.pdf")
+        try {
+            PdfSecurity.unlock(tempFile, destination, password)
+            true
+        } catch (wrong: InvalidPasswordException) {
+            destination.delete()
+            false
+        } catch (error: Throwable) {
+            destination.delete()
+            throw error
+        } finally {
+            tempFile.delete()
+        }
     }
 
     /** The picked file's own name without its extension, safe for a file name, or [fallback]. */
@@ -117,7 +346,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         passwords: Map<Uri, String> = emptyMap()
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(inputUris.size >= 2, R.string.tools_err_merge_two)
         outputFile.parentFile?.mkdirs()
 
@@ -180,10 +409,11 @@ object PdfToolsEngine {
         everyNPages: Int = 1,
         outputDir: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): List<File> = withContext(Dispatchers.IO) {
+    ): List<File> = withContext(BackgroundWork.tools) {
         outputDir.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "split_in_${UUID.randomUUID()}.pdf")
         val outputFiles = mutableListOf<File>()
+        val base = sourceBaseName(context, inputUri)
 
         try {
             loadPdf(tempFile).use { doc ->
@@ -196,9 +426,10 @@ object PdfToolsEngine {
                         for (i in 0 until totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(i + 1, totalPages, AppStrings.get(R.string.tools_progress_splitting_page, i + 1, totalPages))
-                            val outFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.pdf")
+                            val outFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.pdf")
                             PDDocument().use { singleDoc ->
                                 singleDoc.addImportedPage(doc.getPage(i))
+                                singleDoc.dropLinksToMissingPages()
                                 singleDoc.save(outFile)
                             }
                             outputFiles.add(outFile)
@@ -211,10 +442,11 @@ object PdfToolsEngine {
                         while (pageIndex < totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             val end = (pageIndex + chunkSize).coerceAtMost(totalPages)
-                            onProgress(chunkIndex, (totalPages + chunkSize - 1) / chunkSize, AppStrings.get(R.string.tools_progress_splitting_chunk, chunkIndex))
-                            val outFile = File(outputDir, "part_${chunkIndex}_pages_${pageIndex + 1}_to_$end.pdf")
+                            onProgress(chunkIndex, ((totalPages + chunkSize) - 1) / chunkSize, AppStrings.get(R.string.tools_progress_splitting_chunk, chunkIndex))
+                            val outFile = File(outputDir, "$base part $chunkIndex pages ${pageIndex + 1} to $end.pdf")
                             PDDocument().use { chunkDoc ->
                                 for (i in pageIndex until end) chunkDoc.addImportedPage(doc.getPage(i))
+                                chunkDoc.dropLinksToMissingPages()
                                 chunkDoc.save(outFile)
                             }
                             outputFiles.add(outFile)
@@ -228,11 +460,12 @@ object PdfToolsEngine {
                         ranges.forEachIndexed { idx, range ->
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(idx + 1, ranges.size, AppStrings.get(R.string.tools_progress_extracting_range, idx + 1, ranges.size))
-                            val outFile = File(outputDir, "range_${idx + 1}_pages_${range.first}_to_${range.last}.pdf")
+                            val outFile = File(outputDir, "$base range ${idx + 1} pages ${range.first} to ${range.last}.pdf")
                             PDDocument().use { rangeDoc ->
                                 for (pageNum in range) {
-                                    if (pageNum in 1..totalPages) rangeDoc.addImportedPage(doc.getPage(pageNum - 1))
+                                    if ((pageNum in 1..totalPages)) rangeDoc.addImportedPage(doc.getPage(pageNum - 1))
                                 }
+                                rangeDoc.dropLinksToMissingPages()
                                 rangeDoc.save(outFile)
                             }
                             outputFiles.add(outFile)
@@ -252,13 +485,14 @@ object PdfToolsEngine {
         selectedPageIndices: List<Int>,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(selectedPageIndices.isNotEmpty(), R.string.tools_err_extract_none)
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "extract_in_${UUID.randomUUID()}.pdf")
 
         try {
             val originalSize = tempFile.length()
+            var added = 0
             PDDocument().use { extractedDoc -> loadPdf(tempFile).use { doc ->
                 userRequire(doc.numberOfPages > 1, R.string.tools_extract_single_page_desc)
                 selectedPageIndices.forEachIndexed { index, pageIdx ->
@@ -266,16 +500,20 @@ object PdfToolsEngine {
                     onProgress(index + 1, selectedPageIndices.size, AppStrings.get(R.string.tools_progress_extracting_page, index + 1, selectedPageIndices.size))
                     if (pageIdx in 0 until doc.numberOfPages) {
                         extractedDoc.addImportedPage(doc.getPage(pageIdx))
+                        added++
                     }
                 }
+                // Pages chosen from a different file (or one that changed) must not produce an empty PDF.
+                userRequire(added > 0, R.string.tools_err_extract_none)
+                extractedDoc.dropLinksToMissingPages()
                 extractedDoc.save(outputFile)
             } }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
-                pageCount = selectedPageIndices.size,
+                pageCount = added,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = AppStrings.plural(R.plurals.tools_result_extracted, selectedPageIndices.size, selectedPageIndices.size)
+                message = AppStrings.plural(R.plurals.tools_result_extracted, added, added)
             )
         } finally {
             tempFile.delete()
@@ -288,7 +526,7 @@ object PdfToolsEngine {
         rotationsMap: Map<Int, Int>,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "rotate_in_${UUID.randomUUID()}.pdf")
 
@@ -326,13 +564,14 @@ object PdfToolsEngine {
         pageSpecs: List<PageSpec>,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(pageSpecs.isNotEmpty(), R.string.tools_err_keep_one_page)
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "organize_in_${UUID.randomUUID()}.pdf")
 
         try {
             val originalSize = tempFile.length()
+            var added = 0
             PDDocument().use { newDoc -> loadPdf(tempFile).use { doc ->
                 userRequire(doc.numberOfPages > 1, R.string.tools_organize_single_page_desc)
                 pageSpecs.forEachIndexed { index, spec ->
@@ -344,16 +583,19 @@ object PdfToolsEngine {
                             page.rotation = Math.floorMod(page.rotation + spec.rotationDegrees, 360)
                         }
                         newDoc.addImportedPage(page)
+                        added++
                     }
                 }
+                userRequire(added > 0, R.string.tools_err_keep_one_page)
+                newDoc.dropLinksToMissingPages()
                 newDoc.save(outputFile)
             } }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
-                pageCount = pageSpecs.size,
+                pageCount = added,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = AppStrings.plural(R.plurals.tools_result_organized, pageSpecs.size, pageSpecs.size)
+                message = AppStrings.plural(R.plurals.tools_result_organized, added, added)
             )
         } finally {
             tempFile.delete()
@@ -366,8 +608,10 @@ object PdfToolsEngine {
         pageSize: PdfPageSize = PdfPageSize.AUTO,
         quality: PdfQuality = PdfQuality.BALANCED,
         outputFile: File,
-        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        /** The white border around each picture, in points. */
+        margin: Float = PdfExporter.MARGIN
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(imageUris.isNotEmpty(), R.string.tools_err_no_images)
         outputFile.parentFile?.mkdirs()
 
@@ -384,7 +628,7 @@ object PdfToolsEngine {
                 val localFile = if (uri.scheme == "file") uri.path?.let(::File)?.takeIf { it.exists() && it.isFile } else null
                 val imgFile = localFile ?: File(tempDir, "img_$index").also { target ->
                     context.contentResolver.openInputStream(uri)?.use { input ->
-                        FileOutputStream(target).use { output -> input.copyTo(output) }
+                        FileOutputStream(target).buffered(COPY_BUFFER).use { output -> input.copyTo(output, COPY_BUFFER) }
                     } ?: userError(R.string.tools_err_image_unreadable, index + 1)
                 }
                 // Only the header is read here: a file that is not a picture is named before any page is drawn.
@@ -418,7 +662,8 @@ object PdfToolsEngine {
                     // Decoding is the slow part, so Cancel is honoured between pages here too.
                     if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
                     onProgress(number, total, creating)
-                }
+                },
+                margin = margin
             )
 
             return@withContext PdfToolResult(
@@ -444,20 +689,23 @@ object PdfToolsEngine {
         pages: List<Int>? = null,
         /** Render scale over the PDF's 72 dpi: 2 is about 150 dpi, 2.5 is sharp on screen, 4 is print quality. */
         scale: Float = 2.5f
-    ): List<File> = withContext(Dispatchers.IO) {
+    ): List<File> = withContext(BackgroundWork.tools) {
         outputDir.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "pdf2img_in_${UUID.randomUUID()}.pdf")
         val imageFiles = mutableListOf<File>()
+        val base = sourceBaseName(context, inputUri)
+        // Pages of one PDF are mostly the same size: one bitmap is drawn over again instead of a new one per page.
+        var bitmap: Bitmap? = null
 
         try {
-            if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
-                userError(R.string.tools_err_password_protected)
-            }
+            // Android's own renderer goes first: it draws files PDFBox cannot parse at all (Repair's last resort depends
+            // on that). PDFBox is asked only when the renderer refuses, to tell a password from a broken file; asking it
+            // first meant parsing every PDF twice.
             try {
                 ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
-                    PdfRenderer(pfd).use { renderer ->
+                    openRenderer(pfd, tempFile).use { renderer ->
                         val totalPages = renderer.pageCount
-                        val chosen = pages?.filter { it in 1..totalPages }?.distinct()?.sorted() ?: (1..totalPages).toList()
+                        val chosen = PdfToImagesMath.chosenPages(pages, totalPages)
                         userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
                         chosen.forEachIndexed { step, pageNumber ->
                             val i = pageNumber - 1
@@ -465,24 +713,30 @@ object PdfToolsEngine {
                             onProgress(step + 1, chosen.size, AppStrings.get(R.string.tools_progress_exporting_page, pageNumber, format.extension.uppercase()))
 
                             renderer.openPage(i).use { page ->
-                                // Capped so a poster-sized page can't run out of memory.
-                                val scale = minOf(scale, 4000f / maxOf(page.width, page.height))
-                                val width = (page.width * scale).toInt().coerceAtLeast(1)
-                                val height = (page.height * scale).toInt().coerceAtLeast(1)
-                                val bitmap = createBitmap(width, height)
-                                // PdfRenderer draws onto what is there; transparent pixels turn black in a JPEG.
-                                bitmap.eraseColor(Color.WHITE)
-                                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                // Capped so a poster-sized page can't run out of memory; the tool page shows the same sizes.
+                                val (width, height) = PdfToImagesMath.pixelSize(page.width, page.height, scale)
+                                val canvas = bitmap?.takeIf { it.width == width && it.height == height }
+                                    ?: createBitmap(width, height).also { bitmap?.recycle(); bitmap = it }
+                                // PdfRenderer draws onto what is there: transparent pixels turn black in a JPEG, and a
+                                // reused bitmap still holds the previous page.
+                                canvas.eraseColor(Color.WHITE)
+                                page.render(canvas, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
-                                val imgFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.${format.extension}")
-                                FileOutputStream(imgFile).use { out ->
+                                val imgFile = File(outputDir, PdfToImagesMath.fileName(base, i + 1, totalPages, format.extension))
+                                FileOutputStream(imgFile).buffered().use { out ->
                                     if (format == ImageExportFormat.JPEG) {
-                                        bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                                        canvas.compress(Bitmap.CompressFormat.JPEG, PdfToImagesMath.JPEG_QUALITY, out)
+                                    } else if (format == ImageExportFormat.PNG) {
+                                        canvas.compress(Bitmap.CompressFormat.PNG, 100, out)
                                     } else {
-                                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                                            canvas.compress(Bitmap.CompressFormat.WEBP_LOSSY, PdfToImagesMath.WEBP_QUALITY, out)
+                                        } else {
+                                            @Suppress("DEPRECATION")
+                                            canvas.compress(Bitmap.CompressFormat.WEBP, PdfToImagesMath.WEBP_QUALITY, out)
+                                        }
                                     }
                                 }
-                                bitmap.recycle()
                                 imageFiles.add(imgFile)
                             }
                         }
@@ -493,6 +747,7 @@ object PdfToolsEngine {
             }
             return@withContext imageFiles
         } finally {
+            bitmap?.recycle()
             tempFile.delete()
         }
     }
@@ -502,16 +757,16 @@ object PdfToolsEngine {
         inputUri: Uri,
         password: String,
         outputFile: File
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val tempFile = copyUriToTemp(context, inputUri, "protect_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
             if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
                 userError(R.string.tools_err_already_protected)
             }
-            PdfSecurity.protect(tempFile, outputFile, password)
-            var pageCount = 0
-            PDDocument.load(outputFile, password).use { pageCount = it.numberOfPages }
+            // The page count comes back from the write itself: reopening and parsing the finished file just to count
+            // its pages used to cost a second full read of a large PDF (F172).
+            val pageCount = PdfSecurity.protect(tempFile, outputFile, password)
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = pageCount,
@@ -529,14 +784,12 @@ object PdfToolsEngine {
         inputUri: Uri,
         password: String,
         outputFile: File
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val tempFile = copyUriToTemp(context, inputUri, "unlock_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
             val before = PdfSecurity.protection(tempFile)
-            PdfSecurity.unlock(tempFile, outputFile, password)
-            var pageCount = 0
-            PDDocument.load(outputFile).use { pageCount = it.numberOfPages }
+            val pageCount = PdfSecurity.unlock(tempFile, outputFile, password)
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = pageCount,
@@ -563,14 +816,45 @@ object PdfToolsEngine {
         addPage(page)
     }
 
+    /**
+     * Pages are added to a new document as they are, links and all. A link (or a form widget's /P) on a kept page that
+     * points at a page left out pulled that page, and through its /Parent the whole source page tree, into the output:
+     * a one-page Split or Extract came out nearly as large as the original. Such references are cut, as PDFBox's own
+     * Splitter does; links between pages that are both kept still work.
+     */
+    internal fun PDDocument.dropLinksToMissingPages() {
+        val kept = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<com.tom_roush.pdfbox.cos.COSBase, Boolean>())
+        pages.forEach { kept.add(it.cosObject) }
+        pages.forEach { page ->
+            val annotations = runCatching { page.annotations }.getOrNull() ?: return@forEach
+            annotations.forEach { annotation ->
+                if (annotation is com.tom_roush.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink) {
+                    val destination = runCatching { annotation.destination }.getOrNull()
+                        ?: (runCatching { annotation.action }.getOrNull() as? com.tom_roush.pdfbox.pdmodel.interactive.action.PDActionGoTo)
+                            ?.let { runCatching { it.destination }.getOrNull() }
+                    if (destination is com.tom_roush.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageDestination) {
+                        val target = destination.cosObject.getObject(0)
+                        if (target is com.tom_roush.pdfbox.cos.COSDictionary && target !in kept) destination.setPage(null)
+                    }
+                }
+                val owner = annotation.cosObject.getDictionaryObject(com.tom_roush.pdfbox.cos.COSName.P)
+                if (owner != null && owner !in kept) annotation.cosObject.removeItem(com.tom_roush.pdfbox.cos.COSName.P)
+            }
+        }
+    }
+
     /** One file is returned as it is; several are bundled into a single zip so they can be shared together. */
-    suspend fun bundleOutputs(context: Context, files: List<File>, name: String): File = withContext(Dispatchers.IO) {
+    suspend fun bundleOutputs(context: Context, files: List<File>, name: String): File = withContext(BackgroundWork.tools) {
         if (files.size == 1) return@withContext files.first()
         val zip = outputLocation(context, "$name.zip")
         ZipOutputStream(FileOutputStream(zip).buffered()).use { out ->
+            // JPEG, PNG, WebP and PDF are compressed already: deflating them again cost time at the very end of a
+            // long run (the progress sat at 100%) and saved almost nothing.
+            out.setLevel(java.util.zip.Deflater.NO_COMPRESSION)
             files.forEach { file ->
+                currentCoroutineContext().ensureActive()
                 out.putNextEntry(ZipEntry(file.name))
-                file.inputStream().use { it.copyTo(out) }
+                file.inputStream().buffered(COPY_BUFFER).use { it.copyTo(out, COPY_BUFFER) }
                 out.closeEntry()
             }
         }
@@ -587,10 +871,290 @@ object PdfToolsEngine {
         throw UserFacingException(R.string.tools_err_password_protected, cause = error)
     }
 
+    /**
+     * Applies a text watermark across selected pages of a PDF document with custom angle, colour, opacity and size.
+     */
+    suspend fun watermarkPdf(
+        context: Context,
+        inputUri: Uri,
+        config: WatermarkConfig,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        userRequire(config.text.isNotBlank(), R.string.tools_err_watermark)
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "wm_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            // use {}: a failure part-way (cancel, a glyph the font lacks) must still close the document.
+            val (totalPages, watermarkedCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+                val targetRanges = if (config.pageRange.isBlank()) listOf(1..totalPages)
+                else parsePageRanges(config.pageRange, totalPages)
+                val targetPages = targetRanges.flatMap { it.toList() }.map { it - 1 }.toSet()
+
+                val font = PDType1Font.HELVETICA_BOLD
+                val fontSize = config.fontSizePt.coerceIn(12f, 120f)
+                // Helvetica writes Latin text only; anything else (an Indian script, emoji) is drawn as a picture (F139).
+                val pictureStamp = if (PdfTextImage.canEncode(font, config.text)) null else PdfTextImage.create(
+                    doc, config.text, fontSize, (config.colorRgb and 0xFFFFFF) or (0xFF shl 24)
+                )
+                val alpha = (config.opacityPercent.coerceIn(5, 100) / 100f)
+                val r = Color.red(config.colorRgb) / 255f
+                val g = Color.green(config.colorRgb) / 255f
+                val b = Color.blue(config.colorRgb) / 255f
+
+                val gState = PDExtendedGraphicsState().apply {
+                    nonStrokingAlphaConstant = alpha
+                }
+
+                var watermarkedCount = 0
+                val label = AppStrings.get(R.string.tools_progress_watermarking)
+                for (i in 0 until totalPages) {
+                    if (!coroutineContext.isActive) throw InterruptedException("Watermark cancelled")
+                    onProgress(i + 1, totalPages, label)
+
+                    if (i in targetPages) {
+                        val page = doc.getPage(i)
+                        val textWidth = pictureStamp?.width ?: ((font.getStringWidth(config.text) / 1000f) * fontSize)
+
+                        val rotation = page.rotation
+                        // The visible box (crop box) is what the reader sees; it need not start at 0,0 on scanned PDFs.
+                        val visible = page.cropBox
+                        val stamps = WatermarkGeometry.stamps(config, textWidth, fontSize, visible.width, visible.height, rotation)
+                        PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                            cs.setGraphicsStateParameters(gState)
+                            cs.setNonStrokingColor(r, g, b)
+                            stamps.forEach { stamp ->
+                                if (pictureStamp != null) {
+                                    // Opacity comes from the graphics state, which applies to pictures as it does to text.
+                                    cs.drawImage(
+                                        pictureStamp.image,
+                                        PdfTextImage.placement(pictureStamp, visible.lowerLeftX + stamp.x, visible.lowerLeftY + stamp.y, stamp.angleRad)
+                                    )
+                                    return@forEach
+                                }
+                                val cos = Math.cos(stamp.angleRad).toFloat()
+                                val sin = Math.sin(stamp.angleRad).toFloat()
+                                // Half the cap height of Helvetica, so the text is centred on the point rather than sitting on it.
+                                val halfCap = fontSize * 0.36f
+                                val tx = visible.lowerLeftX + stamp.x - (textWidth / 2f * cos) + (halfCap * sin)
+                                val ty = visible.lowerLeftY + stamp.y - (textWidth / 2f * sin) - (halfCap * cos)
+                                cs.beginText()
+                                cs.setFont(font, fontSize)
+                                cs.setTextMatrix(Matrix(cos, sin, -sin, cos, tx, ty))
+                                cs.showText(config.text)
+                                cs.endText()
+                            }
+                        }
+                        watermarkedCount++
+                    }
+                }
+
+                doc.save(outputFile)
+                totalPages to watermarkedCount
+            }
+
+            val outputSize = outputFile.length()
+            val msg = AppStrings.get(R.string.tools_watermark_success, watermarkedCount)
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /** Smallest and largest page-number size offered (points, on an A4 page). */
+    const val MIN_PAGE_NUMBER_PT = 6f
+    const val MAX_PAGE_NUMBER_PT = 36f
+    /** The underline sits this far below the baseline and is this thick, as fractions of the font size. */
+    internal const val UNDERLINE_DROP = 0.14f
+    internal const val UNDERLINE_THICKNESS = 0.06f
+
+    /**
+     * The font page numbers are written in (F242): a standard PDF font for Sans (Helvetica), Serif (Times) and Mono
+     * (Courier), or one the app carries, embedded (only the letters used). Helvetica if a carried font cannot be read.
+     */
+    private fun pageNumberFont(context: Context, doc: PDDocument, config: PageNumbersConfig): com.tom_roush.pdfbox.pdmodel.font.PDFont {
+        val b = config.bold
+        val i = config.italic
+        fun standard(regular: PDType1Font, bold: PDType1Font, italic: PDType1Font, boldItalic: PDType1Font) =
+            if (b && i) boldItalic else if (b) bold else if (i) italic else regular
+        val helvetica = standard(PDType1Font.HELVETICA, PDType1Font.HELVETICA_BOLD, PDType1Font.HELVETICA_OBLIQUE, PDType1Font.HELVETICA_BOLD_OBLIQUE)
+        return when (config.font) {
+            PageNumberFont.SERIF -> standard(PDType1Font.TIMES_ROMAN, PDType1Font.TIMES_BOLD, PDType1Font.TIMES_ITALIC, PDType1Font.TIMES_BOLD_ITALIC)
+            PageNumberFont.MONO -> standard(PDType1Font.COURIER, PDType1Font.COURIER_BOLD, PDType1Font.COURIER_OBLIQUE, PDType1Font.COURIER_BOLD_OBLIQUE)
+            PageNumberFont.SANS -> helvetica
+            else -> runCatching { CarriedFonts(context).load(doc, config.font.editorFamily, b, i) }.getOrNull() ?: helvetica
+        }
+    }
+
+    /**
+     * Adds page numbers to pages of a PDF document with position and formatting controls.
+     */
+    suspend fun addPageNumbers(
+        context: Context,
+        inputUri: Uri,
+        config: PageNumbersConfig,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "num_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            val (totalPages, numberedCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+                val font = pageNumberFont(context, doc, config)
+                val baseFontSize = config.fontSizePt.coerceIn(MIN_PAGE_NUMBER_PT, MAX_PAGE_NUMBER_PT)
+                val red = ((config.colourArgb shr 16) and 0xFF) / 255f
+                val green = ((config.colourArgb shr 8) and 0xFF) / 255f
+                val blue = (config.colourArgb and 0xFF) / 255f
+                val baseMargin = config.marginPt.coerceIn(12f, 100f)
+
+                var numberedCount = 0
+                val label = AppStrings.get(R.string.tools_progress_page_numbers)
+
+                for (i in 0 until totalPages) {
+                    if (!coroutineContext.isActive) throw InterruptedException("Page numbers cancelled")
+                    onProgress(i + 1, totalPages, label)
+
+                    if (config.skipFirstPage && i == 0) continue
+
+                    val page = doc.getPage(i)
+                    // The visible box: it need not start at 0,0 and can be smaller than the media box on cropped PDFs.
+                    val box = page.cropBox
+
+                    val pageNum = i + 1
+                    val text = PageNumberGeometry.text(config.format, pageNum, totalPages)
+
+                    // Sized to the page as seen (F210), and never wider than the page between its margins.
+                    val (seenW, seenH) = WatermarkGeometry.seenSize(box.width, box.height, page.rotation)
+                    val grow = PageNumberGeometry.sizeScale(seenW, seenH)
+                    val margin = baseMargin * grow
+                    val widthPerPoint = font.getStringWidth(text) / 1000f
+                    val fontSize = PageNumberGeometry.fittedFontSize(baseFontSize * grow, widthPerPoint, margin, seenW)
+                    val textWidth = widthPerPoint * fontSize
+
+                    // Placed on the page as seen, so a page turned with /Rotate gets an upright number on the edge the reader sees.
+                    val spot = PageNumberGeometry.place(config.position, textWidth, fontSize, margin, box.width, box.height, page.rotation)
+                    val cos = Math.cos(spot.angleRad).toFloat()
+                    val sin = Math.sin(spot.angleRad).toFloat()
+
+                    PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                        // Drawn in a frame turned and moved to the number's spot, so the underline turns with it.
+                        cs.saveGraphicsState()
+                        cs.transform(Matrix(cos, sin, -sin, cos, box.lowerLeftX + spot.x, box.lowerLeftY + spot.y))
+                        cs.setNonStrokingColor(red, green, blue)
+                        cs.beginText()
+                        cs.setFont(font, fontSize)
+                        cs.newLineAtOffset(0f, 0f)
+                        cs.showText(text)
+                        cs.endText()
+                        if (config.underline) {
+                            val y = -fontSize * UNDERLINE_DROP
+                            cs.setStrokingColor(red, green, blue)
+                            cs.setLineWidth(fontSize * UNDERLINE_THICKNESS)
+                            cs.moveTo(0f, y)
+                            cs.lineTo(textWidth, y)
+                            cs.stroke()
+                        }
+                        cs.restoreGraphicsState()
+                    }
+                    numberedCount++
+                }
+
+                doc.save(outputFile)
+                totalPages to numberedCount
+            }
+
+            val outputSize = outputFile.length()
+            val msg = AppStrings.get(R.string.tools_page_numbers_success, numberedCount)
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Extracts all selectable text from a PDF document into a UTF-8 text file.
+     */
+    suspend fun extractText(
+        context: Context,
+        inputUri: Uri,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "txt_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            onProgress(1, 2, AppStrings.get(R.string.tools_progress_extracting_text))
+
+            val (totalPages, text, wordCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+                val stripper = PDFTextStripper()
+                val text = stripper.getText(doc).trim()
+                val wordCount = if (text.isBlank()) 0 else text.split("\\s+".toRegex()).count { it.isNotBlank() }
+                Triple(totalPages, text, wordCount)
+            }
+            outputFile.writeText(text, Charsets.UTF_8)
+            val outputSize = outputFile.length()
+
+            onProgress(2, 2, AppStrings.get(R.string.tools_progress_extracting_text))
+            val msg = if (wordCount > 0) {
+                AppStrings.get(R.string.tools_pdf2text_success, wordCount, totalPages, formatBytes(context, outputSize))
+            } else {
+                AppStrings.get(R.string.tools_pdf2text_empty_warning)
+            }
+
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
     /** Opens a PDF with [password] ("" when there is none); a missing or wrong one throws [InvalidPasswordException]. */
     internal fun openPdf(file: File, password: String = ""): PDDocument =
         // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
-        PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
+        // The scratch file is capped (F215): a small file built to inflate without end (a "decompression bomb") now
+        // fails with an error at the cap instead of filling the phone's storage.
+        PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly(scratchLimit(file.length()))).editable()
+
+    /**
+     * The most scratch storage a PDF of [fileBytes] may use while a tool works on it: eight times its own size, and
+     * never less than [MIN_SCRATCH_BYTES], so an honest file (even a small one of tightly packed scans) is never
+     * refused.
+     */
+    internal fun scratchLimit(fileBytes: Long): Long = maxOf(MIN_SCRATCH_BYTES, fileBytes.coerceAtLeast(0L) * 8L)
+
+    internal const val MIN_SCRATCH_BYTES = 1024L * 1024L * 1024L
 
     /**
      * A PDF that opens without a password can still carry an owner-password encryption dictionary (print or copy
@@ -600,11 +1164,27 @@ object PdfToolsEngine {
      */
     internal fun PDDocument.editable(): PDDocument = apply { if (isEncrypted) isAllSecurityToBeRemoved = true }
 
+    /**
+     * Opens [pfd] in the system renderer. Its error for a protected file differs between Android versions (and it may
+     * not open the file at all), so on any failure PDFBox tells a password from a broken file.
+     */
+    internal fun openRenderer(pfd: ParcelFileDescriptor, file: File): PdfRenderer = try {
+        PdfRenderer(pfd)
+    } catch (refused: Throwable) {
+        if (runCatching { PdfSecurity.protection(file) }.getOrNull() == PdfProtection.PASSWORD_REQUIRED) {
+            userError(R.string.tools_err_password_protected, cause = refused)
+        }
+        throw refused
+    }
+
+    /** Larger than the 8 KB default: picked PDFs are often tens of megabytes from a cloud provider. */
+    private const val COPY_BUFFER = 64 * 1024
+
     internal fun copyUriToTemp(context: Context, uri: Uri, fileName: String): File {
         val tempFile = File(context.cacheDir, fileName)
         try {
             context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+                FileOutputStream(tempFile).buffered(COPY_BUFFER).use { output -> input.copyTo(output, COPY_BUFFER) }
             } ?: userError(R.string.tools_err_unreadable_location)
         } catch (error: Throwable) {
             // A copy that failed half way must not leave part of the user's file behind in the cache.

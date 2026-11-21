@@ -1,11 +1,18 @@
 package com.example.scanpro.feature.viewer
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import androidx.compose.ui.layout.onSizeChanged
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +47,8 @@ import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
+import com.example.scanpro.core.designsystem.ProcessingDots
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +56,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -148,8 +157,12 @@ fun PdfViewerScreen(
 
     val currentPage by remember {
         derivedStateOf {
-            if (pageCount == 0) 1
-            else (listState.firstVisibleItemIndex + 1).coerceIn(1, pageCount)
+            when {
+                pageCount == 0 -> 1
+                // Scrolled to the end, the last page cannot reach the top, so it would never count as current.
+                !listState.canScrollForward && listState.firstVisibleItemIndex > 0 -> pageCount
+                else -> (listState.firstVisibleItemIndex + 1).coerceIn(1, pageCount)
+            }
         }
     }
 
@@ -246,7 +259,7 @@ fun PdfViewerScreen(
                 val file = local ?: File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf").also { temp ->
                     tempFiles += temp
                     context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                        FileOutputStream(temp).use { output -> input.copyTo(output) }
+                        FileOutputStream(temp).buffered(64 * 1024).use { output -> input.copyTo(output, 64 * 1024) }
                     } ?: throw IllegalStateException(resources.getString(R.string.viewer_could_not_open_file))
                 }
                 try {
@@ -326,7 +339,7 @@ fun PdfViewerScreen(
                         File(pdfUri.path.orEmpty())
                     } else {
                         context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                            FileOutputStream(tempPdf).use { output -> input.copyTo(output) }
+                            FileOutputStream(tempPdf).buffered(64 * 1024).use { output -> input.copyTo(output, 64 * 1024) }
                         }
                         tempPdf
                     }
@@ -371,15 +384,19 @@ fun PdfViewerScreen(
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = {
                     if (isSearchActive) {
+                        // Focused when it opens, so the keyboard comes up (2026-11-18): a second tap was needed before.
+                        val searchFocus = androidx.compose.runtime.remember { androidx.compose.ui.focus.FocusRequester() }
+                        androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { searchFocus.requestFocus() } }
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text(stringResource(R.string.viewer_search_placeholder)) },
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            // No fixed height: an outlined field needs 56 dp, and 52 dp clipped the bottom of the typed text.
+                            modifier = Modifier.fillMaxWidth().focusRequester(searchFocus),
                             trailingIcon = {
                                 if (isSearchingText) {
-                                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                                    ProcessingDots(MaterialTheme.colorScheme.primary)
                                 } else if (searchQuery.isNotBlank()) {
                                     IconButton(onClick = { searchQuery = "" }) {
                                         Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.viewer_clear))
@@ -529,7 +546,7 @@ fun PdfViewerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(40.dp), strokeWidth = 3.dp)
+                        FileLoadingAnimation(size = 96.dp)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(stringResource(R.string.viewer_loading_document), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -543,7 +560,7 @@ fun PdfViewerScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         IconTile(
-                            androidx.compose.material.icons.Icons.Rounded.ErrorOutline,
+                            Icons.Rounded.ErrorOutline,
                             TileTone.Rose,
                             size = 72.dp, corner = 24.dp, iconSize = 36.dp
                         )
@@ -570,8 +587,11 @@ fun PdfViewerScreen(
                                 detectTransformGestures { _, pan, zoom, _ ->
                                     scale = (scale * zoom).coerceIn(1f, 3.5f)
                                     if (scale > 1f) {
-                                        offsetX += pan.x
-                                        offsetY += pan.y
+                                        // Kept within the zoomed page (2026-11-18): it could be panned right off the screen.
+                                        val maxX = size.width * (scale - 1f) / 2f
+                                        val maxY = size.height * (scale - 1f) / 2f
+                                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
                                     } else {
                                         offsetX = 0f
                                         offsetY = 0f
@@ -601,8 +621,11 @@ fun PdfViewerScreen(
                                 detectTransformGestures { _, pan, zoom, _ ->
                                     scale = (scale * zoom).coerceIn(1f, 3.5f)
                                     if (scale > 1f) {
-                                        offsetX += pan.x
-                                        offsetY += pan.y
+                                        // Kept within the zoomed page (2026-11-18): it could be panned right off the screen.
+                                        val maxX = size.width * (scale - 1f) / 2f
+                                        val maxY = size.height * (scale - 1f) / 2f
+                                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
                                     } else {
                                         offsetX = 0f
                                         offsetY = 0f
@@ -622,7 +645,7 @@ fun PdfViewerScreen(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
                             // Pages sit as sheets on the tonal backdrop, with room for the page counter at the end.
-                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 56.dp),
+                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = if (pageCount > 1) 150.dp else 56.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(count = pageCount, key = { it }, contentType = { "pdf_page" }) { index ->
@@ -640,21 +663,39 @@ fun PdfViewerScreen(
                     }
 
                     if (pageCount > 1) {
-                        Surface(
+                        // Page thumbnails under the counter (as iLovePDF's viewer has): see where you are, tap to jump.
+                        Column(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = 16.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.92f),
-                            shadowElevation = 6.dp
+                                .padding(bottom = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = stringResource(R.string.viewer_page_counter, currentPage, pageCount),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.inverseOnSurface
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.92f),
+                                shadowElevation = 6.dp
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.viewer_page_counter, currentPage, pageCount),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.inverseOnSurface
+                                )
+                            }
+                            if (scale <= 1.01f) {
+                                val renderer = pdfRenderer
+                                if (renderer != null) {
+                                    Spacer(Modifier.height(8.dp))
+                                    PageThumbStrip(
+                                        renderer = renderer,
+                                        renderLock = renderLock,
+                                        pageCount = pageCount,
+                                        currentPage = currentPage,
+                                        onJump = { index -> scope.launch { listState.animateScrollToItem(index) } }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -704,6 +745,73 @@ fun PdfViewerScreen(
     }
 }
 
+/** Small first renders of every page in a floating strip; the current page is outlined and kept in view. */
+@Composable
+private fun PageThumbStrip(
+    renderer: PdfRenderer,
+    renderLock: Mutex,
+    pageCount: Int,
+    currentPage: Int,
+    onJump: (Int) -> Unit
+) {
+    val thumbs = remember(renderer) {
+        object : android.util.LruCache<Int, Bitmap>(6 * 1024 * 1024) {
+            override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
+        }
+    }
+    val stripState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(currentPage) {
+        val visible = stripState.layoutInfo.visibleItemsInfo.map { it.index }
+        if ((currentPage - 1) !in visible) stripState.animateScrollToItem((currentPage - 2).coerceAtLeast(0))
+    }
+    Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        shadowElevation = 6.dp,
+        modifier = Modifier.widthIn(max = 360.dp)
+    ) {
+        androidx.compose.foundation.lazy.LazyRow(
+            state = stripState,
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            items(count = pageCount, key = { it }) { index ->
+                val selected = index == currentPage - 1
+                var thumb by remember(renderer, index) { mutableStateOf(thumbs[index]) }
+                LaunchedEffect(renderer, index) {
+                    if (thumb != null) return@LaunchedEffect
+                    thumb = withContext(Dispatchers.IO) {
+                        runCatching { renderPage(renderer, renderLock, index, 96) {} }.getOrNull()?.also { thumbs.put(index, it) }
+                    }
+                }
+                val label = stringResource(R.string.viewer_page_of, index + 1, pageCount)
+                Box(
+                    modifier = Modifier
+                        .size(width = 34.dp, height = 46.dp)
+                        .background(Color.White, androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                        .border(
+                            width = if (selected) 2.dp else 0.5.dp,
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                        )
+                        .clickable(onClickLabel = label) { onJump(index) }
+                        .semantics { contentDescription = label; if (selected) this.selected = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    thumb?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize().padding(1.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun PdfPageItem(
     zoom: Float,
@@ -730,7 +838,7 @@ private fun PdfPageItem(
             isPageLoading = false
             return@LaunchedEffect
         }
-        withContext(Dispatchers.IO) {
+        withContext(BackgroundWork.thumbnails) {
             try {
                 isPageLoading = bitmap == null
                 // One page at a time: PdfRenderer throws if a second page is opened before the first is closed,
@@ -760,7 +868,7 @@ private fun PdfPageItem(
             sharp = null
             return@LaunchedEffect
         }
-        sharp = withContext(Dispatchers.IO) {
+        sharp = withContext(BackgroundWork.thumbnails) {
             runCatching { renderPage(renderer, renderLock, pageIndex, targetW) {} }.getOrNull()
         }
     }
@@ -789,7 +897,8 @@ private fun PdfPageItem(
                     filterQuality = FilterQuality.High
                 )
             } else if (isPageLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.5.dp)
+                // The page being read while it renders; drawn on the white page, so it reads in both themes.
+                FileLoadingAnimation(size = 64.dp)
             }
         }
     }

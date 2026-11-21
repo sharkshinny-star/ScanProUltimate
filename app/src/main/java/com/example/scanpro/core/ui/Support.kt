@@ -3,8 +3,10 @@ package com.example.scanpro.core.ui
 import com.example.scanpro.R
 import androidx.annotation.StringRes
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
 import com.example.scanpro.BuildConfig
@@ -18,7 +20,7 @@ import kotlinx.coroutines.withContext
  * issue" and "Suggest a feature" emails; the two links open from Settings and are hidden while blank.
  */
 object SupportLinks {
-    const val EMAIL = "support@scanpro.app"
+    const val EMAIL = "sharkshinny@gmail.com"
     const val PRIVACY_POLICY_URL = ""
     const val TERMS_OF_USE_URL = ""
 }
@@ -49,12 +51,26 @@ enum class SupportDelivery(@param:StringRes private val confirmationRes: Int) {
 }
 
 /**
+ * What the user wrote in one of the feedback screens. A null [subject] or [text] falls back to the topic's own
+ * subject and prompt; [attachments] are content URIs this app can grant (screenshots copied into the exports cache).
+ */
+class SupportMessage(val subject: String? = null, val text: String? = null, val attachments: List<Uri> = emptyList())
+
+/** Puts [uris] on a send intent, as one stream or several, with read access for the app that receives it. */
+private fun Intent.attach(label: String, uris: List<Uri>) {
+    if (uris.isEmpty()) return
+    if (uris.size == 1) putExtra(Intent.EXTRA_STREAM, uris[0]) else putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+    clipData = ClipData.newRawUri(label, uris[0]).apply { uris.drop(1).forEach { addItem(ClipData.Item(it)) } }
+    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+}
+
+/**
  * Opens the mail app (or the share sheet, or the clipboard) with a support message. An issue report is built here,
  * on a background thread: it reads the system log, measures the cache folder and writes a file, none of which may
  * block the screen. The report has the app's folder paths, other apps' links and exported file names taken out
  * (see [AppDiagnostics.redact]), and the message says what is in it, because the user sends it.
  */
-suspend fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
+suspend fun contactSupport(context: Context, topic: SupportTopic, message: SupportMessage = SupportMessage()): SupportDelivery {
     AppDiagnostics.recordEvent("Support", "Contact support initiated for topic: ${topic.name}")
 
     val isIssue = topic == SupportTopic.ISSUE
@@ -70,12 +86,14 @@ suspend fun contactSupport(context: Context, topic: SupportTopic): SupportDelive
             )
         }
     } else null
-    val reportUri = parts?.reportUri
+    val streams = listOfNotNull(parts?.reportUri) + message.attachments
+    val prompt = message.text ?: context.getString(topic.promptRes)
+    val baseSubject = message.subject ?: context.getString(topic.subjectRes)
 
     val subject = if (isIssue) {
-        "${context.getString(topic.subjectRes)} [${BuildConfig.VERSION_NAME} - ${Build.MANUFACTURER} ${Build.MODEL}]"
+        "$baseSubject [${BuildConfig.VERSION_NAME} - ${Build.MANUFACTURER} ${Build.MODEL}]"
     } else {
-        context.getString(topic.subjectRes)
+        baseSubject
     }
 
     val body = if (parts != null) {
@@ -86,7 +104,7 @@ suspend fun contactSupport(context: Context, topic: SupportTopic): SupportDelive
         }
 
         """
-        |${context.getString(topic.promptRes)}
+        |$prompt
         |
         |
         |—
@@ -100,18 +118,23 @@ suspend fun contactSupport(context: Context, topic: SupportTopic): SupportDelive
         |(Full diagnostic report and recent app logs are attached as scanpro_issue_report.txt)
         """.trimMargin()
     } else {
-        "${context.getString(topic.promptRes)}\n\n\n—\n${supportDetails()}"
+        "$prompt\n\n\n—\n${supportDetails()}"
     }
 
-    val email = Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
+    // Several files need ACTION_SEND_MULTIPLE; the mailto: selector still limits the choice to email apps.
+    val email = if (streams.size > 1) {
+        Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = "*/*"
+            selector = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
+        }
+    } else {
+        Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
+    }.apply {
         putExtra(Intent.EXTRA_EMAIL, arrayOf(SupportLinks.EMAIL))
         putExtra(Intent.EXTRA_SUBJECT, subject)
         putExtra(Intent.EXTRA_TEXT, body)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        if (reportUri != null) {
-            putExtra(Intent.EXTRA_STREAM, reportUri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        attach(subject, streams)
     }
     try {
         context.startActivity(email)
@@ -119,18 +142,16 @@ suspend fun contactSupport(context: Context, topic: SupportTopic): SupportDelive
     } catch (_: ActivityNotFoundException) {
     }
 
-    val share = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
+    val share = Intent(if (streams.size > 1) Intent.ACTION_SEND_MULTIPLE else Intent.ACTION_SEND).apply {
+        type = if (streams.size > 1) "*/*" else "text/plain"
         putExtra(Intent.EXTRA_EMAIL, arrayOf(SupportLinks.EMAIL))
         putExtra(Intent.EXTRA_SUBJECT, subject)
         putExtra(Intent.EXTRA_TEXT, context.getString(R.string.support_to_line, SupportLinks.EMAIL) + "\n\n$body")
-        if (reportUri != null) {
-            putExtra(Intent.EXTRA_STREAM, reportUri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        attach(subject, streams)
     }
     val chooser = Intent.createChooser(share, subject).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     return try {
         context.startActivity(chooser)

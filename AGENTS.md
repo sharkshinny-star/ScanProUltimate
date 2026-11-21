@@ -5,9 +5,25 @@ This project's rules and context live in files every agent should read before wo
 1. `AGENT_HANDOFF.md`: current state, completed work, open issues, next steps. Start here.
 2. `CLAUDE.md`: project rules (branch `claude/awesome-clarke-ussjo3` only, British English, offline-first, keep the four reference files current, never commit signing credentials or `local.properties`). They apply to every agent, not only Claude.
 3. `AUDIT_FINDINGS.md`, `BUILD_AND_TEST.md`, `ARCHITECTURE.md`: findings with stable IDs, build and test commands and results, structure.
+4. `AGENT_DEBUGGING_LESSONS.md`: how hard bugs were actually found and fixed (read it when a bug shows no error, or before spending more than one attempt on a guess).
 
 Gradle needs `JAVA_HOME` set to Android Studio's bundled JDK:
-`/Applications/Android Studio.app/Contents/jbr/Contents/Home`.
+`/Applications/Android Studio.app/Contents/jbr/Contents/Home`, or `/Applications/Android Studio Preview.app/...` when only the Preview is installed (the case since 2026-11-12).
+
+## Performance and smoothness: what an agent in the cloud cannot know
+
+- **Frames cannot be measured in the cloud container.** There is no phone or emulator there, so an agent cannot see
+  dropped frames, jank or stutter. Performance changes made there come from reading the code (work on the main thread,
+  state read in composition, unbounded thread pools, large bitmaps), not from measurements.
+- **So never promise a fix.** Do not tell the owner a stutter is gone. Say the change should help, that it was not
+  measured, and record it as unverified (a device-check item, e.g. R55, in `AUDIT_FINDINGS.md`).
+- **If particular tools still stutter after a fix, the owner reports which tools and where** (for example, "while the
+  Merge progress dialog runs" or "when Organise pages scrolls"). Another agent with a device, or the owner's phone, then
+  traces them (Perfetto, or `adb shell dumpsys gfxinfo com.scanpro.app.debug framestats`). Ask for that detail rather
+  than guessing again.
+- **Judge smoothness on a release build.** A debug build of a Compose app runs several times slower (no R8, no baseline
+  profile, extra checks), so stutter seen only in a debug build may not exist in release. Compare both before
+  deciding that something needs fixing.
 
 # GitHub Actions budget rules
 

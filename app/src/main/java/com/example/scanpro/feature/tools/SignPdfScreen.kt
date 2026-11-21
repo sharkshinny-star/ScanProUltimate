@@ -23,7 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
+import com.example.scanpro.core.designsystem.FileLoadingState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,11 +44,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import android.graphics.Typeface
+import androidx.compose.foundation.background
+import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -108,6 +114,7 @@ fun SignPdfScreen(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
+                ToolDemoHelpButton("sign")
                 Button(
                     enabled = file != null && state.placements.isNotEmpty() && !busy,
                     onClick = { if (file != null) onSign(file, state.placements, state.sourceName) },
@@ -117,7 +124,7 @@ fun SignPdfScreen(
 
             when {
                 state.loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    FileLoadingState(stringResource(R.string.tools_organizer_opening))
                 }
                 state.failed -> Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.sign_open_failed), style = MaterialTheme.typography.bodyLarge)
@@ -159,6 +166,23 @@ fun SignPdfScreen(
                     val selected = state.selected
                     val placement = state.placements.getOrNull(selected)
                     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                        // Said before anything is placed, and kept in view: the saved copy loses the file's digital signature.
+                        if (state.digitallySigned) {
+                            Box(Modifier.padding(bottom = 4.dp)) { ImageToolNotice(stringResource(R.string.sign_existing_digital_signature)) }
+                        }
+                        if (placement == null && state.placements.isNotEmpty()) {
+                            // What Save will write: so many stamps on so many pages, not only the page on screen.
+                            val onPages = state.placements.map { it.pageIndex }.distinct().size
+                            Text(
+                                stringResource(
+                                    R.string.edit_sign_summary,
+                                    pluralStringResource(R.plurals.edit_sign_stamps, state.placements.size, state.placements.size),
+                                    pluralStringResource(R.plurals.pdf_outcome_pages, onPages, onPages)
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         if (placement == null) {
                             Text(
                                 stringResource(R.string.sign_hint),
@@ -228,8 +252,8 @@ fun SignPdfScreen(
     if (textOpen) {
         SignTextDialog(
             onDismiss = { textOpen = false },
-            onConfirm = { text ->
-                viewModel.addText(text)
+            onConfirm = { text, color, tf ->
+                viewModel.addText(text, color, tf)
                 textOpen = false
             }
         )
@@ -262,7 +286,7 @@ private fun SignPagePreview(viewModel: SignPdfViewModel, state: SignUiState, fil
     }
     val image = rendered
     if (image == null) {
-        CircularProgressIndicator()
+        FileLoadingAnimation()
         return
     }
     val density = LocalDensity.current
@@ -387,23 +411,47 @@ private fun SignPasswordDialog(wrong: Boolean, onDismiss: () -> Unit, onConfirm:
 }
 
 @Composable
-private fun SignTextDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+private fun SignTextDialog(onDismiss: () -> Unit, onConfirm: (String, Color, Typeface?) -> Unit) {
     // Starts as today's date, the usual thing to put beside a signature.
     var text by remember { mutableStateOf(DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date())) }
+    var color by remember { mutableStateOf(com.example.scanpro.feature.document.InkColors.first().second) }
+    var typeface by remember { mutableStateOf<Typeface?>(Typeface.DEFAULT) }
+    val fonts = listOf(
+        stringResource(R.string.tools_edit_font_sans) to Typeface.DEFAULT,
+        stringResource(R.string.tools_edit_font_serif) to Typeface.SERIF,
+        stringResource(R.string.tools_edit_font_mono) to Typeface.MONOSPACE,
+        stringResource(R.string.tools_edit_bold) to Typeface.DEFAULT_BOLD
+    )
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.sign_text_title)) },
         text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.take(80) },
-                singleLine = true,
-                label = { Text(stringResource(R.string.sign_text_label)) },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.take(80) },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.sign_text_label)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                com.example.scanpro.core.designsystem.InkColourRow(
+                    presets = com.example.scanpro.feature.document.InkColors,
+                    selected = color,
+                    onSelect = { color = it }
+                )
+                androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(fonts) { (name, tf) ->
+                        androidx.compose.material3.FilterChip(
+                            selected = typeface == tf,
+                            onClick = { typeface = tf },
+                            label = { Text(name) }
+                        )
+                    }
+                }
+            }
         },
         confirmButton = {
-            TextButton(enabled = text.isNotBlank(), onClick = { onConfirm(text) }) {
+            TextButton(enabled = text.isNotBlank(), onClick = { onConfirm(text, color, typeface) }) {
                 Text(stringResource(R.string.sign_text_add))
             }
         },

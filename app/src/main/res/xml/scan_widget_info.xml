@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Resizable (F197): two cells give a Scan button, a row of three or more gives Scan, ID card, Import and Tools,
+     two rows add the app's name and Files. Android 12+ picks the layout itself from the sizes in ScanWidgetProvider. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:targetApi="31"
-    android:minWidth="180dp"
-    android:minHeight="56dp"
-    android:targetCellWidth="3"
-    android:targetCellHeight="1"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/widget_scan"
-    android:resizeMode="horizontal"
+    android:previewLayout="@layout/widget_scan_large"
+    android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_description" />

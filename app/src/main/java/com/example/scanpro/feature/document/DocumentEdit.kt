@@ -27,7 +27,8 @@ import org.json.JSONObject
  */
 sealed interface DocumentEdit {
     val type: String
-    fun encodeArgs(json: JSONObject) {}
+    /** Writes the edit's arguments into [json]; an edit that has none leaves it empty on purpose. */
+    fun encodeArgs(json: JSONObject) { /* an edit without arguments writes nothing */ }
 
     data class Rename(val title: String) : DocumentEdit {
         override val type = "rename"

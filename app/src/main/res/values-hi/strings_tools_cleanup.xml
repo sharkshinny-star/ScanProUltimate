@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tools landing clean-up (2026-11-16): Image tools tile, Beta badge, Repair from the failure dialog. -->
+<resources>
+    <string name="tools_card_image_tools">इमेज टूल</string>
+    <string name="tools_desc_image_tools">फ़ोटो काटें, कंप्रेस करें, बदलें या आकार बदलें</string>
+    <string name="tools_badge_beta">बीटा</string>
+    <string name="tools_failure_repair">इस PDF को ठीक करें</string>
+</resources>

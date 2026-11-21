@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Machine translation; needs a native speaker's read. -->
+<resources>
+    <string name="phone_pdfs_title">ഈ ഫോണിലെ ഫയലുകൾ</string>
+    <string name="phone_files_card_title">നിങ്ങളുടെ എല്ലാ ഫയലുകളും ഇവിടെ കാണുക</string>
+    <string name="phone_pdfs_card_body">ഡൗൺലോഡുകൾ, ചാറ്റ് ആപ്പുകൾ, മറ്റ് ഫോൾഡറുകൾ എന്നിവയിൽ നിന്ന് PDF, ഫോട്ടോ, Office ഫയലുകൾ കണ്ടെത്തുക. ഒന്നും നിങ്ങളുടെ ഫോണിൽ നിന്ന് പുറത്തുപോകില്ല, ഇത് ഓപ്ഷണലുമാണ്.</string>
+    <string name="phone_pdfs_card_hide">ഈ കാർഡ് മറയ്ക്കുക</string>
+    <string name="phone_files_tab_mine">എന്റെ ഡോക്യുമെന്റുകൾ</string>
+    <string name="phone_files_tab_phone">ഈ ഫോണിൽ</string>
+    <string name="phone_pdfs_explainer_title">നിങ്ങളുടെ ഫോണിലെ എല്ലാ ഫയലുകളും കാണുക</string>
+    <string name="phone_pdfs_explainer_why">നിങ്ങളുടെ ഫോണിൽ എവിടെയുമുള്ള, ഉദാഹരണത്തിന് ഡൗൺലോഡുകളിലോ ചാറ്റ് ആപ്പുകളിൽ ലഭിച്ച ഫയലുകളിലോ ഉള്ള, PDF, ഫോട്ടോ, Office ഫയലുകൾ കണ്ടെത്താനും തുറക്കാനും ScanPro-യ്ക്ക് എല്ലാ ഫയലുകളിലേക്കുമുള്ള ആക്സസ് വേണം.</string>
+    <string name="phone_pdfs_explainer_private">ഒന്നും നിങ്ങളുടെ ഫോണിൽ നിന്ന് പുറത്തുപോകില്ല. ScanPro നിങ്ങളുടെ ഫയലുകൾ വായിക്കുക മാത്രം ചെയ്യുന്നു; നിങ്ങൾ ആവശ്യപ്പെടാതെ അവ ഒരിക്കലും മാറ്റുകയോ ഇല്ലാതാക്കുകയോ ചെയ്യില്ല.</string>
+    <string name="phone_pdfs_explainer_optional">ഇത് ഓപ്ഷണലാണ്. സ്കാനിംഗും നിങ്ങളുടെ ഡോക്യുമെന്റുകളും എല്ലാ ടൂളുകളും ഇതില്ലാതെയും പ്രവർത്തിക്കും.</string>
+    <string name="phone_pdfs_explainer_steps">അടുത്ത സ്ക്രീനിൽ ScanPro-യ്ക്കായി \"എല്ലാ ഫയലുകളും മാനേജ് ചെയ്യാൻ ആക്സസ് അനുവദിക്കുക\" ഓണാക്കുക, തുടർന്ന് തിരികെ വരിക.</string>
+    <string name="phone_pdfs_explainer_steps_dialog">ScanPro-യ്ക്ക് നിങ്ങളുടെ ഫയലുകൾ വായിക്കാമോ എന്ന് Android ചോദിക്കും.</string>
+    <string name="phone_pdfs_allow">ആക്സസ് അനുവദിക്കുക</string>
+    <string name="phone_pdfs_not_now">ഇപ്പോൾ വേണ്ട</string>
+    <string name="phone_pdfs_settings_failed">ക്രമീകരണ പേജ് തുറക്കാനായില്ല. ക്രമീകരണം &gt; ആപ്പുകൾ എന്നതിൽ ScanPro-യ്ക്ക് എല്ലാ ഫയലുകളിലേക്കുമുള്ള ആക്സസ് അനുവദിക്കുക.</string>
+    <string name="phone_pdfs_refresh">പുതുക്കുക</string>
+    <string name="phone_pdfs_search_hint">ഫയലുകൾ തിരയുക</string>
+    <string name="phone_pdfs_clear_search">തിരയൽ മായ്ക്കുക</string>
+    <string name="phone_files_filter_all">എല്ലാം</string>
+    <string name="phone_files_filter_pdf">PDF</string>
+    <string name="phone_files_filter_images">ചിത്രങ്ങൾ</string>
+    <string name="phone_files_filter_word">Word</string>
+    <string name="phone_files_filter_excel">Excel</string>
+    <string name="phone_files_filter_powerpoint">PowerPoint</string>
+    <string name="phone_files_filter_text">ടെക്സ്റ്റ്</string>
+    <string name="phone_pdfs_sort_name">പേര്</string>
+    <string name="phone_pdfs_sort_date">തീയതി</string>
+    <string name="phone_pdfs_sort_size">വലുപ്പം</string>
+    <string name="phone_pdfs_sort_ascending">ആരോഹണ ക്രമം</string>
+    <string name="phone_pdfs_sort_descending">അവരോഹണ ക്രമം</string>
+    <plurals name="phone_files_count">
+        <item quantity="one">%1$d ഫയൽ</item>
+        <item quantity="other">%1$d ഫയലുകൾ</item>
+    </plurals>
+    <plurals name="phone_files_selected">
+        <item quantity="one">%1$d തിരഞ്ഞെടുത്തു</item>
+        <item quantity="other">%1$d തിരഞ്ഞെടുത്തു</item>
+    </plurals>
+    <string name="phone_pdfs_loading">ഫയലുകൾ തിരയുന്നു…</string>
+    <string name="phone_pdfs_empty">ഈ ഫോണിൽ ഫയലുകളൊന്നും കണ്ടെത്തിയില്ല.</string>
+    <string name="phone_pdfs_no_match">\"%1$s\" എന്നതുമായി പൊരുത്തപ്പെടുന്ന ഫയലുകളൊന്നുമില്ല.</string>
+    <string name="phone_pdfs_more">%1$s എന്നതിനുള്ള കൂടുതൽ ഓപ്ഷനുകൾ</string>
+    <string name="phone_pdfs_open">തുറക്കുക</string>
+    <string name="phone_pdfs_add">ScanPro-യിലേക്ക് ചേർക്കുക</string>
+    <string name="phone_pdfs_share">പങ്കിടുക</string>
+    <string name="phone_files_open_with">ഇതുപയോഗിച്ച് തുറക്കുക</string>
+    <string name="phone_files_convert">PDF ആക്കുക</string>
+    <string name="phone_files_merge">ലയിപ്പിക്കുക</string>
+    <string name="phone_files_images_to_pdf">ചിത്രങ്ങളിൽ നിന്ന് PDF</string>
+    <string name="phone_files_clear_selection">തിരഞ്ഞെടുപ്പ് മായ്ക്കുക</string>
+    <string name="phone_files_close">അടയ്ക്കുക</string>
+    <string name="phone_files_no_app">ഈ ഫോണിലെ ഒരു ആപ്പിനും ഈ ഫയൽ തുറക്കാനാകില്ല.</string>
+    <string name="default_viewer_title">ScanPro നിങ്ങളുടെ ഡിഫോൾട്ട് PDF വ്യൂവറാക്കുക</string>
+    <string name="default_viewer_body">മറ്റ് ആപ്പുകളിൽ നിന്നുള്ള PDF-കൾ നേരിട്ട് ScanPro-യിൽ, അതിന്റെ വ്യൂവറും ടൂളുകളും സഹിതം തുറക്കുക.</string>
+    <string name="default_viewer_hint">PDF ഏത് ആപ്പിൽ തുറക്കണമെന്ന് Android ചോദിക്കുമ്പോൾ, ScanPro തിരഞ്ഞെടുത്ത് എപ്പോഴും ടാപ്പ് ചെയ്യുക.</string>
+    <string name="default_viewer_set">ഡിഫോൾട്ടായി സജ്ജമാക്കുക</string>
+    <string name="default_viewer_not_now">ഇപ്പോൾ വേണ്ട</string>
+    <string name="default_viewer_settings_failed">ക്രമീകരണ പേജ് തുറക്കാനായില്ല.</string>
+    <string name="import_tip_title">ഫയലുകൾ ഇമ്പോർട്ട് ചെയ്യുന്നതെങ്ങനെ?</string>
+    <string name="import_tip_body">ഒരു ഫയൽ തിരഞ്ഞെടുക്കാൻ ടാപ്പ് ചെയ്യുക, പലതും തിരഞ്ഞെടുക്കാൻ ദീർഘനേരം അമർത്തുക, തുടർന്ന് ഇമ്പോർട്ട് ചെയ്യാൻ മുകളിൽ വലതുവശത്തുള്ള തിരഞ്ഞെടുക്കുക ടാപ്പ് ചെയ്യുക.</string>
+    <string name="import_tip_cancel">റദ്ദാക്കുക</string>
+    <string name="import_tip_import">ഇമ്പോർട്ട് ചെയ്യുക</string>
+    <string name="phone_files_folders">ഫോൾഡറുകൾ</string>
+    <string name="phone_files_show_grid">ഗ്രിഡായി കാണിക്കുക</string>
+    <string name="phone_files_show_list">ലിസ്റ്റായി കാണിക്കുക</string>
+    <string name="phone_files_my_storage">എന്റെ സ്റ്റോറേജ്</string>
+    <string name="phone_files_internal_storage">ഇന്റേണൽ സ്റ്റോറേജ്</string>
+    <string name="phone_files_downloads">ഡൗൺലോഡുകൾ</string>
+    <string name="phone_files_processed">ScanPro-ൽ നിർമ്മിച്ചവ</string>
+    <string name="phone_files_cloud_title">ക്ലൗഡ് ഡ്രൈവുകളും മറ്റ് ആപ്പുകളും</string>
+    <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… എന്നിവയിൽ നിന്ന് തുറക്കുക</string>
+    <string name="phone_files_all_files">എല്ലാ ഫയലുകളും</string>
+    <string name="phone_files_up">ഒരു ഫോൾഡർ മുകളിലേക്ക്</string>
+</resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings redesign: group headings, value summaries and the Shortcuts & default app page. -->
+<resources>
+    <string name="settings_section_shortcuts">Shortcuts &amp; default app</string>
+    <string name="settings_shortcuts_summary">Default PDF app · Widget · Scan shortcut</string>
+
+    <string name="settings_open_by_default_title">Open PDFs with ScanPro by default</string>
+    <string name="settings_open_by_default_subtitle">Choose ScanPro for PDF files in Android settings</string>
+    <string name="settings_open_by_default_body">Android decides which app opens PDF files. The next time you open a PDF, choose ScanPro and tap Always.\n\nIf another app already opens PDFs straight away, clear that app\'s defaults in Android settings first. The button below opens ScanPro\'s own page there.</string>
+    <string name="settings_open_android_settings">Open Android settings</string>
+    <string name="settings_android_settings_unavailable">Couldn\'t open Android settings on this phone</string>
+
+    <string name="settings_group_home_screen">Home screen</string>
+    <string name="settings_widget_title">Add home-screen widget</string>
+    <string name="settings_widget_subtitle">Start a scan or an ID card scan in one tap</string>
+    <string name="settings_scan_shortcut_title">Add Scan shortcut to home screen</string>
+    <string name="settings_scan_shortcut_subtitle">An icon that opens the camera straight away</string>
+    <string name="settings_pin_not_accepted">Your home screen didn\'t accept it. Try adding it from the home screen instead.</string>
+
+    <string name="settings_group_camera">Camera</string>
+    <string name="settings_group_saving">Saving</string>
+    <string name="settings_group_advanced">Advanced</string>
+    <string name="settings_group_help">Help</string>
+    <string name="settings_group_contact">Get in touch</string>
+    <string name="settings_group_spread">Spread the word</string>
+    <string name="settings_group_legal">Legal</string>
+    <string name="settings_group_notify_about">Notify me about</string>
+
+    <string name="settings_recycle_bin_open">Open recycle bin</string>
+    <string name="settings_recycle_bin_empty">Empty</string>
+    <plurals name="settings_recycle_bin_count">
+        <item quantity="one">%d document</item>
+        <item quantity="other">%d documents</item>
+    </plurals>
+    <!-- Main page, Recycle bin row: "3 documents · kept for 30 days". -->
+    <string name="settings_recycle_bin_summary">%1$s · kept for %2$s</string>
+    <!-- Main page, library row: "24 documents · 48 MB used". -->
+</resources>

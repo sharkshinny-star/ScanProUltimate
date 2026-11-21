@@ -216,6 +216,7 @@
     <string name="doc_opening_document">ഡോക്യുമെന്റ് തുറക്കുന്നു</string>
     <string name="doc_tab_pages">പേജുകൾ</string>
     <string name="doc_edit_page">പേജ് %1$d എഡിറ്റ് ചെയ്യുക</string>
+    <string name="doc_view_page">പേജ് %1$d കാണുക</string>
     <string name="doc_page_options">പേജ് ഓപ്ഷനുകൾ</string>
     <string name="doc_move_earlier">മുന്നോട്ട് നീക്കുക</string>
     <string name="doc_move_later">പിന്നോട്ട് നീക്കുക</string>
@@ -267,4 +268,15 @@
     <string name="doc_saved_more">സേവ് ചെയ്യാൻ കൂടുതൽ വഴികൾ</string>
     <string name="doc_saved_total">ആകെ %1$s</string>
     <string name="doc_saved_copy_total">ആകെ പകർത്തുക</string>
+    <string name="doc_share_as_word">Word ആയി പങ്കിടുക</string>
+    <string name="doc_share_as_word_hint">ScanPro കണ്ടെത്തിയ വാക്കുകളിൽ നിന്നുള്ള എഡിറ്റ് ചെയ്യാവുന്ന ടെക്സ്റ്റ്</string>
+    <string name="doc_colour_hex">ഹെക്സ് കോഡ്</string>
+    <string name="doc_colour_palette">നിറങ്ങളുടെ പാലറ്റ്</string>
+    <string name="doc_colour_picker_title">ഒരു നിറം തിരഞ്ഞെടുക്കുക</string>
+    <string name="doc_colour_use">ഈ നിറം ഉപയോഗിക്കുക</string>
+    <string name="doc_ink_custom">ഇഷ്ടമുള്ള നിറം</string>
+    <string name="doc_save_for_next_time_hint">അടുത്ത തവണ സേവ് ചെയ്ത ഒപ്പുകളിൽ നിന്ന് ഇത് തിരഞ്ഞെടുക്കാം</string>
+    <string name="doc_translate_download_title">ഭാഷാ പായ്ക്ക് ഡൗൺലോഡ് ചെയ്യണോ?</string>
+    <string name="doc_translate_download_body">%1$s ലേക്ക് ആദ്യമായി വിവർത്തനം ചെയ്യുമ്പോൾ അതിന്റെ ഭാഷാ പായ്ക്ക് Google-ൽ നിന്ന് ഡൗൺലോഡ് ആകും (ഓരോ ഭാഷയ്ക്കും ഏകദേശം 30 MB), നിങ്ങളുടെ ഫോൺ ഇപ്പോൾ ഉപയോഗിക്കുന്ന കണക്ഷനിലൂടെ, മൊബൈൽ ഡാറ്റ ഉൾപ്പെടെ. അതിനുശേഷം %1$s ലേക്കുള്ള വിവർത്തനം ഓഫ്‌ലൈനായി പ്രവർത്തിക്കും.</string>
+    <string name="doc_translate_download_confirm">ഡൗൺലോഡ് ചെയ്ത് വിവർത്തനം ചെയ്യുക</string>
 </resources>

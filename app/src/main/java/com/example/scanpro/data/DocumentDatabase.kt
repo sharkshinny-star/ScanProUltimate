@@ -338,14 +338,16 @@ class DocumentDatabase internal constructor(
 
     private val appContext = context
 
-    private val room = run {
+    // Lazy: Hilt builds this singleton on the main thread, and the file checks below read from disk (about 460 ms
+    // seen under StrictMode on a device). Every caller is on Dispatchers.IO, so the first use pays for it there.
+    private val room by lazy {
         setAsideNewerDatabase(context, databaseName, DATABASE_VERSION)
         Room.databaseBuilder(context, ScanRoomDatabase::class.java, databaseName)
             .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
             .build()
     }
 
-    private val dao = room.scanDao()
+    private val dao by lazy { room.scanDao() }
 
     fun saveDocument(document: ScanDocument) {
         val entity = document.toEntity()

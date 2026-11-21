@@ -20,6 +20,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -109,6 +111,7 @@ internal class DocumentImporter(private val store: DocumentStore) {
                 opened.use { renderer ->
                     userRequire(renderer.pageCount in (1..300), R.string.err_pdf_page_count_range, 1, 300)
                     for (index in 0 until renderer.pageCount) {
+                        coroutineContext.ensureActive()
                         renderer.openPage(index).use { page ->
                             val maxDimension = 2400f
                             val scale = minOf(maxDimension / page.width.toFloat(), maxDimension / page.height.toFloat(), 2.5f)
@@ -203,6 +206,8 @@ internal class DocumentImporter(private val store: DocumentStore) {
                     sourcePath = sourceFile.absolutePath,
                     imagePath = renderedFile.absolutePath,
                     ocrText = restoredPage.ocrText,
+                    ocrEdited = restoredPage.ocrEdited,
+                    ocrWords = restoredPage.ocrWords,
                     filter = if (editable) restoredPage.filter else PageFilter.ORIGINAL,
                     rotationDegrees = if (editable) restoredPage.rotationDegrees else 0,
                     crop = if (editable) restoredPage.crop else CropQuad.DEFAULT,
@@ -265,6 +270,7 @@ internal class DocumentImporter(private val store: DocumentStore) {
 
         try {
             val pages = imageUris.mapIndexed { index, uri ->
+                coroutineContext.ensureActive()
                 val pageId = UUID.randomUUID().toString()
                 val source = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 val rendered = File(renderedDir, "page_${index.toString().padStart(3, '0')}_$pageId.jpg")

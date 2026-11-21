@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_organizer_extract_short_title">పేజీలను సంగ్రహించండి</string>
+
+    <string name="tools_card_blank_pages">ఖాళీ పేజీలను తీసివేయండి</string>
+    <string name="tools_tile_blank_pages">ఖాళీ పేజీలు</string>
+    <string name="tools_desc_blank_pages">ఖాళీ పేజీలను కనుగొని తొలగించండి</string>
+    <string name="tools_card_greyscale">గ్రేస్కేల్ PDF</string>
+    <string name="tools_tile_greyscale">గ్రేస్కేల్</string>
+    <string name="tools_desc_greyscale">రంగు పేజీలను బూడిద రంగులోకి మార్చండి</string>
+    <string name="tools_card_flatten">PDF ఫ్లాటెన్ చేయండి</string>
+    <string name="tools_tile_flatten">ఫ్లాటెన్</string>
+    <string name="tools_desc_flatten">ఫారమ్ సమాధానాలు, వ్యాఖ్యలను పేజీలో భాగం చేయండి</string>
+    <string name="tools_card_extract_images">చిత్రాలను సంగ్రహించండి</string>
+    <string name="tools_desc_extract_images">PDF లోపలి చిత్రాలను సేవ్ చేయండి</string>
+    <string name="tools_card_pdf_info">PDF సమాచారం మరియు మెటాడేటా</string>
+    <string name="tools_tile_pdf_info">సమాచారం &amp; మెటాడేటా</string>
+    <string name="tools_desc_pdf_info">దాచిన వివరాలను చూడండి, మార్చండి లేదా తీసివేయండి</string>
+
+    <string name="tools_new_progress_page">పేజీ %1$d / %2$d</string>
+
+    <string name="tools_blank_progress_scanning">ఖాళీ పేజీల కోసం వెతుకుతోంది…</string>
+    <string name="tools_blank_progress_removing">ఖాళీ పేజీలను తీసివేస్తోంది…</string>
+    <string name="tools_blank_err_failed">ఈ PDFలో ఖాళీ పేజీలను తనిఖీ చేయలేకపోయాము.</string>
+    <string name="tools_blank_err_all">PDFలో కనీసం ఒక పేజీ ఉండాలి.</string>
+    <string name="tools_blank_none_title">ఖాళీ పేజీలు లేవు</string>
+    <string name="tools_blank_none_body">ఈ PDFలోని ప్రతి పేజీలో ఏదో ఉంది, కాబట్టి తీసివేయడానికి ఏమీ లేదు.</string>
+    <string name="tools_blank_found_title">ఖాళీ పేజీలు కనుగొనబడ్డాయి</string>
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%2$d పేజీల్లో %1$d ఖాళీగా కనిపిస్తోంది: పేజీ %3$s. కొత్త కాపీలో దాన్ని తీసివేస్తాము; అసలు ఫైల్ అలాగే ఉంటుంది.</item>
+        <item quantity="other">%2$d పేజీల్లో %1$d ఖాళీగా కనిపిస్తున్నాయి: పేజీలు %3$s. కొత్త కాపీలో వాటిని తీసివేస్తాము; అసలు ఫైల్ అలాగే ఉంటుంది.</item>
+    </plurals>
+    <string name="tools_blank_all_blank">అన్ని పేజీలూ ఖాళీగా కనిపిస్తున్నాయి. PDFకి కనీసం ఒక పేజీ అవసరం, కాబట్టి ఏదీ తీసివేయలేము.</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">%1$d పేజీని తీసివేయండి</item>
+        <item quantity="other">%1$d పేజీలను తీసివేయండి</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">%1$d ఖాళీ పేజీ తీసివేయబడింది</item>
+        <item quantity="other">%1$d ఖాళీ పేజీలు తీసివేయబడ్డాయి</item>
+    </plurals>
+
+    <string name="tools_grey_confirm_body">ప్రతి పేజీని %1$d dpi వద్ద బూడిద రంగు ఛాయల్లో మళ్లీ గీస్తాము. టెక్స్ట్ పేజీ చిత్రంలో భాగమవుతుంది, కాబట్టి దాన్ని వెతకడానికి లేదా కాపీ చేయడానికి తర్వాత \"వెతకదగినదిగా చేయండి\" ఉపయోగించండి. అసలు ఫైల్ మారదు.</string>
+    <string name="tools_grey_confirm_action">గ్రేస్కేల్ చేయండి</string>
+    <string name="tools_grey_progress">గ్రేస్కేల్‌కు మారుస్తోంది…</string>
+    <string name="tools_grey_err_failed">ఈ PDFని గ్రేస్కేల్‌కు మార్చలేకపోయాము.</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">%1$d పేజీని గ్రేస్కేల్‌కు మార్చాము</item>
+        <item quantity="other">%1$d పేజీలను గ్రేస్కేల్‌కు మార్చాము</item>
+    </plurals>
+
+    <string name="tools_flatten_confirm_body">ఫారమ్ ఫీల్డ్‌లు, వ్యాఖ్యలు, హైలైట్‌లు మరియు స్టాంప్‌లను పేజీల్లోనే గీస్తాము, కాబట్టి వాటిని ఇకపై మార్చలేరు లేదా తీసివేయలేరు. లింక్‌లు పని చేస్తూనే ఉంటాయి. అసలు ఫైల్ మారదు.</string>
+    <string name="tools_flatten_confirm_action">ఫ్లాటెన్ చేయండి</string>
+    <string name="tools_flatten_progress">ఫ్లాటెన్ చేస్తోంది…</string>
+    <string name="tools_flatten_err_failed">ఈ PDFని ఫ్లాటెన్ చేయలేకపోయాము.</string>
+    <string name="tools_flatten_nothing">ఈ PDFలో ఫ్లాటెన్ చేయడానికి ఫారమ్ ఫీల్డ్‌లు లేదా వ్యాఖ్యలు లేవు.</string>
+    <string name="tools_flatten_done">ఫ్లాటెన్ అయింది. ఫారమ్ ఫీల్డ్‌లు: %1$d, వ్యాఖ్యలు మరియు స్టాంప్‌లు: %2$d</string>
+
+    <string name="tools_ximg_progress">చిత్రాలను సంగ్రహిస్తోంది…</string>
+    <string name="tools_ximg_err_failed">ఈ PDF నుండి చిత్రాలను సంగ్రహించలేకపోయాము.</string>
+    <string name="tools_ximg_err_none">ఈ PDFలో సేవ్ చేయదగిన చిత్రాలు లేవు. పూర్తి పేజీలను చిత్రాలుగా సేవ్ చేయడానికి \"PDF నుండి చిత్రాలు\" ఉపయోగించండి.</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">%1$d చిత్రం సంగ్రహించబడింది</item>
+        <item quantity="other">%1$d చిత్రాలు సంగ్రహించబడ్డాయి</item>
+    </plurals>
+
+    <string name="tools_info_progress">PDF వివరాలను చదువుతోంది…</string>
+    <string name="tools_info_err_failed">ఈ PDF వివరాలను చదవలేకపోయాము.</string>
+    <string name="tools_info_pages">పేజీలు</string>
+    <string name="tools_info_version">PDF వెర్షన్</string>
+    <string name="tools_info_size">ఫైల్ పరిమాణం</string>
+    <string name="tools_info_created">సృష్టించబడింది</string>
+    <string name="tools_info_modified">మార్చబడింది</string>
+    <string name="tools_info_creator">సృష్టించిన యాప్</string>
+    <string name="tools_info_producer">తయారీదారు</string>
+    <string name="tools_info_not_set">సెట్ చేయలేదు</string>
+    <string name="tools_info_edit_heading">మీరు మార్చగల వివరాలు</string>
+    <string name="tools_info_field_title">శీర్షిక</string>
+    <string name="tools_info_field_author">రచయిత</string>
+    <string name="tools_info_field_subject">విషయం</string>
+    <string name="tools_info_field_keywords">కీవర్డ్‌లు</string>
+    <string name="tools_info_save">కాపీని సేవ్ చేయండి</string>
+    <string name="tools_info_remove_all">మొత్తం మెటాడేటాను తీసివేయండి</string>
+    <string name="tools_info_remove_all_hint">గోప్యత కోసం: శీర్షిక, రచయిత, యాప్‌లు, తేదీలు మరియు ఇతర దాచిన వివరాలను కొత్త కాపీలో తీసివేస్తుంది.</string>
+    <string name="tools_info_xmp_note">ఈ PDFలో దాని వివరాల రెండవ (XMP) కాపీ కూడా ఉంది. సేవ్ చేసినప్పుడు అది తీసివేయబడుతుంది, కాబట్టి అన్ని రీడర్‌లు ఒకే వివరాలను చూపుతాయి.</string>
+    <string name="tools_info_saving">వివరాలను సేవ్ చేస్తోంది…</string>
+    <string name="tools_info_save_failed">కొత్త వివరాలను సేవ్ చేయలేకపోయాము.</string>
+    <string name="tools_info_saved">వివరాలు నవీకరించబడ్డాయి</string>
+    <string name="tools_info_removed">మొత్తం మెటాడేటా తీసివేయబడింది</string>
+
+    <string name="hint_tool_blank_pages">స్కాన్ చేసిన PDFలోని ఖాళీ పేజీలను కనుగొని, జాబితాను తనిఖీ చేసిన తర్వాత తీసివేయండి.</string>
+    <string name="hint_tool_greyscale">తక్కువ ఖర్చుతో ప్రింట్ చేయడానికి లేదా చిన్న ఫైల్ కోసం రంగు PDFని బూడిద ఛాయల్లోకి మార్చండి.</string>
+    <string name="hint_tool_flatten">ఫారమ్ సమాధానాలు, వ్యాఖ్యలు, స్టాంప్‌లను పేజీల్లోనే గీయండి; వాటిని ఇక ఫీల్డ్ లేదా వ్యాఖ్యగా మార్చలేరు. PDF ఎడిటర్‌తో పేజీనే ఇంకా మార్చవచ్చు.</string>
+    <string name="hint_tool_extract_images">PDF లోపలి ప్రతి చిత్రాన్ని ప్రత్యేక చిత్ర ఫైల్‌గా సేవ్ చేయండి.</string>
+    <string name="hint_tool_pdf_info">PDF దాచిన వివరాలను చూడండి, శీర్షిక లేదా రచయితను మార్చండి, లేదా గోప్యత కోసం అన్నీ తీసివేయండి.</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF పేజీలను క్రాప్ చేయండి</string>
+    <string name="tools_tile_crop_pdf">పేజీ క్రాప్</string>
+    <string name="tools_desc_crop_pdf">మార్జిన్లు లేదా ఖాళీ స్థలం తీసేయండి</string>
+    <string name="hint_tool_crop_pdf">ప్రతి పేజీ మార్జిన్లను కత్తిరించండి: కంటెంట్ చుట్టూ ఆటోమేటిక్‌గా, లేదా మిల్లీమీటర్లలో. టెక్స్ట్ లేయర్ అలాగే ఉంటుంది.</string>
+    <string name="tools_crop_pdf_body">ఆటో ప్రతి పేజీని కంటెంట్ చుట్టూ కొంత ఖాళీతో కత్తిరిస్తుంది; మార్జిన్లు మీరు సెట్ చేసిన మొత్తాన్ని ప్రతి పేజీ నుండి చూపించినట్లుగా కత్తిరిస్తుంది. ఏదీ తొలగించబడదు, కాబట్టి తర్వాత రిపేర్‌తో పేజీలను తిరిగి పొందవచ్చు.</string>
+    <string name="tools_crop_pdf_mode_auto">ఆటో ట్రిమ్</string>
+    <string name="tools_crop_pdf_mode_margins">మార్జిన్లు</string>
+    <string name="tools_crop_pdf_padding">కంటెంట్ చుట్టూ ఖాళీ</string>
+    <string name="tools_crop_pdf_top">పైన</string>
+    <string name="tools_crop_pdf_bottom">కింద</string>
+    <string name="tools_crop_pdf_left">ఎడమ</string>
+    <string name="tools_crop_pdf_right">కుడి</string>
+    <string name="tools_crop_pdf_mm">%1$d మిమీ</string>
+    <string name="tools_crop_pdf_action">పేజీలను క్రాప్ చేయండి</string>
+    <string name="tools_crop_pdf_progress">పేజీలు క్రాప్ అవుతున్నాయి…</string>
+    <string name="tools_crop_pdf_err_failed">ఈ PDFని క్రాప్ చేయలేకపోయాం.</string>
+    <string name="tools_crop_pdf_err_nothing">క్రాప్ చేయడానికి ఏమీ లేదు: ప్రతి పేజీ ఇప్పటికే వీలైనంత బిగుతుగా ఉంది, లేదా క్రాప్ చేస్తే చాలా తక్కువ మిగులుతుంది.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d పేజీ క్రాప్ చేయబడింది</item>
+        <item quantity="other">%1$d పేజీలు క్రాప్ చేయబడ్డాయి</item>
+    </plurals>
+    <string name="tools_card_redact">టెక్స్ట్ దాచండి</string>
+    <string name="tools_tile_redact">దాచు</string>
+    <string name="tools_desc_redact">పదాలను శాశ్వతంగా నల్లగా చేయండి</string>
+    <string name="hint_tool_redact">పేర్లు, సంఖ్యలు లేదా ఏ పదాలనైనా ఎక్కడ ఉన్నా నల్లగా చేయండి. సరిపోలిన పేజీలు చిత్రాలుగా మారతాయి, కాబట్టి పదాలు నిజంగా పోతాయి, కేవలం కప్పబడవు.</string>
+    <string name="tools_redact_body">ప్రతి సరిపోలికను నల్లగా పెయింట్ చేసి, సరిపోలిక ఉన్న ప్రతి పేజీని చిత్రంగా మళ్లీ గీస్తారు, కాబట్టి టెక్స్ట్‌ను తిరిగి పొందలేరు. సరిపోలిక లేని పేజీలు వాటి టెక్స్ట్‌ను ఉంచుకుంటాయి. టెక్స్ట్ మళ్లీ కావాలంటే తర్వాత “శోధించదగినదిగా చేయండి” వాడండి.</string>
+    <string name="tools_redact_terms_label">నల్లగా చేయాల్సిన పదాలు</string>
+    <string name="tools_redact_terms_hint">లైన్‌కు ఒకటి, లేదా కామాలతో వేరు చేసి</string>
+    <string name="tools_redact_match_case">పెద్ద, చిన్న అక్షరాలను సరిపోల్చండి</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d పదం శోధించబడుతుంది</item>
+        <item quantity="other">%1$d పదాలు శోధించబడతాయి</item>
+    </plurals>
+    <string name="tools_redact_action">దాచండి</string>
+    <string name="tools_redact_progress">దాచబడుతోంది…</string>
+    <string name="tools_redact_progress_searching">పదాలు శోధించబడుతున్నాయి…</string>
+    <string name="tools_redact_err_failed">ఈ PDFని దాచలేకపోయాం.</string>
+    <string name="tools_redact_err_no_matches">ఈ పదాలలో ఏదీ ఈ PDF టెక్స్ట్‌లో కనబడలేదు. స్కాన్ చేసిన పేజీకి ముందుగా “శోధించదగినదిగా చేయండి” అవసరం.</string>
+    <string name="tools_redact_done">%2$d పేజీలలో %1$d సరిపోలికలు నల్లగా చేయబడ్డాయి</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">ఒక షీట్‌లో అనేక పేజీలు (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">ఒక షీట్‌లో 2 లేదా 4 పేజీలు</string>
+    <string name="hint_tool_nup">ప్రతి షీట్‌లో రెండు లేదా నాలుగు పేజీలు, చదివే క్రమంలో: డ్రాఫ్ట్‌లు, స్లైడ్‌లు లేదా హ్యాండ్అవుట్‌లు ముద్రించడానికి.</string>
+    <string name="tools_nup_body">పేజీలను చిన్నవి చేసి చదివే క్రమంలో పక్కపక్కన ఉంచుతారు. టెక్స్ట్, చిత్రాలు స్పష్టంగా ఉంటాయి: ఏదీ మళ్లీ గీయరు, కదిపి కుదిస్తారు అంతే.</string>
+    <string name="tools_nup_two">షీట్‌కు 2</string>
+    <string name="tools_nup_four">షీట్‌కు 4</string>
+    <string name="tools_nup_action">షీట్లు చేయండి</string>
+    <string name="tools_nup_progress">షీట్లు అమర్చబడుతున్నాయి…</string>
+    <string name="tools_nup_err_failed">ఈ PDFని అమర్చలేకపోయాం.</string>
+    <string name="tools_nup_err_one_page">ఈ PDFలో ఒకే పేజీ ఉంది, పక్కపక్కన పెట్టడానికి ఏమీ లేదు.</string>
+    <string name="tools_nup_done">%2$d షీట్లలో %1$d పేజీలు పెట్టబడ్డాయి</string>
+    <string name="tools_card_header_footer">హెడర్ మరియు ఫుటర్</string>
+    <string name="tools_tile_header_footer">హెడర్/ఫుటర్</string>
+    <string name="tools_desc_header_footer">పైన లేదా కింద టెక్స్ట్</string>
+    <string name="hint_tool_header_footer">ప్రతి పేజీ పైన లేదా కింద ఒక లైన్: శీర్షిక, తేదీ లేదా ఫైల్ రిఫరెన్స్.</string>
+    <string name="tools_hf_body">టెక్స్ట్ ప్రతి పేజీకి అది కనిపించే విధంగా జోడించబడుతుంది; మిగతాదంతా అలాగే ఉంటుంది. పేజీ సంఖ్యకు {page}, మొత్తం పేజీలకు {total} రాయండి.</string>
+    <string name="tools_hf_header_label">హెడర్ (పేజీ పైన)</string>
+    <string name="tools_hf_footer_label">ఫుటర్ (పేజీ కింద)</string>
+    <string name="tools_hf_placeholders_hint">{page} పేజీ సంఖ్య అవుతుంది, {total} మొత్తం పేజీల సంఖ్య.</string>
+    <string name="tools_hf_align_left">ఎడమ</string>
+    <string name="tools_hf_align_centre">మధ్య</string>
+    <string name="tools_hf_align_right">కుడి</string>
+    <string name="tools_hf_skip_first">మొదటి పేజీని వదిలేయండి</string>
+    <string name="tools_hf_action">టెక్స్ట్ జోడించండి</string>
+    <string name="tools_hf_progress">టెక్స్ట్ జోడించబడుతోంది…</string>
+    <string name="tools_hf_err_failed">హెడర్ లేదా ఫుటర్ జోడించలేకపోయాం.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d పేజీకి టెక్స్ట్ జోడించబడింది</item>
+        <item quantity="other">%1$d పేజీలకు టెక్స్ట్ జోడించబడింది</item>
+    </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">ప్రాంతాలను దాచండి</string>
+    <string name="tools_tile_redact_box">ప్రాంతం దాచు</string>
+    <string name="tools_desc_redact_box">నల్లగా చేయడానికి బాక్సులు గీయండి</string>
+    <string name="hint_tool_redact_box">పేజీలో దేనిపైనైనా బాక్సులు గీయండి: ఫోటో, సంతకం, చేతిరాత. బాక్సులు శాశ్వతంగా నల్లగా అవుతాయి.</string>
+    <string name="tools_redact_box_hint">పోవాల్సిన దానిపై లాగి బాక్స్ గీయండి. బాక్స్ ఎంచుకోవడానికి తాకండి, తర్వాత చెత్తబుట్ట దాన్ని తీసేస్తుంది.</string>
+    <string name="tools_redact_box_remove">ఈ బాక్స్ తీసేయండి</string>
+    <string name="tools_redact_box_undo">చివరి బాక్స్ తీసేయండి</string>
+    <string name="tools_redact_box_previous">మునుపటి పేజీ</string>
+    <string name="tools_redact_box_next">తదుపరి పేజీ</string>
+    <string name="tools_redact_box_apply_empty">ముందుగా ఒక బాక్స్ గీయండి</string>
+    <string name="tools_redact_box_apply">%1$d ప్రాంతాలను దాచండి</string>
+    <string name="tools_redact_box_err_preview">ఈ పేజీలను చూపించలేం. PDFకి పాస్‌వర్డ్ అవసరమైతే ముందుగా అన్‌లాక్ చేయండి.</string>
+    <string name="tools_redact_box_err_none">ఈ PDF పేజీలలో బాక్సులేవీ గీయలేదు.</string>
+    <string name="tools_redact_box_done">%2$d పేజీలలో %1$d ప్రాంతాలు నల్లగా చేయబడ్డాయి</string>
+</resources>

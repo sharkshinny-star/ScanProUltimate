@@ -1,5 +1,6 @@
 package com.example.scanpro.core.ui
 
+import android.app.Activity
 import com.example.scanpro.core.text.AppStrings
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -18,6 +19,9 @@ import com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
 import com.example.scanpro.data.ScanDocument
 import java.io.File
 import kotlinx.coroutines.launch
+
+/** Shared 64 KB buffer size for high-throughput stream copying and file I/O operations. */
+const val COPY_BUFFER = 64 * 1024
 
 /**
  * Every document's PDF is stored as "document.pdf", and the receiving app names the attachment after the
@@ -142,6 +146,12 @@ fun pagesLabel(context: Context, count: Int): String = context.resources.getQuan
 fun formatBytes(context: Context, bytes: Long): String =
     android.text.format.Formatter.formatShortFileSize(context, bytes.coerceAtLeast(0L))
 
+/**
+ * Bytes in the "kB" that [formatBytes] shows: the system formatter is decimal from Android 8 (API 26) and binary
+ * before. A typed target must use the same unit, or "170 KB" is rejected for a file the dialog calls 171 kB.
+ */
+fun displayedKiloByte(): Double = if (Build.VERSION.SDK_INT >= 26) 1000.0 else 1024.0
+
 /** How long a trashed document has left before it is deleted for good, in the largest whole unit. */
 sealed class TrashCountdown(val isUrgent: Boolean) {
     object Soon : TrashCountdown(isUrgent = true)
@@ -189,6 +199,29 @@ fun formatTrashCountdown(
         is TrashCountdown.Minutes -> resources.getQuantityString(R.plurals.core_trash_auto_deletes_minutes, countdown.minutes, countdown.minutes)
     }
     return Pair(text, countdown.isUrgent)
+}
+
+/**
+ * Opens [path] in another app ("Open with"), as a result's Open button should: a share sheet would offer people to
+ * send it to instead. Falls back to sharing if the chooser itself cannot start.
+ */
+fun openFile(context: Context, path: String, mimeType: String, chooserTitle: String) {
+    val file = File(path)
+    if (!file.isFile) {
+        Toast.makeText(context, context.getString(R.string.core_export_file_missing), Toast.LENGTH_SHORT).show()
+        return
+    }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val view = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, mimeType)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    // The chooser lists the apps that can open it (asking the package manager first would need <queries> on Android 11+).
+    try {
+        context.startActivity(Intent.createChooser(view, chooserTitle).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+    } catch (_: ActivityNotFoundException) {
+        shareFile(context, path, mimeType, chooserTitle)
+    }
 }
 
 fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String, extraPaths: List<String> = emptyList()) {
@@ -278,12 +311,25 @@ fun printPdfFile(context: Context, file: File, title: String) {
         Toast.makeText(context, context.getString(R.string.core_pdf_not_found), Toast.LENGTH_SHORT).show()
         return
     }
-    val manager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
-    manager.print(
-        title,
-        PdfFilePrintAdapter(file),
-        android.print.PrintAttributes.Builder().build()
-    )
+    val activity = context.findActivity() ?: (context as? Activity)
+    if (activity == null) {
+        Toast.makeText(context, context.getString(R.string.print_err_failed), Toast.LENGTH_SHORT).show()
+        return
+    }
+    val manager = activity.getSystemService(Context.PRINT_SERVICE) as? android.print.PrintManager
+    if (manager == null) {
+        Toast.makeText(context, context.getString(R.string.print_err_failed), Toast.LENGTH_SHORT).show()
+        return
+    }
+    runCatching {
+        manager.print(
+            title,
+            PdfFilePrintAdapter(file),
+            android.print.PrintAttributes.Builder().build()
+        )
+    }.onFailure {
+        Toast.makeText(context, context.getString(R.string.print_err_failed), Toast.LENGTH_SHORT).show()
+    }
 }
 
 fun copyFileToUri(context: Context, sourcePath: String, destination: Uri): Boolean = runCatching {
@@ -339,8 +385,8 @@ private class PdfFilePrintAdapter(
         val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         Thread {
             val result = runCatching {
-                java.io.FileOutputStream(destination.fileDescriptor).use { output ->
-                    file.inputStream().use { input -> input.copyTo(output) }
+                java.io.FileOutputStream(destination.fileDescriptor).buffered(COPY_BUFFER).use { output ->
+                    file.inputStream().buffered(COPY_BUFFER).use { input -> input.copyTo(output, COPY_BUFFER) }
                 }
             }
             mainHandler.post {
@@ -383,3 +429,12 @@ fun openPlayStoreListing(context: Context) {
         }
     }
 }
+
+/**
+ * Lines a document name may take on a card: two, or three once the system text size is large. At 1.5x text a card
+ * half or a third of the screen wide fits about nine characters a line, so two lines of "Scan 2026-11-16 16-13" ended
+ * at "Scan 2026-11-1…" and every scan of the month read the same (seen on the emulator, 2026-11-16).
+ */
+@androidx.compose.runtime.Composable
+@androidx.compose.runtime.ReadOnlyComposable
+fun cardTitleLines(): Int = if (androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.3f) 3 else 2

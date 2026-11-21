@@ -8,10 +8,16 @@ import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.systemBarsPadding
 import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import com.example.scanpro.core.designsystem.ProcessingDots
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -29,6 +35,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -50,6 +57,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.only
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
@@ -68,6 +83,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
@@ -176,13 +192,13 @@ import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.designsystem.TopBarWithProgress
 import com.example.scanpro.core.ui.ContactDraft
 import com.example.scanpro.core.ui.FilterStrip
-import com.example.scanpro.core.ui.copyFileToUri
 import com.example.scanpro.core.ui.copyText
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.openNewContactForm
 import com.example.scanpro.core.ui.openPdf
 import com.example.scanpro.core.ui.printPdf
 import com.example.scanpro.core.ui.saveToGoogleDrive
+import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.core.ui.shareImages
 import com.example.scanpro.core.ui.shareOcrText
 import com.example.scanpro.core.ui.sharePdf
@@ -347,6 +363,7 @@ fun DocumentRoute(
         onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
         onWithFreshPdf = { onFailed, onReady -> viewModel.withFreshPdf(onFailed, onReady) },
+        onSavePdfTo = viewModel::savePdfTo,
         scanSaved = scanSaved,
         undoState = undoState,
         onUndo = viewModel::undo,
@@ -428,6 +445,8 @@ internal fun DocumentDetailScreen(
     onExportEncryptedBackup: (String) -> Unit,
     /** Runs onReady with a current PDF (page edits rebuild it lazily), or onFailed if that isn't possible. */
     onWithFreshPdf: (onFailed: () -> Unit, onReady: (ScanDocument) -> Unit) -> Unit,
+    /** Saves the current PDF to a destination the picker created; deletes it again if saving fails. */
+    onSavePdfTo: (Uri) -> Unit,
     /** True right after this document was scanned: offer share, save and rename straight away. */
     scanSaved: Boolean = false,
     undoState: UndoState = UndoState(),
@@ -497,6 +516,8 @@ internal fun DocumentDetailScreen(
     var watermarkOpen by rememberSaveable { mutableStateOf(false) }
     var annotationTextOpen by rememberSaveable { mutableStateOf(false) }
     var cropOpen by rememberSaveable { mutableStateOf(false) }
+    // A tap on a page shows the finished page; the crop editor (which shows the original photo) opens from there.
+    var previewOpen by rememberSaveable { mutableStateOf(false) }
     var bookSplitOpen by rememberSaveable { mutableStateOf(false) }
     var markupOpen by rememberSaveable { mutableStateOf(false) }
     var editTextOpen by rememberSaveable { mutableStateOf(false) }
@@ -522,21 +543,8 @@ internal fun DocumentDetailScreen(
         if (uris.isNotEmpty()) onAppendImages(uris)
     }
     val savePdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
-        if (uri != null) {
-            // An edit may have finished while the picker was open, so make sure the PDF is current again,
-            // then copy off the main thread (cloud providers can be slow).
-            val deleteDestination = { runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) } }
-            onWithFreshPdf({ deleteDestination() }) { fresh ->
-                detailScope.launch {
-                    val ok = withContext(Dispatchers.IO) {
-                        copyFileToUri(context, fresh.pdfPath, uri).also { copied ->
-                            if (!copied) deleteDestination()
-                        }
-                    }
-                    if (!ok) android.widget.Toast.makeText(context, resources.getString(R.string.doc_could_not_save_pdf), android.widget.Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
+        // Rebuilt if an edit made it stale, then copied, all in the view model: this screen may be gone by then.
+        if (uri != null) onSavePdfTo(uri)
     }
 
     /** Google Drive's own "Save to Drive" screen; without Drive, the system picker, which lists other cloud apps too. */
@@ -550,6 +558,7 @@ internal fun DocumentDetailScreen(
     }
     val sharePdfNow: () -> Unit = { onWithFreshPdf({}) { sharePdf(context, it) } }
 
+    val wordScope = rememberCoroutineScope()
     if (scanSaved) {
         ScanSavedSheet(
             document = document,
@@ -557,6 +566,19 @@ internal fun DocumentDetailScreen(
             onRename = onRename,
             onSharePdf = { title -> onWithFreshPdf({}) { sharePdf(context, it.copy(title = title)) } },
             onShareJpg = { shareImages(context, document) },
+            onShareWord = { title ->
+                wordScope.launch {
+                    val file = withContext(Dispatchers.IO) {
+                        val pagesText = document.pages.sortedBy { it.position }.map {
+                            com.example.scanpro.imaging.PdfTextPage(it.ocrText, if (it.ocrText.isBlank()) com.example.scanpro.imaging.PageTextSource.NONE else com.example.scanpro.imaging.PageTextSource.OCR)
+                        }
+                        java.io.File(java.io.File(context.cacheDir, "exports").apply { mkdirs() }, "${com.example.scanpro.data.fileSafeName(title)}.docx").also {
+                            com.example.scanpro.imaging.PdfToTextEngine.write(title, pagesText, com.example.scanpro.imaging.TextExportFormat.WORD, it)
+                        }
+                    }
+                    shareFile(context, file.absolutePath, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", title)
+                }
+            },
             onSaveToDevice = { title -> savePdfLauncher.launch("${com.example.scanpro.data.fileSafeName(title)}.pdf") },
             onSaveToDrive = saveToDrive,
             onPrint = { title -> onWithFreshPdf({}) { printPdf(context, it.copy(title = title)) } },
@@ -587,6 +609,12 @@ internal fun DocumentDetailScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        // The bottom and side system bars (and a cutout on its side) are kept clear (2026-11-18): with no insets the
+        // snackbar sat behind the navigation bar and, in landscape, the right-hand column of pages under a side bar.
+        // The top bar pads for the status bar itself.
+        contentWindowInsets = WindowInsets.navigationBars
+            .union(WindowInsets.displayCutout)
+            .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
         topBar = {
             TopBarWithProgress(busy, onStop = onStop) {
                 Column {
@@ -635,6 +663,8 @@ internal fun DocumentDetailScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                // So the tabs' imePadding below does not count the navigation bar a second time.
+                .consumeWindowInsets(padding)
         ) {
             when (DocumentTab.entries[tab]) {
                 DocumentTab.PAGES -> LazyVerticalGrid(
@@ -647,31 +677,41 @@ internal fun DocumentDetailScreen(
                     item(key = "markup", contentType = "markup", span = { GridItemSpan(maxLineSpan) }) {
                         // Mark-up for the current page; the watermark covers every page, as before.
                         val canMark = !busy && currentPage != null
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            ActionChip(Icons.Default.Draw, stringResource(R.string.doc_sign), canMark) { signatureOpen = true }
-                            ActionChip(Icons.Default.Gesture, stringResource(R.string.doc_pen), canMark) { penOpen = true }
-                            ActionChip(Icons.Default.TextFields, stringResource(R.string.doc_text), canMark) { annotationTextOpen = true }
-                            ActionChip(Icons.Default.Highlight, stringResource(R.string.doc_highlight), canMark) { currentPage?.let { onHighlight(it.id) } }
-                            ActionChip(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), canMark) { currentPage?.let { onRedact(it.id) } }
-                            ActionChip(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), canMark) { watermarkOpen = true }
+                            item { ActionChip(Icons.Default.Crop, stringResource(R.string.doc_crop), canMark) { cropOpen = true } }
+                            item { ActionChip(Icons.Default.Tune, stringResource(R.string.doc_clean_up), canMark) { adjustmentsOpen = true } }
+                            item { ActionChip(RotateRightIcon, stringResource(R.string.doc_rotate), canMark) { currentPage?.let { onRotate(it.id) } } }
+                            item { ActionChip(Icons.Default.Draw, stringResource(R.string.doc_sign), canMark) { signatureOpen = true } }
+                            item { ActionChip(Icons.Default.Gesture, stringResource(R.string.doc_pen), canMark) { penOpen = true } }
+                            item { ActionChip(Icons.Default.TextFields, stringResource(R.string.doc_text), canMark) { annotationTextOpen = true } }
+                            item { ActionChip(Icons.Default.Highlight, stringResource(R.string.doc_highlight), canMark) { currentPage?.let { onHighlight(it.id) } } }
+                            item { ActionChip(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), canMark) { currentPage?.let { onRedact(it.id) } } }
+                            item { ActionChip(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), canMark) { watermarkOpen = true } }
                         }
                     }
-                    itemsIndexed(pages, key = { _, page -> page.id }, contentType = { _, _ -> "page_cell" }) { index, page ->
+                    // One page gets the whole row, larger and centred, instead of half the width beside an empty space.
+                    itemsIndexed(
+                        pages,
+                        key = { _, page -> page.id },
+                        contentType = { _, _ -> "page_cell" },
+                        span = { _, _ -> GridItemSpan(if (pages.size == 1) maxLineSpan else 1) }
+                    ) { index, page ->
+                        androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().animateItem(), contentAlignment = Alignment.TopCenter) {
                         PageCell(
                             page = page,
                             index = index,
                             count = pages.size,
                             current = page.id == currentPage?.id,
                             enabled = !busy,
-                            onOpen = { selectedPageId = page.id; cropOpen = true },
+                            onOpen = { selectedPageId = page.id; previewOpen = true },
                             onOptions = { selectedPageId = page.id; pageSheetOpen = true },
                             onMoveEarlier = if (index > 0) ({ onMove(page.id, -1) }) else null,
                             onMoveLater = if (index < pages.lastIndex) ({ onMove(page.id, 1) }) else null,
-                            modifier = Modifier.animateItem()
+                            modifier = if (pages.size == 1) Modifier.fillMaxWidth(0.72f).widthIn(max = 420.dp) else Modifier.fillMaxWidth()
                         )
+                        }
                     }
                     item(key = "organise", contentType = "organise", span = { GridItemSpan(maxLineSpan) }) {
                         FlowRow(
@@ -722,6 +762,7 @@ internal fun DocumentDetailScreen(
                 DocumentTab.TEXT -> Column(
                     Modifier
                         .fillMaxSize()
+                        .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)
                 ) {
@@ -820,25 +861,48 @@ internal fun DocumentDetailScreen(
                                     }
                                 }
                             }
+                            val startTranslation = {
+                                detailScope.launch {
+                                    translating = true
+                                    translationResult = try {
+                                        val translator = TranslationFeature.translator(context) { translationProgress = it }
+                                        translationProgress = null
+                                        translator.translate(document.ocrText, translationTarget)
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (error: Exception) {
+                                        // A failure is a message, not a "translation" the user could copy or share.
+                                        android.widget.Toast.makeText(context, R.string.doc_translation_failed, android.widget.Toast.LENGTH_LONG).show()
+                                        ""
+                                    } finally {
+                                        translating = false
+                                        translationProgress = null
+                                    }
+                                }
+                                Unit
+                            }
+                            // The first translation into a language downloads its language pack over whatever connection
+                            // the phone is on (F215): asked once for each language, so mobile data is never used unasked.
+                            val downloadPrefs = remember { context.getSharedPreferences("translation_downloads", android.content.Context.MODE_PRIVATE) }
+                            var askDownloadFor by remember { mutableStateOf<String?>(null) }
+                            askDownloadFor?.let { tag ->
+                                AlertDialog(
+                                    onDismissRequest = { askDownloadFor = null },
+                                    title = { Text(stringResource(R.string.doc_translate_download_title)) },
+                                    text = { Text(stringResource(R.string.doc_translate_download_body, targetLabel)) },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            downloadPrefs.edit().putBoolean(tag, true).apply()
+                                            askDownloadFor = null
+                                            startTranslation()
+                                        }) { Text(stringResource(R.string.doc_translate_download_confirm)) }
+                                    },
+                                    dismissButton = { TextButton(onClick = { askDownloadFor = null }) { Text(stringResource(R.string.common_cancel)) } }
+                                )
+                            }
                             FilledTonalButton(
                                 onClick = {
-                                    detailScope.launch {
-                                        translating = true
-                                        translationResult = try {
-                                            val translator = TranslationFeature.translator(context) { translationProgress = it }
-                                            translationProgress = null
-                                            translator.translate(document.ocrText, translationTarget)
-                                        } catch (cancelled: CancellationException) {
-                                            throw cancelled
-                                        } catch (error: Exception) {
-                                            // A failure is a message, not a "translation" the user could copy or share.
-                                            android.widget.Toast.makeText(context, R.string.doc_translation_failed, android.widget.Toast.LENGTH_LONG).show()
-                                            ""
-                                        } finally {
-                                            translating = false
-                                            translationProgress = null
-                                        }
-                                    }
+                                    if (downloadPrefs.getBoolean(translationTarget, false)) startTranslation() else askDownloadFor = translationTarget
                                 },
                                 enabled = hasText && !translating
                             ) {
@@ -908,6 +972,8 @@ internal fun DocumentDetailScreen(
                 DocumentTab.INSIGHTS -> Column(
                     Modifier
                         .fillMaxSize()
+                        // The Ask field: the keyboard used to cover it and its answer.
+                        .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -957,11 +1023,42 @@ internal fun DocumentDetailScreen(
                         }
                     }
                     InsightCard(stringResource(R.string.doc_ask_about_scan)) {
-                        val ask = {
-                            val question = assistantQuestion
+                        var asking by remember { mutableStateOf(false) }
+                        val ask: (String) -> Unit = { query ->
                             val text = document.ocrText
-                            if (question.isNotBlank() && text.isNotBlank()) {
-                                scope.launch { assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(question, text) } }
+                            if (query.isNotBlank() && text.isNotBlank()) {
+                                asking = true
+                                assistantQuestion = query
+                                scope.launch {
+                                    assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(query, text) }
+                                    asking = false
+                                }
+                            }
+                        }
+                        if (hasText) {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                listOf(
+                                    "Summary" to "summary of this document",
+                                    "Total & due" to "what is the total amount due",
+                                    "Dates" to "what are the key dates",
+                                    "Action items" to "what are the action items"
+                                ).forEach { (label, q) ->
+                                    AssistChip(
+                                        onClick = { ask(q) },
+                                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.AutoFixHigh,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    )
+                                }
                             }
                         }
                         OutlinedTextField(
@@ -970,22 +1067,40 @@ internal fun DocumentDetailScreen(
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = { Text(stringResource(R.string.doc_ask_placeholder)) },
                             trailingIcon = {
-                                IconButton(onClick = ask, enabled = assistantQuestion.isNotBlank() && hasText) {
+                                IconButton(onClick = { ask(assistantQuestion) }, enabled = assistantQuestion.isNotBlank() && hasText && !asking) {
                                     Icon(Icons.Default.Search, contentDescription = stringResource(R.string.doc_find_answer))
                                 }
                             },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = { ask() }),
+                            keyboardActions = KeyboardActions(onSearch = { ask(assistantQuestion) }),
                             maxLines = 3
                         )
-                        // Answers are passages of the recognised text, so they read in the same mono as the text tab.
-                        SelectionContainer {
+                        if (asking) {
+                            Box(Modifier.fillMaxWidth().padding(top = 12.dp), contentAlignment = Alignment.Center) {
+                                ProcessingDots(MaterialTheme.colorScheme.primary, dotSize = 6.dp)
+                            }
+                        }
+                        AnimatedVisibility(
+                            visible = assistantAnswer.isNotBlank() && !asking,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            SelectionContainer {
+                                Text(
+                                    assistantAnswer,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    lineHeight = 19.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(top = 10.dp)
+                                )
+                            }
+                        }
+                        if (assistantAnswer.isBlank() && !asking) {
                             Text(
-                                assistantAnswer.ifBlank { stringResource(R.string.doc_ask_supporting) },
+                                stringResource(R.string.doc_ask_supporting),
                                 style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                lineHeight = 19.sp,
-                                color = if (assistantAnswer.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 10.dp)
                             )
                         }
@@ -1090,6 +1205,7 @@ internal fun DocumentDetailScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 val hasMarkup = currentPage.annotations.isNotEmpty()
+                SheetRow(Icons.Default.Crop, stringResource(R.string.doc_crop), !busy, run { cropOpen = true })
                 SheetRow(Icons.Default.Tune, stringResource(R.string.doc_clean_up), !busy, run { adjustmentsOpen = true })
                 SheetRow(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(currentPage.id) })
                 SheetRow(Icons.Default.Replay, stringResource(R.string.doc_retake), !busy, run { onRetakePage(currentPage.id, currentIndex) })
@@ -1311,6 +1427,17 @@ internal fun DocumentDetailScreen(
         )
     }
 
+    if (previewOpen && currentPage != null && !cropOpen) {
+        PagePreviewDialog(
+            page = currentPage,
+            index = currentIndex,
+            count = pages.size,
+            onDismiss = { previewOpen = false },
+            onCrop = { cropOpen = true },
+            onPage = if (pages.size > 1) ({ delta -> pages.getOrNull(currentIndex + delta)?.let { selectedPageId = it.id } }) else null
+        )
+    }
+
     if (cropOpen && currentPage != null) {
         CropEditorDialog(
             sourcePath = currentPage.sourcePath,
@@ -1318,9 +1445,15 @@ internal fun DocumentDetailScreen(
             initial = currentPage.crop,
             onDismiss = { cropOpen = false },
             onConfirm = {
-                onCrop(currentPage.id, it)
+                // Done with the outline unchanged is not an edit: no re-render, no new "modified" time, nothing to undo.
+                if (it != currentPage.crop) onCrop(currentPage.id, it)
                 cropOpen = false
+                // Done finishes the job: back to the document, not to the page preview it may have been opened from
+                // (that dark screen looked like the editor had not closed). Back from the editor still returns there.
+                previewOpen = false
             },
+            onRotateRight = { onRotate(currentPage.id) },
+            turns = currentPage.rotationDegrees / 90,
             pageIndex = currentIndex,
             pageCount = pages.size,
             // Moving to another page keeps the editor open; a changed crop on the page being left is applied first.
@@ -1489,8 +1622,8 @@ private fun DocumentTabs(selected: Int, onSelect: (Int) -> Unit) {
 }
 
 /**
- * One page in the grid: the thumbnail, its number under it and the earlier/later buttons. A tap opens the
- * crop editor; a long press the rest of the page's tools. The current page (the one the chip row acts on)
+ * One page in the grid: the thumbnail, its number under it and the earlier/later buttons. A tap shows the finished
+ * page full screen (Crop is there); a long press the rest of the page's tools. The current page (the one the chip row acts on)
  * has a primary border.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -1509,7 +1642,7 @@ private fun PageCell(
 ) {
     val shape = RoundedCornerShape(10.dp)
     val description = stringResource(R.string.viewer_page_of, index + 1, count)
-    val editLabel = stringResource(R.string.doc_edit_page, index + 1)
+    val editLabel = stringResource(R.string.doc_view_page, index + 1)
     val optionsLabel = stringResource(R.string.doc_page_options)
     Column(
         modifier
@@ -1550,7 +1683,8 @@ private fun PageCell(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterStart).padding(start = 6.dp)
             )
-            Row(Modifier.align(Alignment.CenterEnd)) {
+            // A document with one page has nowhere to move it: no greyed arrows.
+            if (onMoveEarlier != null || onMoveLater != null) Row(Modifier.align(Alignment.CenterEnd)) {
                 MoveButton(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_earlier), enabled, onMoveEarlier)
                 MoveButton(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.doc_move_later), enabled, onMoveLater)
             }
@@ -1728,9 +1862,12 @@ private fun DocumentLoadingScreen(title: String?, coverPath: String?, coverVersi
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Column {
-                DocumentTopBar(title = title.orEmpty(), status = null, onBack = onBack)
-                DocumentTabs(selected = DocumentTab.PAGES.ordinal, onSelect = {})
+            // The same 4dp progress strip as the loaded screen, so its pages don't move down 4dp when they arrive.
+            TopBarWithProgress(busy = false) {
+                Column {
+                    DocumentTopBar(title = title.orEmpty(), status = null, onBack = onBack)
+                    DocumentTabs(selected = DocumentTab.PAGES.ordinal, onSelect = {})
+                }
             }
         }
     ) { padding ->
@@ -1805,7 +1942,7 @@ private fun DocumentLoadingScreen(title: String?, coverPath: String?, coverVersi
 @Composable
 private fun LockedFolderGate(folder: String, onBack: () -> Unit, onUnlocked: () -> Unit) {
     val unlock = com.example.scanpro.core.security.LocalDeviceUnlock.current
-    androidx.compose.material3.Surface(Modifier.fillMaxSize()) {
+    Surface(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().systemBarsPadding().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

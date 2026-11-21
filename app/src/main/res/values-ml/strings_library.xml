@@ -7,6 +7,7 @@
     <string name="greeting_morning">സുപ്രഭാതം</string>
     <string name="greeting_afternoon">ശുഭദിനം</string>
     <string name="greeting_evening">ശുഭസായാഹ്നം</string>
+    <string name="greeting_night">ശുഭരാത്രി</string>
     <string name="lib_title_files">എന്റെ ഫയലുകൾ</string>
     <string name="lib_cd_clear_selection">തിരഞ്ഞെടുപ്പ് മാറ്റുക</string>
     <string name="lib_cd_share_selected">തിരഞ്ഞെടുത്തവ പങ്കിടുക</string>
@@ -206,13 +207,11 @@
     <string name="settings_report_issue_subtitle">ആപ്പ് ലോഗുകളും ഡിവൈസ് വിവരങ്ങളും സ്വയം ചേർക്കും</string>
     <string name="settings_share_subtitle">Play Store ലിങ്ക് ഒരു സുഹൃത്തിന് അയയ്ക്കുക</string>
     <string name="settings_library_title">നിങ്ങളുടെ ലൈബ്രറി</string>
-    <string name="settings_library_subtitle">ഈ ഡിവൈസിൽ മാത്രം സൂക്ഷിച്ചിരിക്കുന്നു</string>
-    <plurals name="settings_stat_documents">
-        <item quantity="one">ഡോക്യുമെന്റ്</item>
-        <item quantity="other">ഡോക്യുമെന്റുകൾ</item>
-    </plurals>
-    <string name="settings_stat_in_recycle_bin">റീസൈക്കിൾ ബിന്നിൽ</string>
-    <string name="settings_stat_used">ഉപയോഗിച്ചു</string>
+    <string name="settings_free_space_title">സ്ഥലം ഒഴിവാക്കുക</string>
+    <string name="settings_free_space_subtitle">പഴയ സ്കാനുകൾ ആവശ്യത്തിലധികം വലിയ PDF-കളിലാണ് സേവ് ചെയ്തിരിക്കുന്നത്. അവ വീണ്ടും നിർമ്മിച്ചാൽ %1$s വരെ സ്ഥലം ഒഴിവാകും; ഓരോ പേജും തിരയാവുന്ന ടെക്സ്റ്റും അതുപോലെ തുടരും.</string>
+    <string name="settings_free_space_action">ഒഴിവാക്കുക</string>
+    <string name="settings_free_space_running">സ്ഥലം ഒഴിവാക്കുന്നു…</string>
+    <string name="settings_free_space_done">%1$s ഒഴിവായി</string>
     <string name="settings_footer_privacy">പൂർണ്ണമായും സ്വകാര്യം. അക്കൗണ്ട് ഇല്ല, ഒന്നും അപ്‌ലോഡ് ചെയ്യുന്നില്ല.</string>
     <string name="settings_privacy_dialog_title">നിങ്ങളുടെ സ്കാനുകൾ ഈ ഫോണിൽ തന്നെ ഇരിക്കും</string>
     <string name="settings_privacy_dialog_account">ScanPro-യ്ക്ക് അക്കൗണ്ട് വേണ്ട, ഒരു സെർവറിലേക്കും ഒന്നും അയയ്ക്കുന്നില്ല. ഡോക്യുമെന്റുകൾ, ടെക്സ്റ്റ് തിരിച്ചറിയൽ, PDF ടൂളുകൾ എല്ലാം ഡിവൈസിൽ തന്നെ പ്രവർത്തിക്കുന്നു.</string>
@@ -233,6 +232,16 @@
     <string name="settings_review_mode_subtitle">ആവശ്യമെങ്കിൽ: ഒരു പേജിന്റെ അരിക് കണ്ടെത്താനാകാതെയോ, മങ്ങിയതോ, തിളക്കമുള്ളതോ, വളരെ ഇരുണ്ടതോ അല്ലെങ്കിൽ "പൂർത്തിയായി" ഉടൻ സേവ് ചെയ്യും. ഒരിക്കലും ഇല്ല: ഓട്ടോമാറ്റിക് ക്രോപ്പും ഫിൽട്ടറും ഉപയോഗിച്ച് എപ്പോഴും ഉടൻ സേവ് ചെയ്യും</string>
     <string name="lib_share_separate">വെവ്വേറെ PDF-കൾ (%1$d)</string>
     <string name="lib_share_one_pdf">ഒറ്റ PDF</string>
+    <string name="settings_search_placeholder">ക്രമീകരണങ്ങൾ തിരയുക</string>
+    <string name="settings_search_clear">തിരയൽ മായ്ക്കുക</string>
+    <string name="settings_search_no_match">“%1$s” ന് യോജിക്കുന്ന ക്രമീകരണം ഇല്ല</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF അല്ലെങ്കിൽ lock പോലുള്ള വാക്ക് പരീക്ഷിക്കുക.</string>
+    <string name="settings_backup_last">അവസാന ബാക്കപ്പ്: %1$s</string>
+    <string name="settings_backup_never">ഇതുവരെ ബാക്കപ്പ് ഇല്ല. ഫോൺ മാറ്റുന്നതിന് മുമ്പ് ബാക്കപ്പ് എടുക്കുക.</string>
+    <string name="settings_backup_intro_title">നിങ്ങളുടെ ലൈബ്രറി ബാക്കപ്പ് ചെയ്യുക</string>
+    <string name="settings_backup_intro_body">ഓരോ ഡോക്യുമെന്റും നിങ്ങൾ തിരഞ്ഞെടുത്ത ഫോൾഡറിൽ പ്രത്യേക എൻക്രിപ്റ്റ് ചെയ്ത ഫയലായി സേവ് ചെയ്യും; ക്ലൗഡ് ഡ്രൈവ് ഫോൾഡറും ഉപയോഗിക്കാം.\n\nഅടുത്ത ഘട്ടത്തിൽ പാസ്‌വേഡ് സജ്ജമാക്കും. അത് തിരിച്ചെടുക്കാനാവില്ല, അതിനാൽ സുരക്ഷിതമായി സൂക്ഷിക്കുക.</string>
+    <string name="settings_backup_choose_folder">ഫോൾഡർ തിരഞ്ഞെടുക്കുക</string>
+    <string name="settings_backup_nothing">ബാക്കപ്പ് ചെയ്യാൻ ഇതുവരെ ഡോക്യുമെന്റുകൾ ഇല്ല.</string>
     <string name="lib_restore_aside_title">മുമ്പത്തെ ലൈബ്രറി പുനഃസ്ഥാപിക്കണോ?</string>
     <string name="lib_restore_aside_body">ആപ്പിന്റെ പഴയ പതിപ്പ് ഇൻസ്റ്റാൾ ചെയ്തപ്പോൾ നിങ്ങളുടെ ലൈബ്രറി മാറ്റിവച്ചിരുന്നു. ഈ പതിപ്പിന് അത് വീണ്ടും വായിക്കാനാകും. അതിലെ രേഖകൾ പുനഃസ്ഥാപിക്കണോ? അതിനുശേഷം നിങ്ങൾ സ്കാൻ ചെയ്തവ അതുപോലെ തുടരും.</string>
     <string name="lib_restore_aside_confirm">പുനഃസ്ഥാപിക്കുക</string>
@@ -244,4 +253,25 @@
         <item quantity="one">%1$d രേഖ പുനഃസ്ഥാപിച്ചു</item>
         <item quantity="other">%1$d രേഖകൾ പുനഃസ്ഥാപിച്ചു</item>
     </plurals>
+    <string name="home_recent_files">അടുത്തിടെയുള്ള ഫയലുകൾ</string>
+    <string name="home_recent_opened">തുറന്നവ</string>
+    <string name="home_recent_scans">സ്കാനുകൾ</string>
+    <string name="settings_section_about">ScanPro-നെക്കുറിച്ച്</string>
+    <string name="settings_group_more">കൂടുതൽ</string>
+    <string name="settings_about_tagline">നിങ്ങളുടെ ഫോണിൽ ഓഫ്‌ലൈനായി പ്രവർത്തിക്കുന്ന ഡോക്യുമെന്റ് സ്കാനറും PDF ടൂൾകിറ്റും.</string>
+    <string name="settings_group_general">പൊതുവായവ</string>
+    <string name="settings_group_data">ഡാറ്റയും സ്വകാര്യതയും</string>
+    <string name="settings_stat_documents">ഡോക്യുമെന്റുകൾ</string>
+    <string name="settings_stat_storage">ഉപയോഗിച്ച സ്റ്റോറേജ്</string>
+    <string name="settings_stat_recycle_bin">റീസൈക്കിൾ ബിന്നിൽ</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">ഒരു ടാഗ് ചേർക്കുക</string>
+    <string name="name_pattern_example">അടുത്ത സ്കാൻ: %1$s</string>
+    <string name="name_pattern_sample_text">ഇൻവോയ്സ് Acme</string>
+    <string name="name_pattern_suggestions">നിർദേശങ്ങൾ</string>
+    <string name="name_pattern_tag_date">തീയതി</string>
+    <string name="name_pattern_tag_mode">സ്കാൻ തരം</string>
+    <string name="name_pattern_tag_text">പേജ് ടെക്സ്റ്റ്</string>
+    <string name="name_pattern_tag_time">സമയം</string>
+    <string name="name_pattern_unknown">ടാഗ് അല്ല, ടൈപ്പ് ചെയ്തതുപോലെ സൂക്ഷിച്ചു: %1$s</string>
 </resources>

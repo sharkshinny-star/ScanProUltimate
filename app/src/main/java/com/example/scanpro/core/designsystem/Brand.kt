@@ -29,6 +29,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -160,9 +162,11 @@ fun BrandWordmark(modifier: Modifier = Modifier, color: Color = MaterialTheme.co
 @androidx.annotation.StringRes
 fun greetingRes(hour: Int): Int =
     when (hour) {
-        in 4..11 -> R.string.greeting_morning
+        // F140: everything outside 4-16 used to be evening, so Home said "Good evening" at 2 am.
+        in 5..11 -> R.string.greeting_morning
         in 12..16 -> R.string.greeting_afternoon
-        else -> R.string.greeting_evening
+        in 17..23 -> R.string.greeting_evening
+        else -> R.string.greeting_night
     }
 
 @androidx.annotation.StringRes
@@ -221,13 +225,15 @@ fun AuroraBackground(modifier: Modifier = Modifier, animated: Boolean = remember
     val dark = MaterialTheme.colorScheme.onBackground.luminanceApprox() > 0.5f
     val strength = if (dark) 0.34f else 0.22f
     val transition = rememberInfiniteTransition(label = "aurora")
-    val animatedDrift by transition.animateFloat(
+    // Not read here (no `by`): read while drawing, so the drift redraws the backdrop without recomposing it and its content
+    // sixty times a second.
+    val animatedDrift = transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(14_000, easing = LinearEasing), RepeatMode.Reverse),
         label = "drift"
     )
-    val drift by rememberUpdatedState(if (animated) animatedDrift else 0.5f)
+    val stillAnimated by rememberUpdatedState(animated)
     Box(
         modifier
             .fillMaxSize()
@@ -236,7 +242,7 @@ fun AuroraBackground(modifier: Modifier = Modifier, animated: Boolean = remember
                 val w = size.width
                 val h = size.height
                 onDrawBehind {
-                    val d = drift
+                    val d = if (stillAnimated) animatedDrift.value else 0.5f
                     drawCircle(
                         brush = Brush.radialGradient(
                             listOf(brand.gradientEnd.copy(alpha = strength), Color.Transparent),
@@ -329,7 +335,12 @@ fun SectionHeader(
 ) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { heading() }
+            )
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -474,7 +485,7 @@ fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
         )
     ) {
         if (loading) {
-            androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Color(0xFF04281E))
+            ProcessingDots(Color(0xFF04281E))
         } else {
             Text(text, fontWeight = FontWeight.Bold, maxLines = 1)
         }

@@ -7,6 +7,7 @@
     <string name="greeting_morning">शुभ प्रभात</string>
     <string name="greeting_afternoon">शुभ दोपहर</string>
     <string name="greeting_evening">शुभ संध्या</string>
+    <string name="greeting_night">शुभ रात्रि</string>
     <string name="lib_title_files">मेरी फ़ाइलें</string>
     <string name="lib_cd_clear_selection">चुनाव हटाएं</string>
     <string name="lib_cd_share_selected">चुने गए शेयर करें</string>
@@ -206,13 +207,11 @@
     <string name="settings_report_issue_subtitle">ऐप लॉग और डिवाइस की जानकारी अपने आप भर दी जाती है</string>
     <string name="settings_share_subtitle">दोस्त को Play Store लिंक भेजें</string>
     <string name="settings_library_title">आपकी लाइब्रेरी</string>
-    <string name="settings_library_subtitle">सिर्फ़ इसी डिवाइस पर सेव</string>
-    <plurals name="settings_stat_documents" tools:ignore="ImpliedQuantity">
-        <item quantity="one">डॉक्यूमेंट</item>
-        <item quantity="other">डॉक्यूमेंट</item>
-    </plurals>
-    <string name="settings_stat_in_recycle_bin">रीसायकल बिन में</string>
-    <string name="settings_stat_used">इस्तेमाल हुआ</string>
+    <string name="settings_free_space_title">जगह खाली करें</string>
+    <string name="settings_free_space_subtitle">पुराने स्कैन ज़रूरत से बड़ी PDF में सेव हैं। इन्हें दोबारा बनाने से %1$s तक जगह खाली होगी, और हर पन्ना व खोजने लायक टेक्स्ट बना रहेगा।</string>
+    <string name="settings_free_space_action">खाली करें</string>
+    <string name="settings_free_space_running">जगह खाली की जा रही है…</string>
+    <string name="settings_free_space_done">%1$s खाली हुई</string>
     <string name="settings_footer_privacy">पूरी तरह प्राइवेट। कोई अकाउंट नहीं, कुछ भी अपलोड नहीं।</string>
     <string name="settings_privacy_dialog_title">आपके स्कैन इसी फ़ोन पर रहते हैं</string>
     <string name="settings_privacy_dialog_account">ScanPro को किसी अकाउंट की ज़रूरत नहीं और यह किसी सर्वर पर कुछ नहीं भेजता। डॉक्यूमेंट, टेक्स्ट पहचान और PDF टूल सब डिवाइस पर ही चलते हैं।</string>
@@ -233,6 +232,16 @@
     <string name="settings_review_mode_subtitle">ज़रूरत पड़ने पर: "हो गया" सीधे सेव करता है, जब तक किसी पेज की किनारी न मिले, वह धुँधला हो, चमक हो या बहुत गहरा हो। कभी नहीं: अपने-आप क्रॉप और फ़िल्टर के साथ हमेशा तुरंत सेव</string>
     <string name="lib_share_separate">अलग-अलग PDF (%1$d)</string>
     <string name="lib_share_one_pdf">एक PDF में</string>
+    <string name="settings_search_placeholder">सेटिंग खोजें</string>
+    <string name="settings_search_clear">खोज साफ़ करें</string>
+    <string name="settings_search_no_match">“%1$s” से मेल खाती कोई सेटिंग नहीं</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF या lock जैसा शब्द आज़माएँ।</string>
+    <string name="settings_backup_last">पिछला बैकअप: %1$s</string>
+    <string name="settings_backup_never">अभी तक कोई बैकअप नहीं। फ़ोन बदलने से पहले बैकअप लें।</string>
+    <string name="settings_backup_intro_title">अपनी लाइब्रेरी का बैकअप लें</string>
+    <string name="settings_backup_intro_body">हर दस्तावेज़ आपके चुने फ़ोल्डर में अलग एन्क्रिप्टेड फ़ाइल के रूप में सेव होता है; क्लाउड ड्राइव का फ़ोल्डर भी चलेगा।\n\nअगले चरण में आप पासवर्ड सेट करेंगे। उसे वापस नहीं पाया जा सकता, इसलिए सुरक्षित रखें।</string>
+    <string name="settings_backup_choose_folder">फ़ोल्डर चुनें</string>
+    <string name="settings_backup_nothing">अभी बैकअप के लिए कोई दस्तावेज़ नहीं है।</string>
     <string name="lib_restore_aside_title">पहले वाली लाइब्रेरी वापस लाएं?</string>
     <string name="lib_restore_aside_body">ऐप का पुराना वर्ज़न इंस्टॉल होने पर आपकी लाइब्रेरी अलग रख दी गई थी। यह वर्ज़न उसे फिर पढ़ सकता है। क्या उसके दस्तावेज़ वापस लाएं? उसके बाद आपने जो स्कैन किया है, वह जैसा है वैसा ही रहेगा।</string>
     <string name="lib_restore_aside_confirm">वापस लाएं</string>
@@ -244,4 +253,25 @@
         <item quantity="one">%1$d दस्तावेज़ वापस आया</item>
         <item quantity="other">%1$d दस्तावेज़ वापस आए</item>
     </plurals>
+    <string name="home_recent_files">हाल की फ़ाइलें</string>
+    <string name="home_recent_opened">खोली गईं</string>
+    <string name="home_recent_scans">स्कैन</string>
+    <string name="settings_section_about">ScanPro के बारे में</string>
+    <string name="settings_group_more">और</string>
+    <string name="settings_about_tagline">एक दस्तावेज़ स्कैनर और PDF टूलकिट जो आपके फ़ोन पर ऑफ़लाइन काम करता है।</string>
+    <string name="settings_group_general">सामान्य</string>
+    <string name="settings_group_data">डेटा और गोपनीयता</string>
+    <string name="settings_stat_documents">दस्तावेज़</string>
+    <string name="settings_stat_storage">उपयोग किया गया स्टोरेज</string>
+    <string name="settings_stat_recycle_bin">रीसायकल बिन में</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">टैग जोड़ें</string>
+    <string name="name_pattern_example">अगला स्कैन: %1$s</string>
+    <string name="name_pattern_sample_text">इनवॉइस Acme</string>
+    <string name="name_pattern_suggestions">सुझाव</string>
+    <string name="name_pattern_tag_date">तारीख़</string>
+    <string name="name_pattern_tag_mode">स्कैन का प्रकार</string>
+    <string name="name_pattern_tag_text">पेज का टेक्स्ट</string>
+    <string name="name_pattern_tag_time">समय</string>
+    <string name="name_pattern_unknown">यह टैग नहीं है, जैसा लिखा वैसा रखा गया: %1$s</string>
 </resources>

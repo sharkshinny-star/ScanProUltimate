@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="intro_welcome_scan_title">दस्तावेज़ जल्दी स्कैन करें</string>
+    <string name="intro_welcome_scan_body">कैमरे को किसी भी पेज की ओर करें: ScanPro %1$s, उसे सीधा करता है और साफ़ करता है।</string>
+    <string name="intro_welcome_scan_keyword">किनारे ढूँढता है</string>
+    <string name="intro_welcome_files_title">फ़ाइलें आसानी से संभालें</string>
+    <string name="intro_welcome_files_body">हर स्कैन को %1$s रखें और पेज के शब्दों से उसे फिर से ढूँढें।</string>
+    <string name="intro_welcome_files_keyword">फ़ोल्डरों में व्यवस्थित</string>
+    <string name="intro_welcome_tools_title">PDF टूल, पूरी तरह निजी</string>
+    <string name="intro_welcome_tools_body">PDF जोड़ें, साइन करें, छोटा करें और सुरक्षित करें। %1$s: कोई खाता नहीं, कोई अपलोड नहीं।</string>
+    <string name="intro_welcome_tools_keyword">कुछ भी आपके फ़ोन से बाहर नहीं जाता</string>
+    <string name="intro_welcome_page">पेज %1$d / %2$d</string>
+    <string name="intro_doc_title">स्कैन कैसे करें</string>
+    <string name="intro_doc_body">अभी कोई दस्तावेज़ पास नहीं है? हमारे सैंपल दस्तावेज़ के साथ स्मार्ट स्कैनिंग आज़माएँ!</string>
+    <string name="intro_doc_tip">नहीं तो अच्छी रोशनी में पेज को सीधा रखें और कैमरा उसकी ओर करें। ScanPro किनारे अपने आप ढूँढ लेता है।</string>
+    <string name="intro_doc_try">अभी आज़माएँ</string>
+    <string name="intro_doc_sample_ready">सैंपल पेज जोड़ा गया। क्रॉप और फ़िल्टर आज़माएँ, फिर उसे सेव करें या हटा दें।</string>
+    <string name="intro_doc_sample_failed">सैंपल पेज नहीं बन सका। इसके बजाय कैमरा किसी दस्तावेज़ की ओर करें।</string>
+    <string name="intro_book_body">बुक स्कैन: खुली किताब के बाएँ और दाएँ पेज एक साथ स्कैन करें और उन्हें अपने आप दो इमेज में बाँटें।</string>
+    <string name="intro_book_order_left_first">बायाँ पेज पहले सेव होगा (A | B)। बदलने के लिए टैप करें।</string>
+    <string name="intro_book_order_right_first">दायाँ पेज पहले सेव होगा (B | A)। बदलने के लिए टैप करें।</string>
+    <string name="intro_book_two_pages">दो पेज</string>
+    <string name="intro_idcard_body">कार्ड को सादी सतह पर सीधा रखें और फ़्रेम भरें। पहले आगे का हिस्सा, फिर पीछे का स्कैन करें; ScanPro दोनों ओर एक पेज पर रखता है।</string>
+</resources>

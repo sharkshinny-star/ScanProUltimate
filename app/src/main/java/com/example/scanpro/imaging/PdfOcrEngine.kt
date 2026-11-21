@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -8,8 +9,6 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.core.graphics.createBitmap
 import com.example.scanpro.data.OcrScript
-import com.tom_roush.pdfbox.text.PDFTextStripper
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -18,6 +17,7 @@ import java.io.FileOutputStream
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
 import com.example.scanpro.R
+import com.example.scanpro.core.ui.COPY_BUFFER
 import com.example.scanpro.core.text.AppStrings
 import com.example.scanpro.core.text.userRequire
 
@@ -48,19 +48,20 @@ object PdfOcrEngine {
         ocr: OcrEngine,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfOcrOutcome = withContext(Dispatchers.IO) {
+    ): PdfOcrOutcome = withContext(BackgroundWork.tools) {
         val input = PdfToolsEngine.copyUriToTemp(context, inputUri, "ocr_in_${UUID.randomUUID()}.pdf")
         val pageImage = File(context.cacheDir, "ocr_page_${UUID.randomUUID()}.jpg")
         try {
             PdfToolsEngine.loadPdf(input).use { document ->
                 val total = document.numberOfPages
                 userRequire(total > 0, R.string.err_pdf_has_no_pages)
-                val stripper = PDFTextStripper()
+                // One pass over the text layer; a page with only a stray line over a picture (a scanning app's stamp)
+                // is read as well, the same rule the tool page counts with before it runs.
+                val chars = PageTextRules.visibleCharsPerPage(document)
+                coroutineContext.ensureActive()
                 val needsText = (0 until total).filter { index ->
-                    coroutineContext.ensureActive()
-                    stripper.startPage = index + 1
-                    stripper.endPage = index + 1
-                    runCatching { stripper.getText(document) }.getOrDefault("").isBlank()
+                    val visible = chars.getOrElse(index) { 0 }
+                    PageTextRules.needsOcr(visible, visible in 1 until PageTextRules.SPARSE_TEXT_CHARS && PageTextRules.pageHasImage(document.getPage(index)))
                 }
                 if (needsText.isEmpty()) {
                     return@withContext PdfOcrOutcome(null, total, 0, total, 0, input.length())
@@ -105,7 +106,7 @@ object PdfOcrEngine {
             try {
                 bitmap.eraseColor(Color.WHITE)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                FileOutputStream(target).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it) }
+                FileOutputStream(target).buffered(COPY_BUFFER).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it) }
             } finally {
                 bitmap.recycle()
             }

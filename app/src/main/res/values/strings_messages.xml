@@ -136,7 +136,9 @@
     <string name="msg_tools_compressing">Compressing PDF…</string>
     <string name="msg_tools_compression_failed">Compression failed</string>
     <string name="msg_tools_compressed_by">Compressed by %1$d%% (%2$s → %3$s)</string>
+    <string name="msg_tools_compress_no_gain">Already as small as it can be: no smaller version was possible (%1$s)</string>
     <string name="msg_tools_compressed_not_searchable">. Pages were converted to images, so the text is no longer selectable or searchable.</string>
+    <string name="msg_tools_compress_missed_target">. Could not reach %1$s, so this is as small as it gets. Try a larger target.</string>
     <string name="msg_tools_exporting_pages">Exporting pages…</string>
     <string name="msg_tools_export_failed">Export failed</string>
     <!-- Used by PdfToolsViewModel through bundled(); lint misses the reference. -->
@@ -165,7 +167,6 @@
     <string name="msg_tools_merge_failed">Failed to merge PDFs</string>
     <string name="msg_tools_reading_form_fields">Reading form fields…</string>
     <string name="msg_tools_read_form_failed">Could not read this PDF\'s form</string>
-    <string name="msg_tools_no_fillable_fields">This PDF has no fillable fields. Import it into your documents and use Add text to type on it.</string>
     <string name="msg_tools_filling_form">Filling form…</string>
     <string name="msg_tools_save_form_failed">Could not save the filled form</string>
     <string name="msg_tools_making_searchable">Making PDF searchable…</string>
@@ -212,4 +213,6 @@
     <string name="msg_scan_photos_unavailable">The photos from an unfinished scan are no longer available</string>
     <string name="msg_tools_out_of_memory">Not enough memory for this PDF. Try a smaller file or fewer pages.</string>
     <string name="msg_tools_form_nothing_changed">Nothing has been changed yet</string>
+    <string name="msg_tools_repairing">Repairing PDF…</string>
+    <string name="msg_tools_repair_failed">Could not repair the PDF</string>
 </resources>

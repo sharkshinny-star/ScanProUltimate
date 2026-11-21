@@ -32,4 +32,23 @@
     <string name="settings_notify_backup_body">మీరు ఒక నెలగా బ్యాకప్ చేయకపోతే</string>
     <string name="settings_notifications_system_title">సిస్టమ్ నోటిఫికేషన్ సెట్టింగ్‌లు</string>
     <string name="settings_notifications_system_body">ఒక్కో రకం నోటీసుకు సౌండ్‌లు, లాక్ స్క్రీన్ మరియు మరిన్ని</string>
+    <string name="settings_notify_water_title">నీళ్లు తాగే రిమైండర్లు</string>
+    <string name="settings_notify_water_body">ఒక గ్లాసు నీళ్లు తాగమని రోజంతా మృదువైన గుర్తు</string>
+    <string name="notify_channel_water">నీళ్లు తాగండి</string>
+    <string name="notify_channel_water_description">మీరు ఆన్ లో ఉంచితే, రోజంతా నీళ్లు తాగే రిమైండర్</string>
+    <string name="notify_water_title">ఒక గ్లాసు నీళ్ల సమయం</string>
+    <string name="notify_water_body_morning">ఇప్పుడు ఒక గుక్క ఉదయాన్ని చురుగ్గా ఉంచుతుంది. 💧</string>
+    <string name="notify_water_body_midday">మధ్యాహ్నం అయింది — విరామంతో పాటు ఒక గ్లాసు నీళ్లు తాగండి.</string>
+    <string name="notify_water_body_later">సమయం గడుస్తోంది — ఇప్పుడు ఒక గ్లాసు నీళ్లు మిమ్మల్ని తాజాగా ఉంచుతాయి.</string>
+    <string name="notify_water_body_last">ఈ రోజు చివరి గుర్తు: మరో గ్లాసు మిమ్మల్ని ఉత్సాహంగా ఉంచుతుంది.</string>
+    <string name="notify_water_drank">తాగాను</string>
+    <string name="notify_water_skip">దాటవేయి</string>
+    <string name="settings_group_water_times">నీళ్ల రిమైండర్ సమయాలు</string>
+    <string name="settings_notify_water_first_title">మొదటి రిమైండర్</string>
+    <string name="settings_notify_water_last_title">దీని తర్వాత రిమైండర్లు వద్దు</string>
+    <string name="settings_notify_water_every_title">రిమైండర్ల మధ్య వ్యవధి</string>
+    <plurals name="settings_notify_water_every_value">
+        <item quantity="one">%d గంట</item>
+        <item quantity="other">%d గంటలు</item>
+    </plurals>
 </resources>

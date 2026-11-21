@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scan_guidance_align_page">Straighten the page in the frame</string>
+    <string name="scan_check_sharp">Sharp</string>
+    <string name="scan_check_blur">Blurry</string>
+    <string name="scan_check_clear">No glare</string>
+    <string name="scan_check_glare">Glare</string>
+    <string name="scan_check_level">Aligned</string>
+    <string name="scan_check_tilt">Tilted</string>
+    <string name="scan_check_summary">Image quality: %1$s, %2$s, %3$s</string>
+</resources>

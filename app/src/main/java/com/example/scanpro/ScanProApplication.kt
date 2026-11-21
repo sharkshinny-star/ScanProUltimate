@@ -25,6 +25,7 @@ class ScanProApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var notifications: AppNotifications
+    @Inject lateinit var hydrationReminders: com.example.scanpro.work.HydrationReminders
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -40,6 +41,7 @@ class ScanProApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        com.example.scanpro.core.text.AppLocale.warmUp(this)
         // Before anything can throw a user-facing error: engines without a Context read their messages through it.
         AppStrings.init(this)
         if (BuildConfig.DEBUG) enableStrictMode()
@@ -55,6 +57,8 @@ class ScanProApplication : Application(), Configuration.Provider {
             runCatching { CacheCleaner.purge(this) }
             // Channels exist from the start, so Android's notification settings list them before the first notice.
             runCatching { notifications.ensureChannels() }
+            // The drink-water queue: kept while the reminders are on, emptied while they are off.
+            runCatching { kotlinx.coroutines.runBlocking { hydrationReminders.sync() } }
         }.apply { priority = Thread.MIN_PRIORITY }.start()
     }
 

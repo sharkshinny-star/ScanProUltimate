@@ -7,6 +7,7 @@
     <string name="greeting_morning">శుభోదయం</string>
     <string name="greeting_afternoon">శుభ మధ్యాహ్నం</string>
     <string name="greeting_evening">శుభ సాయంత్రం</string>
+    <string name="greeting_night">శుభ రాత్రి</string>
     <string name="lib_title_files">నా ఫైల్స్</string>
     <string name="lib_cd_clear_selection">ఎంపిక తీసేయండి</string>
     <string name="lib_cd_share_selected">ఎంచుకున్నవి షేర్ చేయండి</string>
@@ -206,13 +207,11 @@
     <string name="settings_report_issue_subtitle">యాప్ లాగ్‌లు, డివైజ్ వివరాలు మీ కోసం నింపబడతాయి</string>
     <string name="settings_share_subtitle">Play Store లింక్‌ను స్నేహితుడికి పంపండి</string>
     <string name="settings_library_title">మీ లైబ్రరీ</string>
-    <string name="settings_library_subtitle">ఈ డివైజ్‌లో మాత్రమే స్టోర్ అవుతుంది</string>
-    <plurals name="settings_stat_documents">
-        <item quantity="one">డాక్యుమెంట్</item>
-        <item quantity="other">డాక్యుమెంట్‌లు</item>
-    </plurals>
-    <string name="settings_stat_in_recycle_bin">రీసైకిల్ బిన్‌లో</string>
-    <string name="settings_stat_used">ఉపయోగించారు</string>
+    <string name="settings_free_space_title">స్థలం ఖాళీ చేయండి</string>
+    <string name="settings_free_space_subtitle">పాత స్కాన్‌లు అవసరమైనదానికంటే పెద్ద PDFలలో సేవ్ అయ్యాయి. వాటిని తిరిగి తయారు చేస్తే %1$s వరకు స్థలం ఖాళీ అవుతుంది, ప్రతి పేజీ మరియు శోధించగల టెక్స్ట్ అలాగే ఉంటాయి.</string>
+    <string name="settings_free_space_action">ఖాళీ చేయండి</string>
+    <string name="settings_free_space_running">స్థలం ఖాళీ చేస్తోంది…</string>
+    <string name="settings_free_space_done">%1$s ఖాళీ అయింది</string>
     <string name="settings_footer_privacy">పూర్తిగా ప్రైవేట్. అకౌంట్ లేదు, ఏదీ అప్‌లోడ్ కాదు.</string>
     <string name="settings_privacy_dialog_title">మీ స్కాన్‌లు ఈ ఫోన్‌లోనే ఉంటాయి</string>
     <string name="settings_privacy_dialog_account">ScanProకి అకౌంట్ అవసరం లేదు, సర్వర్‌కి ఏదీ పంపదు. డాక్యుమెంట్‌లు, టెక్స్ట్ గుర్తింపు, PDF టూల్స్ అన్నీ డివైజ్‌లోనే పనిచేస్తాయి.</string>
@@ -233,6 +232,16 @@
     <string name="settings_review_mode_subtitle">అవసరమైతే: పేజీ అంచు దొరకకపోతే, మసకగా, మెరుపుతో లేదా చాలా చీకటిగా ఉంటే తప్ప "పూర్తయింది" వెంటనే సేవ్ చేస్తుంది. ఎప్పుడూ కాదు: ఆటోమేటిక్ క్రాప్, ఫిల్టర్‌తో ఎల్లప్పుడూ వెంటనే సేవ్</string>
     <string name="lib_share_separate">వేర్వేరు PDFలు (%1$d)</string>
     <string name="lib_share_one_pdf">ఒకే PDF</string>
+    <string name="settings_search_placeholder">సెట్టింగ్‌లను వెతకండి</string>
+    <string name="settings_search_clear">శోధనను క్లియర్ చేయండి</string>
+    <string name="settings_search_no_match">“%1$s”కి సరిపోయే సెట్టింగ్ లేదు</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF లేదా lock లాంటి పదాన్ని ప్రయత్నించండి.</string>
+    <string name="settings_backup_last">చివరి బ్యాకప్: %1$s</string>
+    <string name="settings_backup_never">ఇంకా బ్యాకప్ లేదు. ఫోన్ మార్చే ముందు బ్యాకప్ తీసుకోండి.</string>
+    <string name="settings_backup_intro_title">మీ లైబ్రరీని బ్యాకప్ చేయండి</string>
+    <string name="settings_backup_intro_body">ప్రతి డాక్యుమెంట్ మీరు ఎంచుకున్న ఫోల్డర్‌లో ప్రత్యేక ఎన్‌క్రిప్టెడ్ ఫైల్‌గా సేవ్ అవుతుంది; క్లౌడ్ డ్రైవ్ ఫోల్డర్ కూడా పనిచేస్తుంది.\n\nతదుపరి దశలో పాస్‌వర్డ్ సెట్ చేస్తారు. దాన్ని తిరిగి పొందలేము, కాబట్టి భద్రంగా ఉంచండి.</string>
+    <string name="settings_backup_choose_folder">ఫోల్డర్ ఎంచుకోండి</string>
+    <string name="settings_backup_nothing">ఇంకా బ్యాకప్ చేయడానికి డాక్యుమెంట్లు లేవు.</string>
     <string name="lib_restore_aside_title">మునుపటి లైబ్రరీని పునరుద్ధరించాలా?</string>
     <string name="lib_restore_aside_body">యాప్ పాత వెర్షన్ ఇన్‌స్టాల్ అయినప్పుడు మీ లైబ్రరీని పక్కన పెట్టారు. ఈ వెర్షన్ దాన్ని మళ్లీ చదవగలదు. అందులోని పత్రాలను పునరుద్ధరించాలా? ఆ తర్వాత మీరు స్కాన్ చేసినవి అలాగే ఉంటాయి.</string>
     <string name="lib_restore_aside_confirm">పునరుద్ధరించు</string>
@@ -244,4 +253,25 @@
         <item quantity="one">%1$d పత్రం పునరుద్ధరించబడింది</item>
         <item quantity="other">%1$d పత్రాలు పునరుద్ధరించబడ్డాయి</item>
     </plurals>
+    <string name="home_recent_files">ఇటీవలి ఫైల్‌లు</string>
+    <string name="home_recent_opened">తెరిచినవి</string>
+    <string name="home_recent_scans">స్కాన్‌లు</string>
+    <string name="settings_section_about">ScanPro గురించి</string>
+    <string name="settings_group_more">మరిన్ని</string>
+    <string name="settings_about_tagline">మీ ఫోన్‌లో ఆఫ్‌లైన్‌లో పనిచేసే డాక్యుమెంట్ స్కానర్ మరియు PDF టూల్‌కిట్.</string>
+    <string name="settings_group_general">సాధారణం</string>
+    <string name="settings_group_data">డేటా మరియు గోప్యత</string>
+    <string name="settings_stat_documents">డాక్యుమెంట్‌లు</string>
+    <string name="settings_stat_storage">వాడిన స్టోరేజ్</string>
+    <string name="settings_stat_recycle_bin">రీసైకిల్ బిన్‌లో</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">ట్యాగ్ జోడించండి</string>
+    <string name="name_pattern_example">తదుపరి స్కాన్: %1$s</string>
+    <string name="name_pattern_sample_text">Invoice Acme</string>
+    <string name="name_pattern_suggestions">సూచనలు</string>
+    <string name="name_pattern_tag_date">తేదీ</string>
+    <string name="name_pattern_tag_mode">స్కాన్ రకం</string>
+    <string name="name_pattern_tag_text">పేజీ టెక్స్ట్</string>
+    <string name="name_pattern_tag_time">సమయం</string>
+    <string name="name_pattern_unknown">ట్యాగ్ కాదు, టైప్ చేసినట్లే ఉంచింది: %1$s</string>
 </resources>

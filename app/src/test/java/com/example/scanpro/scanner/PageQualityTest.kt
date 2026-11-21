@@ -4,6 +4,7 @@ import com.example.scanpro.data.CropQuad
 import com.example.scanpro.imaging.NativeOpenCv
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,6 +38,22 @@ class PageQualityTest {
         val share = PageQuality.glareShare(m, whole)
         assertTrue("share $share", PageQuality.isGlare(share))
         m.release()
+    }
+
+    @Test
+    fun brightDeskOutsideTheDetectedPageDoesNotCountAsGlare() {
+        // A skewed, medium-grey page on a pure white table; the bounding rectangle includes table pixels.
+        val m = Mat(800, 800, CvType.CV_8UC1, Scalar(255.0))
+        val polygon = listOf(Point(180.0, 80.0), Point(700.0, 180.0), Point(620.0, 710.0), Point(100.0, 610.0))
+        val outline = org.opencv.core.MatOfPoint(*polygon.toTypedArray())
+        try {
+            Imgproc.fillConvexPoly(m, outline, Scalar(205.0))
+            val share = PageQuality.glareShare(m, Rect(100, 80, 601, 631), polygon)
+            assertEquals("Bright table is not glare on the page", 0.0, share, 1e-9)
+        } finally {
+            outline.release()
+            m.release()
+        }
     }
 
     @Test
@@ -83,6 +100,37 @@ class PageQualityTest {
     fun withoutAPageOnlyDarknessIsJudged() {
         // Sharpness and glare over the whole frame would be about the table, not the page.
         assertEquals(setOf(PageIssue.DARK), PageQuality.issues(detection(null, blur = 10.0, brightness = 20.0, glare = 0.05)))
+    }
+
+    @Test
+    fun repeatedPageAndEmptyFramesStayStable() {
+        // The page path measures sharpness on the page; the empty path falls back to the whole frame. Both run
+        // repeatedly, as the live analyser does, and every per-frame Mat is released in the detector's finally.
+        val frame = Mat(1200, 900, CvType.CV_8UC1, Scalar(45.0))
+        val sheet = page()
+        val pageRegion = frame.submat(Rect(150, 200, 600, 800))
+        try {
+            sheet.copyTo(pageRegion)
+        } finally {
+            pageRegion.release()
+        }
+        val emptyFrame = Mat(1200, 900, CvType.CV_8UC1, Scalar(45.0))
+        try {
+            repeat(8) {
+                val result = DocumentEdgeDetector.detect(frame)
+                assertNotNull("page found on pass $it", result.quad)
+                assertTrue("finite page sharpness on pass $it", result.blurScore.isFinite())
+            }
+            repeat(8) {
+                val result = DocumentEdgeDetector.detect(emptyFrame)
+                assertTrue("empty frame is not capture-ready on pass $it", result.guidance != Guidance.READY)
+                assertTrue("finite whole-frame sharpness on pass $it", result.blurScore.isFinite())
+            }
+        } finally {
+            frame.release()
+            sheet.release()
+            emptyFrame.release()
+        }
     }
 
     @Test

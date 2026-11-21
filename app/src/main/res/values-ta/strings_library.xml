@@ -7,6 +7,7 @@
     <string name="greeting_morning">காலை வணக்கம்</string>
     <string name="greeting_afternoon">மதிய வணக்கம்</string>
     <string name="greeting_evening">மாலை வணக்கம்</string>
+    <string name="greeting_night">இனிய இரவு</string>
     <string name="lib_title_files">என் ஃபைல்கள்</string>
     <string name="lib_cd_clear_selection">தேர்வை அழி</string>
     <string name="lib_cd_share_selected">தேர்ந்தெடுத்தவற்றைப் பகிர்</string>
@@ -206,13 +207,11 @@
     <string name="settings_report_issue_subtitle">ஆப் பதிவுகள் மற்றும் சாதன விவரங்கள் தானாக நிரப்பப்படும்</string>
     <string name="settings_share_subtitle">Play Store லிங்கை நண்பருக்கு அனுப்புங்கள்</string>
     <string name="settings_library_title">உங்கள் லைப்ரரி</string>
-    <string name="settings_library_subtitle">இந்தச் சாதனத்தில் மட்டுமே சேமிக்கப்படுகிறது</string>
-    <plurals name="settings_stat_documents">
-        <item quantity="one">ஆவணம்</item>
-        <item quantity="other">ஆவணங்கள்</item>
-    </plurals>
-    <string name="settings_stat_in_recycle_bin">குப்பைத் தொட்டியில்</string>
-    <string name="settings_stat_used">பயன்படுத்தப்பட்டது</string>
+    <string name="settings_free_space_title">இடத்தை விடுவிக்கவும்</string>
+    <string name="settings_free_space_subtitle">பழைய ஸ்கேன்கள் தேவைக்கு அதிகமான பெரிய PDF-களில் சேமிக்கப்பட்டுள்ளன. அவற்றை மீண்டும் உருவாக்கினால் %1$s வரை இடம் விடுவிக்கப்படும்; ஒவ்வொரு பக்கமும் தேடக்கூடிய உரையும் அப்படியே இருக்கும்.</string>
+    <string name="settings_free_space_action">விடுவி</string>
+    <string name="settings_free_space_running">இடம் விடுவிக்கப்படுகிறது…</string>
+    <string name="settings_free_space_done">%1$s விடுவிக்கப்பட்டது</string>
     <string name="settings_footer_privacy">முழுமையான தனியுரிமை. அக்கவுண்ட் இல்லை, எதுவும் அப்லோடு ஆகாது.</string>
     <string name="settings_privacy_dialog_title">உங்கள் ஸ்கேன்கள் இந்த ஃபோனிலேயே இருக்கும்</string>
     <string name="settings_privacy_dialog_account">ScanPro-க்கு அக்கவுண்ட் தேவையில்லை, எந்த சர்வருக்கும் எதையும் அனுப்பாது. ஆவணங்கள், உரை அறிதல், PDF கருவிகள் அனைத்தும் சாதனத்திலேயே இயங்கும்.</string>
@@ -233,6 +232,16 @@
     <string name="settings_review_mode_subtitle">தேவைப்பட்டால்: ஒரு பக்கத்தின் விளிம்பு கிடைக்காவிட்டால், மங்கலாக, பளபளப்பாக அல்லது மிகவும் இருளாக இருந்தால் தவிர "முடிந்தது" உடனே சேமிக்கும். ஒருபோதும் இல்லை: தானியங்கி வெட்டு மற்றும் வடிகட்டியுடன் எப்போதும் உடனே சேமிக்கும்</string>
     <string name="lib_share_separate">தனித்தனி PDF-கள் (%1$d)</string>
     <string name="lib_share_one_pdf">ஒரே PDF</string>
+    <string name="settings_search_placeholder">அமைப்புகளைத் தேடு</string>
+    <string name="settings_search_clear">தேடலை அழி</string>
+    <string name="settings_search_no_match">“%1$s” உடன் பொருந்தும் அமைப்பு இல்லை</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF அல்லது lock போன்ற சொல்லை முயலவும்.</string>
+    <string name="settings_backup_last">கடைசி காப்புப்பிரதி: %1$s</string>
+    <string name="settings_backup_never">இன்னும் காப்புப்பிரதி இல்லை. போன் மாற்றும் முன் காப்புப்பிரதி எடுங்கள்.</string>
+    <string name="settings_backup_intro_title">உங்கள் நூலகத்தைக் காப்புப்பிரதி எடுங்கள்</string>
+    <string name="settings_backup_intro_body">ஒவ்வொரு ஆவணமும் நீங்கள் தேர்ந்த கோப்புறையில் தனி மறைகுறியாக்கப்பட்ட கோப்பாகச் சேமிக்கப்படும்; கிளவுட் டிரைவ் கோப்புறையும் பயன்படுத்தலாம்.\n\nஅடுத்த படியில் கடவுச்சொல் அமைப்பீர்கள். அதை மீட்க முடியாது, எனவே பாதுகாப்பாக வைத்திருங்கள்.</string>
+    <string name="settings_backup_choose_folder">கோப்புறையைத் தேர்ந்தெடு</string>
+    <string name="settings_backup_nothing">காப்புப்பிரதி எடுக்க இன்னும் ஆவணங்கள் இல்லை.</string>
     <string name="lib_restore_aside_title">முந்தைய நூலகத்தை மீட்டெடுக்கவா?</string>
     <string name="lib_restore_aside_body">ஆப்பின் பழைய பதிப்பு நிறுவப்பட்டபோது உங்கள் நூலகம் ஒதுக்கி வைக்கப்பட்டது. இந்தப் பதிப்பு அதை மீண்டும் படிக்க முடியும். அதிலுள்ள ஆவணங்களை மீட்டெடுக்கவா? அதன் பிறகு நீங்கள் ஸ்கேன் செய்தவை அப்படியே இருக்கும்.</string>
     <string name="lib_restore_aside_confirm">மீட்டெடுக்கவும்</string>
@@ -244,4 +253,25 @@
         <item quantity="one">%1$d ஆவணம் மீட்டெடுக்கப்பட்டது</item>
         <item quantity="other">%1$d ஆவணங்கள் மீட்டெடுக்கப்பட்டன</item>
     </plurals>
+    <string name="home_recent_files">சமீபத்திய கோப்புகள்</string>
+    <string name="home_recent_opened">திறந்தவை</string>
+    <string name="home_recent_scans">ஸ்கேன்கள்</string>
+    <string name="settings_section_about">ScanPro பற்றி</string>
+    <string name="settings_group_more">மேலும்</string>
+    <string name="settings_about_tagline">உங்கள் ஃபோனில் ஆஃப்லைனில் இயங்கும் ஆவண ஸ்கேனர் மற்றும் PDF கருவித்தொகுப்பு.</string>
+    <string name="settings_group_general">பொது</string>
+    <string name="settings_group_data">தரவு மற்றும் தனியுரிமை</string>
+    <string name="settings_stat_documents">ஆவணங்கள்</string>
+    <string name="settings_stat_storage">பயன்படுத்திய சேமிப்பகம்</string>
+    <string name="settings_stat_recycle_bin">மறுசுழற்சி தொட்டியில்</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">டேக் சேர்</string>
+    <string name="name_pattern_example">அடுத்த ஸ்கேன்: %1$s</string>
+    <string name="name_pattern_sample_text">இன்வாய்ஸ் Acme</string>
+    <string name="name_pattern_suggestions">பரிந்துரைகள்</string>
+    <string name="name_pattern_tag_date">தேதி</string>
+    <string name="name_pattern_tag_mode">ஸ்கேன் வகை</string>
+    <string name="name_pattern_tag_text">பக்க உரை</string>
+    <string name="name_pattern_tag_time">நேரம்</string>
+    <string name="name_pattern_unknown">டேக் அல்ல, தட்டச்சு செய்தபடியே வைக்கப்பட்டது: %1$s</string>
 </resources>

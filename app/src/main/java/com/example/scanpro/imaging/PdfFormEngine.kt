@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.net.Uri
 import com.tom_roush.pdfbox.cos.COSName
@@ -10,12 +11,12 @@ import com.tom_roush.pdfbox.pdmodel.interactive.form.PDField
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDListBox
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDRadioButton
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDTextField
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 import com.example.scanpro.R
 import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.text.AppStrings
 
 enum class FormFieldKind { TEXT, CHECKBOX, RADIO, CHOICE, MULTI_CHOICE }
 
@@ -90,12 +91,14 @@ object FormFieldRules {
 object PdfFormEngine {
 
     /** Every fillable field, in the form's order. An empty list means the PDF has nothing to fill. */
-    suspend fun readFields(context: Context, inputUri: Uri): List<FormField> = withContext(Dispatchers.IO) {
+    suspend fun readFields(context: Context, inputUri: Uri): List<FormField> = withContext(BackgroundWork.tools) {
         val input = PdfToolsEngine.copyUriToTemp(context, inputUri, "form_read_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(input).use { document ->
                 val form = document.documentCatalog.acroForm ?: return@use emptyList()
-                val fields = form.fieldTree.mapNotNull(::toModel)
+                // A malformed form can list two fields under one name; the screen keys its rows by name, so a second
+                // row of the same name would crash it, and a value saved by name lands in the first one anyway.
+                val fields = form.fieldTree.mapNotNull(::toModel).distinctBy { it.name }
                 if (fields.isEmpty() && form.xfa != null) {
                     userError(R.string.err_form_xfa_unsupported)
                 }
@@ -113,17 +116,22 @@ object PdfFormEngine {
         values: Map<String, String>,
         flatten: Boolean,
         outputFile: File
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val input = PdfToolsEngine.copyUriToTemp(context, inputUri, "form_fill_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(input).use { document ->
                 val form = document.documentCatalog.acroForm ?: userError(R.string.err_form_no_fields)
                 var needAppearances = false
+                var written = 0
                 values.forEach { (name, value) ->
                     val field = form.getField(name) ?: return@forEach
                     if (field.isReadOnly) return@forEach
                     if (!write(field, value)) needAppearances = true
+                    written++
                 }
+                // A value the form's font cannot draw (Hindi typed into a Helvetica field) is kept for the viewer to
+                // draw; flattening would bake in the old, empty look and lose it, so that is refused with the reason.
+                if (flatten && needAppearances) userError(R.string.tools_form_err_flatten_font)
                 if (flatten) {
                     // Flattening draws each field's appearance into the page, so every appearance must be current.
                     runCatching { form.refreshAppearances() }
@@ -144,9 +152,9 @@ object PdfFormEngine {
                     originalSizeBytes = input.length(),
                     outputSizeBytes = outputFile.length(),
                     message = when {
-                        values.isEmpty() -> "Form saved (no changes)"
-                        flatten -> "Filled ${values.size} ${if (values.size == 1) "field" else "fields"} and flattened the form"
-                        else -> "Filled ${values.size} ${if (values.size == 1) "field" else "fields"}"
+                        written == 0 && !flatten -> AppStrings.get(R.string.tools_form_saved_no_changes)
+                        flatten -> AppStrings.plural(R.plurals.tools_form_filled_flattened, written, written)
+                        else -> AppStrings.plural(R.plurals.tools_form_filled, written, written)
                     }
                 )
             }
@@ -167,11 +175,16 @@ object PdfFormEngine {
             )
             is PDCheckBox -> FormField(name, label, FormFieldKind.CHECKBOX, if (field.isChecked) FormFieldRules.CHECKED else "", readOnly = readOnly, required = required)
             is PDRadioButton -> {
-                // Forms often store "Choice1" as the state and keep the readable text as the export value.
-                val states = field.onValues.sorted()
+                // With an /Opt array PDFBox already returns the readable export values here, in the form's own order;
+                // otherwise the widgets' state names. Never sort them: the order is the form's, and a label must stay
+                // with its own value (sorting once paired "Yes" with "No", so the other option was saved).
+                val states = field.onValues.toList()
                 val exports = runCatching { field.exportValues }.getOrDefault(emptyList())
-                val options = states.mapIndexed { i, state -> FormOption(state, exports.getOrNull(i)?.takeIf { it.isNotBlank() && it != state } ?: state.replace('_', ' ')) }
-                FormField(name, label, FormFieldKind.RADIO, field.value.takeIf { it != "Off" }.orEmpty(), options, readOnly, required = required)
+                val options = states.map { state -> FormOption(state, state.replace('_', ' ')) }
+                // With /Opt the stored state can be the option's index ("0", "1") rather than its export value.
+                val raw = field.value.takeIf { it != "Off" }.orEmpty()
+                val current = if (raw in states) raw else raw.toIntOrNull()?.let(exports::getOrNull)?.takeIf { it in states } ?: raw
+                FormField(name, label, FormFieldKind.RADIO, current, options, readOnly, required = required)
             }
             is PDChoice -> {
                 val exports = field.optionsExportValues
@@ -222,7 +235,19 @@ object PdfFormEngine {
         set()
         true
     } catch (error: java.io.IOException) {
-        if (field is PDTextField) field.cosObject.setString(COSName.V, value)
+        keepValue(field, value)
         false
+    } catch (error: IllegalArgumentException) {
+        // PDFBox reports a letter the field's font has no glyph for ("No glyph for U+0915") this way, not as an
+        // IOException: the whole save used to fail for text in Hindi, Kannada, Malayalam, Tamil or Telugu (F211).
+        keepValue(field, value)
+        false
+    }
+
+    private fun keepValue(field: PDField, value: String) {
+        when (field) {
+            is PDTextField -> field.cosObject.setString(COSName.V, value)
+            is PDComboBox -> if (value.isNotEmpty()) field.cosObject.setString(COSName.V, value)
+        }
     }
 }

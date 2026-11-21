@@ -24,7 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -145,7 +145,7 @@ fun PenDialog(
                 ) {
                     val image = bitmap
                     if (image == null) {
-                        CircularProgressIndicator()
+                        FileLoadingAnimation()
                     } else {
                         Canvas(
                             Modifier

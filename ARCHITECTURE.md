@@ -31,7 +31,7 @@ The app follows the layered, package-by-feature structure recommended in Android
   share effects).
 - **ViewModels**: `AppViewModel` (activity: theme, lock, imports, app-wide events), `LibraryViewModel`,
   `DocumentViewModel` (document id from `SavedStateHandle`), `TrashViewModel`, `SettingsViewModel`.
-- **`core/`**: `designsystem` (theme, shared components), `ui` (share/format helpers), `operations`
+- **`core/`**: `designsystem` (theme, shared components; `ToolDemos*.kt` the tool demonstrations (`ToolDemo`, `DemoScene`, `toolDemoScene(id)`), `PressTilt.kt` the 3D press response for cards; `DragHintAnimation.kt` is the press-and-hold reorder demonstration (`DragToReorderHint`, shown by `ReorderHintBanner` in tools); `InkColourPicker.kt` is the shared ink swatch row and hexagon colour picker (`InkColourRow`); `LoadingAnimations.kt` holds the only loading/processing indicators to use: `FileLoadingAnimation`, `ProcessingAnimation`, `LoadingShimmer`, `ScanBeamProgressBar`, `ProcessingDots`, Canvas-drawn, no animation library), `ui` (share/format helpers), `operations`
   (`OperationRunner` runs one long document job at a time on an application-scoped coroutine, so jobs
   survive leaving the screen, and publishes progress, messages and exports), `di` (Hilt modules).
 - **Data layer (`data/`)**: `DocumentLibrary` exposes the active, trash and storage flows every screen
@@ -50,7 +50,9 @@ The primary scanner is `scanner/CameraScannerScreen.kt`.
 1. CameraX binds `Preview`, `ImageCapture`, and `ImageAnalysis` to the lifecycle.
 2. Analyser receives YUV frames and extracts the Y plane into a greyscale OpenCV `Mat`.
 3. Frames are rotated into display orientation.
-4. `DocumentEdgeDetector` bounds analysis to a long side of roughly 900 px.
+4. `DocumentEdgeDetector` bounds analysis to a long side of roughly 900 px (bilinear down to half size, area averaging below; F161).
+   `Steadiness` (in `OpenCvDocumentAnalyzer.kt`) decides when a page has held still: 350 ms and at least 4 frames, not a frame count.
+   `PageInspector` gives each captured photo one decode and one detection, shared by the crop outline and the quality notes.
 5. Gaussian smoothing + adaptive Canny + morphology produce edge candidates.
 6. Contours are approximated to convex quadrilaterals.
 7. Candidates are scored by area, rectangularity, and opposite-edge balance.
@@ -226,12 +228,35 @@ A biometric UI gate should not be marketed as full at-rest encryption of every l
 
 ## 12. Notifications
 
+- Cancel from the notification (F215): `OperationForegroundService`'s notification carries a Cancel action; the service calls `cancelHandler`, which `OperationRunner` sets to `cancelAll()` (the queued operation's job and the jobs registered by `keepAlive`). `core/security/ShortcutToken` is the per-install secret the launcher shortcuts carry; `MainActivity` requires it for the two support actions only.
+
 `core/notifications/AppNotifications` (Hilt singleton) posts local notices only: finished/failed task while the app is out of
 sight (`appVisible` is set by `MainActivity.onStart/onStop`), and optional reminders. Channels `results`, `failures`,
 `reminders`; one fixed id per kind. Preferences in `SettingsStore` (`notify_finished`, `notify_failures` default on;
 `notify_trash`, `notify_backup` default off). Taps use explicit immutable PendingIntents with `MainActivity.ACTION_OPEN_*`,
 routed by `AppViewModel.destinationRequest` below the app-lock gate. No document names; neutral text when app lock is on.
 Runtime permissions (camera, notifications on 13+) are asked once after the welcome on first launch (`StartupPermissions` in `ui/WelcomeScreen.kt`), then again in context if refused.
+
+**Drink-water reminders (F157, timings F232).** `core/notifications/HydrationSchedule` (pure, tested) places the
+notices from the user's `Timing`: the first reminder of the day, the time after which there are none, and the gap
+between them (default 09:00, 18:00 and three hours: 09:00, 12:00, 15:00, 18:00 local time; values are clamped, the gap
+to at least an hour). `work/HydrationReminders` (Hilt singleton) keeps exactly one delayed `HydrationWorker` in a unique
+WorkManager queue: each run shows the notice (skipped when more than 45 min late, or when its time is no longer one of
+the day's reminders) and queues the next with `APPEND_OR_REPLACE`, so no exact-alarm or boot permission is needed and
+the queue survives restarts (`ScanProApplication` re-syncs it at start). Channel `drink_water`; the notice carries "I
+drank" and "Skip" (`HydrationActionReceiver`, not exported), which both only put it away: nothing about the answer is
+stored, so the app keeps no record of drinking (a plain reminder, not a tracker, for Play's Health apps declaration;
+see `PLAY_STORE_CHECKLIST.md` section 3). It times itself out after an hour. Preferences `notify_drink_water`
+(`SettingsStore.hydrationReminders`, default on) and `drink_water_first_minute` / `drink_water_last_minute` /
+`drink_water_every_minutes` (`SettingsStore.hydrationTiming`); the switch and the three timing rows sit in Settings >
+Notifications and go through `HydrationReminders.setEnabled` / `setTiming`, which restart the queue.
+
+**Default PDF app (F157).** Android has no role an app can request for PDFs, so `core/ui/DefaultPdfApp` resolves who
+handles `ACTION_VIEW application/pdf` (`OURS` / `UNSET` / `OTHER`), and `ask()` opens ScanPro's own one-page sample PDF so
+the system's "Open with" sheet does the asking; for `OTHER` the other app's settings page (the only place its default can
+be cleared) is opened. Entry points: a one-time card at the top of Tools (`FirstRunHints` key `default_pdf_ask`, hidden
+when already the default) and a Settings > Feedback & support row that shows the current holder. When the sample PDF
+comes back through the sheet, `MainActivity` recognises it (`isProbe`) and shows a confirmation instead of importing it.
 
 ## 12b. Colour themes, Home tips, What's new
 
@@ -248,6 +273,16 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   straight to its feature; closing it hides tips for good, Settings > Appearance brings them back (`home_tips`).
 - **What's new.** `ui/WhatsNewSheet.kt`, shown once to people updating past `WHATS_NEW_VERSION` (`SettingsStore`), never with
   the welcome or the rating sheet; finishing the welcome marks it seen.
+- **First-time introductions (F146).** `data/FirstRunHints.kt` records which one-time introductions were seen
+  (SharedPreferences `first_run_hints`, read synchronously so a dialog is decided in the same frame as its screen). It is
+  armed by `AppViewModel.markWelcomeSeen`, so people updating from an older version are not toured again, and re-armed by
+  Settings > Support > Show introductions again, which also clears the camera explainers' "Don't remind me" keys
+  (`resetScanIntros`). Every introduction uses `core/designsystem/IllustratedDialog.kt` (`IllustratedDialogFrame`,
+  `IllustrationPanel`, `IllustratedDialog`, `HintSteps`) and the animated Compose pictures in `HintIllustrations.kt`
+  (document scan, ID card turning over, book split at the spine, tool flow, files arriving, tools grid). Animated values
+  are read in the draw phase, and the pictures hold still when animations are off. They are used by the camera's
+  `ScanIntroDialog`, by `feature/tools/ToolIntroDialog.kt` before a tool's picker (`toolIntro(id)` gives each tile's
+  description and input; `FirstRunHintsTest` fails if a tile has none), and by `ui/HomeTour.kt` on Home after the welcome.
 - **Launch animation.** Designed and assessed in Figma (https://www.figma.com/design/wlMBDKuD8B4ojE2RjQZWYi: frame
   `2:2` holds the keyframes, `6:2` the spec) and drawn by `ui/LaunchIntro.kt` from the same keyframe table: the icon is
   pressed, the scan line writes the page, the brackets lock on, an indigo-azure-teal flood fills the screen, "ScanPro"
@@ -324,6 +359,18 @@ All dependency coordinates live in `gradle/libs.versions.toml` (F71, 2026-11-08)
 Main libraries: Jetpack Compose (BOM 2026.09.00) + Material3, Navigation Compose 2.10.2, Hilt 2.60.1, Room 2.8.5 (FTS4,
 schema v3, schemas in `app/schemas`), DataStore 1.3.0, WorkManager 2.12.0, CameraX, ML Kit (text recognition 19.0.2 / scripts 16.0.2, barcode,
 document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCastle forced to 1.86, coroutines 1.11.0.
+File info and metadata (F243, 2026-11-19, owner's choice "read and write"): metadata-extractor 2.22.0 (Apache 2.0, pulls
+Adobe xmpcore 6.1.11, BSD) reads every tag of pictures, camera RAW and video; jaudiotagger 3.0.1 (LGPL 2.1) reads and
+writes audio tags on Android 8+ only (it uses `java.nio.file`). Kept whole by R8 (`proguard-rules.pro`), about 1-2 MB.
+
+**File info and metadata (`imaging/metadata/`, F243).** `FileFormat` tells a file's kind from its signature bytes (then
+name and type; 100+ extensions); `FileMetadataEngine` reads (PDFBox, ExifInterface, metadata-extractor,
+MediaMetadataRetriever and MediaExtractor, jaudiotagger, `OfficeMetadata` for DOCX/XLSX/PPTX, ODF, EPUB and ZIP) and
+writes a copy (never the original): PDF info, EXIF of JPEG/PNG/WebP, Office core/app properties (only the property parts
+are rewritten, every other zip entry copied as is), audio tags. `MetadataStrip` removes metadata from JPEG, PNG and WebP
+without decoding the picture (keeps ICC, Adobe and PNG colour chunks; orientation written back). `MetadataExport` writes
+JSON and CSV (CSV cells guarded against formulas). Pure parts (`FileFormat`, `MetadataModel`, `MetadataStrip`,
+`OfficeMetadata`) have no Android dependency and are tested on the JVM (`MetadataCoreTest`).
 
 **Tests.** JVM unit tests plus `LaunchSmokeTest` (Robolectric, test-only dependency) that starts the app on every supported Android version, API 24–37. `ScreenScreenshotTest` (opt-in, `-Pscanpro.screenshots=true`) renders the stateless screen composables with sample data under Robolectric native graphics and a plain `Application` (no Hilt), for design review in Figma without an emulator; it adds Compose `ui-test-junit4` to the test classpath only. Camera, PDF viewer and PDF tools are not covered.
 
@@ -347,20 +394,87 @@ document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCa
 
 Cloud sync, accounts, collaboration, subscription entitlements, and server AI are intentionally not mocked. They require real product decisions around authentication, backend storage, key management, privacy consent, billing products, conflict resolution and operational monitoring.
 
+## Tools and Settings UI structure (F116–F123)
+
+- Declutter (F214): `ToolPage` content order is file, main choice, estimate, button; `MoreOptions` (in `ToolPage.kt`) folds seldom-changed options and shows the current choice on its row; `ToolDemoCard` sits folded at the foot and can carry a page's long explanation (`about`). `ToolsLanding` shows two rows a panel with "Show all (n)" (`ToolsMemory.openSections`, not saved).
+
+- `feature/tools/ToolsLanding.kt`: Tools landing (search with intent keywords, category chips, pinned and recent tools kept in the `tools_ui` preferences).
+- `feature/tools/PageGrid.kt`: `ReorderablePageGrid` (press-and-hold drag with auto-scroll) and `PageActionsSheet`; shared by Organise, Images to PDF and Merge.
+- `feature/tools/ImagesToPdfEditor.kt`, `WatermarkEditor.kt`, `MergeEditor.kt`: full-screen editors opened from `PdfToolsScreen.kt`. They work on cached copies and only hand a final list or config to the view model.
+- `feature/tools/ToolResultDialog.kt`: the one result dialog (thumbnail, size, compression comparison, Open/Share/Save).
+- `feature/tools/ToolFlowParts.kt`: the parts every tool shares between the tile and the result: `PickedFileRow` (file name, size, pages at the top of an options dialog), `ToolFailureDialog` (Try again / Choose another file), `StopTaskDialog`, and `nextToolsFor` + `NextToolsRow` ("Continue with this file" on the result). Failures travel in `PdfToolsViewModel.failure`, not in `message`.
+- Protected PDFs in the tools (F155, pushed as F148): `PdfToolsViewModel.prepareTool` runs before any tool that opens one PDF's pages (`OPENS_PAGES` in `PdfToolsScreen.kt`). `PdfToolsEngine.needsOpenPassword` asks `PdfRenderer` first and PDFBox only on refusal; a protected file gets the shared `SourcePasswordDialog` (`PasswordPurpose.OPEN`) and `decryptCopy` writes an unlocked working copy to `cache/tool_input/` (`WORKING_COPY_DIR`), which the tool then opens by `file://` URI. The password is not stored; the copy is deleted on the kept result, a new pick, closing the form, `onCleared` and the next start.
+- `data/ToolResultsStore.kt`: files the tools made, in `files/tool_results/` (FileProvider name `tool_results`), kept until the user deletes them. `PdfToolsViewModel.launchTool` moves every finished output there from `cache/exports`, which stays the one-day work area. Decision (F138, 2026-11-12): keep until deleted, never cleared silently. `feature/tools/ToolFileRows.kt` (`FileThumbnail` with an in-memory LruCache, `FileRow`, `ToolResultRow`) and `RecentFilesStrip.kt` (Home) show them; `PdfViewerScreen` has a `PageThumbStrip`.
+- `data/ScanHistoryProtection.kt` (F139): QR history file = header `SPH\u0001` + 12-byte nonce + AES-256-GCM ciphertext; key `scanpro_qr_history_aes_v1` in Android Keystore, created on the history worker thread. Decision (owner patch, 2026-11-12): QR history is device-bound (excluded from device transfer; cloud and pre-12 backups already exclude all files). `imaging/PdfTextImage.kt`: text the built-in PDF fonts cannot encode is drawn with Android fonts into one image per document and placed by matrix. `scripts/ci/scanpro-quality-audit.py`: read-only source audit, first CI step.
+- `imaging/PdfToolsEngine.kt`: `WatermarkGeometry` maps the page as seen (rotation, CropBox) back to stored PDF coordinates; the preview and the saved file share it.
+- `core/designsystem/HeaderScenes.kt`: `HeaderSceneStrip`, the small random scenes in Home's top bar (Canvas drawings, `withInfiniteAnimationFrameMillis`, state read in the draw phase). `HeaderSceneBag` (pure, tested) is the play order: every scene once, shuffled; the scenes still to come are kept in the preference file `header_scenes`, so each app opening shows a different one (F233).
+- `feature/settings/SettingsAboutPage.kt`: About ScanPro (version, privacy, share, rate).
+- `feature/settings/SettingsSearch.kt`: settings search and jump-to-row (`SettingsLocator`), backup status and explainer.
+- `scanner/CameraScannerScreen.kt`: `ScanIntroDialog`, first-use explainers for Document, ID Card and Book, with one "don't remind me" preference per mode.
+- Decision: view-model tool work runs on `Dispatchers.IO`; `DocumentDatabase` builds Room lazily so the first frame does not wait for disk.
 ### Moved-aside libraries (item 5)
 
 `setAsideNewerDatabase` moves a database written by a newer schema to `scanpro-room.db.newer-v<N>`. When this build's schema is `>= N`, `DocumentDatabase.movedAsideLibraries()` lists it and `LibraryRoute` offers to restore it. Restoring opens the old file as a second Room database and copies in only documents whose id is missing here and whose folder still exists; nothing is overwritten. The file is then renamed to `.restored-v<N>-<time>` (or `.declined-v<N>-<time>` for "Do not ask again"), never deleted. "Not now" hides the offer for the session only.
 
-### QR scanner, history and generator (F102)
+### QR scanner, history and generator (F134)
 
 - `scanner/BarcodeFrameAnalyzer` reports every code of a frame with its ML Kit box and the upright image size (`onCodes` returns true to pause). `scanner/QrOverlayMath` maps the boxes to the FIT_CENTER preview (pure, tested); `QrOverlay` draws the outlines (48 dp minimum) and the chooser sheet. One code with no outlines showing opens the sheet at once; two or more only show outlines.
 - `scanner/ScannedCode` is the model the result sheet renders. It is built from an ML Kit `Barcode` for live scans and parsed from the stored raw text for history (Wi-Fi, vCard, MECARD, events, geo, mailto, tel, sms, links).
 - `data/ScanHistoryStore` (`@Singleton`): `filesDir/scan_history.json`, newest first, 200 entries, written on one worker thread through a temp file and rename; switch `scanHistoryEnabled` in `SettingsStore`. It holds raw text, so Wi-Fi passwords are stored unencrypted like the rest of the library (R20); the list shows the network name and search ignores the password.
-- `feature/qr/*`: history and generator screens with their view models, payload builders (`QrPayloads`) and the ZXing encoder (`QrEncoder`: error correction M, 4-module quiet zone, 1024 px). Dependency: `com.google.zxing:core:3.5.3` (Apache-2.0, pure Java, no network).
+- `feature/qr/*`: history and generator screens with their view models, payload builders (`QrPayloads`) and the ZXing encoder (`QrEncoder`: error correction M, 4-module quiet zone, 1024 px). Dependency: `com.google.zxing:core:3.5.4` (Apache-2.0, pure Java, no network).
 - Destinations `QR_HISTORY` and `QR_GENERATOR` in `ScanProDestinations`, reached from the camera's QR mode.
+- F166: `QrForm` (form state and validation per kind), `CodeFormat`/`CodeStyle`/`QrCorrection` (`QrEncoder.encode` via ZXing `MultiFormatWriter`, EAN-13 and Code 128 too), WCAG contrast check, `ScanHistoryEntry.created` (JSON `made`), `ScanHistoryCsv`, `LinkSafety`. Strings in `strings_qr_new.xml`.
+- F167 (tools): `PdfToolsScreen.kt` keeps the screen and state; catalogue in `ToolCatalogue.kt`, organiser in `PageOrganizer.kt`, dialogs in `CompressPdfDialog.kt`, `PdfToolDialogs.kt`, `ImageToolDialogs.kt`, `CleanupToolDialogs.kt`. Engines `imaging/PdfCleanupTools.kt` (blank pages, greyscale, flatten, extract images) and `imaging/PdfMetadataEngine.kt`. Strings in `strings_tools_new.xml`.
+- F193 (image tools): `ImageToolDialogs.kt` holds Compress, Convert and Resize image; `ImageToolParts.kt` the shared pieces (`rememberLoadedImage`, `ImagePreviewCard` with Original / Result, `BeforeAfterRow`, and `estimateOutput` / `estimateTargetSize`, which run the engine's own encoding on a 1280 px sample off the main thread, 250 ms after the options stop changing); `ImageCropEditor.kt` the straight crop editor, which hands an `ImageCropSpec` (fractions after a quarter-turn and mirror) to `ImageToolsEngine.cropToFile` / `cropImageRect`. The document corner editor (`CropEditorDialog`) is no longer used by the image tools. `ImageToolsEngine.MAX_IMAGE_SIDE` (8000 px) is the one decode limit for every image tool.
+- F165 (settings): `SettingsScreen.kt` (route, bar, navigation, search), `SettingsMainPage.kt`, `SettingsComponents.kt`, one `Settings*Page.kt` per page incl. `SettingsShortcutsPage.kt`. Strings in `strings_settings_new.xml`.
 
-### Sign PDF, PDF to text or Word, Insert pages (F103, F104)
+### Sign PDF, PDF to text or Word, Insert pages (F135, F136)
 
 - `imaging/SignPdfEngine`: renders nothing itself; `SignGeometry` turns a stamp's position, size and rotation into a PDF `cm` matrix through `PdfTextLayerMath.toPageSpace` (page rotation and crop-box origin). `stamp` appends to each page with `PDPageContentStream` in append mode. `feature/tools/SignPdfViewModel` keeps the session across rotation; `SignPdfScreen` is drawn inside the Tools screen. The working copy lives in cache (`sign_*`, swept by `CacheCleaner`).
 - `imaging/PdfToTextEngine`: per page, text layer first, then OCR through an injectable function; output `.txt` or `.docx` (`DocxExporter`). `imaging/InsertPagesEngine`: validates and merges the arranged pages with the chosen pages of a second PDF. `PdfPasswordNeededException` ends a run with a question; `PdfToolsViewModel` asks and retries with a memory-only password.
 
+## Scanning quality, conversions and tool feedback (F124-F133)
+
+- `feature/tools/RedactBoxesEditor.kt` (F174): full-screen page viewer with rectangle drawing (drag to draw, tap to pick, normalised boxes), feeding `PdfRedactTools.redactBoxes` → `boxesToMatches` → the F172 redaction writer.
+- `imaging/PdfLayoutTools.kt` (F173): `PdfNupTools` (2 or 4 pages per sheet as form objects, placed as displayed via `seenMatrix`) and `PdfHeaderFooterTools` (edge text placed as seen, picture fallback for scripts Helvetica lacks). Same seam pattern as the other tool engines.
+- `imaging/PdfCropRedactTools.kt` (F172): `PdfCropTools` (crop box per page, measured as displayed and mapped back through /Rotate) and `PdfRedactTools` (PDFBox text positions → black boxes → matched pages rasterised, others imported). Both follow `PdfCleanupTools`' seam pattern: the decisions take `pageSize`/`draw` lambdas, so the unit tests run without PdfRenderer.
+- `imaging/MatFilters.kt` (F171): COLOR/GRAY illumination is estimated content-free (ink closed away at low resolution, dark blocks filled from surrounding paper) instead of a plain blur of the page, and the COLOR path neutralises the lighting's colour cast from the paper's Lab a/b (clamped). Measured by `scripts/scan-bench` `enhance`, which scores every filter on degraded known pages.
+- `scanner/LineQuadFinder.kt` (F168, F169): when no closed outline is confident (score below 0.5), `DocumentEdgeDetector` rebuilds the page from straight runs of the Canny map's curves (and, when those give nothing, the faint map's), kept only if the union of both edge maps runs along most of the perimeter and the sides stop at the corners. F169 also moved the detector's Otsu masks and faint-edge stage to a half-size copy: same regions, about a third less time per frame. F170 put the fallback sources (adaptive+Canny, dark mask) behind the same gate and snaps a coarse winner's sides onto the full-resolution brightness step (at most 5 px), halving detection time against F168 and roughly halving most scenes' corner error again. Measured with `scripts/scan-bench/`, a desktop Gradle project (not part of the app build) that compiles the detector sources unchanged against stubs and desktop OpenCV (`org.openpnp:opencv` 4.9, bench only).
+- `imaging/MatFilters.kt` (F182): Colour, Grey and Whiteboard are built on the same shadow-divided page as Auto Clean (`cleanPage`: `removeShadows`, levels, saturation, unsharp); Black and white is the adaptive threshold plus everything solidly dark after the divide (`blackWhiteDocument`); `paperStats` judges paper after taking the light's tint off. The Lab/CLAHE path of F171 is gone.
+- `scanner/LiveChroma.kt` (F184): the detector's colour-strength map made from a camera frame's Y, U and V planes at a quarter size; `OpenCvDocumentAnalyzer` passes it to `DocumentEdgeDetector.detect`, so the live outline and the saved crop use the same sources.
+- `imaging/ImageProcessor.processPage` (F183): a page with an outline is read from its own area of a large photo (`decodePageArea`, `PageArea`), so the render limit applies to the page, not to the photo it was cut from.
+- Colour edges and outline choice (F213): `DocumentEdgeDetector.detect(gray, chroma, colourPlanes)` takes the Cb and Cr planes as one 2-channel Mat (`colourPlanes(rgba)` for a photo, `LiveChroma.planes` for a camera frame) and adds their Canny edges to the brightness edges; `preferEnclosing` then swaps the winning outline for one that encloses it, shares three sides and scores at least 85% of it (a card's face against the card, one page against the book spread).
+- `scanner/OutlineTracker.kt` (F213): `OutlineTracker` turns the detector's per-frame outline into the one drawn (400 ms hold over missed frames, three agreeing frames before a far outline is taken, distance-scaled following); `IdCardOutline` decides whether a detected outline is the card in ID card mode's guide (used for the live outline and for the saved crop). Plain Kotlin, JVM-tested; the analyser's steadiness and auto-capture still read the raw outline.
+- `scanner/PageFraming.kt` (F177): `framedSides` counts an outline's sides whose inside edge is clearly darker than both the surface outside and the outline's middle; `DocumentDetection.isFramedObject` (3+ sides) keeps laptops and keyboards out of `isConvincingPage`. A separate object so JVM tests run it without the Android OpenCV loader.
+- `scanner/DocumentEdgeDetector.kt` colour source (F175): `chromaMap(rgba)` makes an 8-bit map of each pixel's chromaticity (channel share of r + g + b) distance from neutral, which a shadow does not change (F176; near-black pixels fade to neutral); `detect(gray, chroma)` splits it at its Otsu level and searches both halves as page candidates (weight 0.96), only when the halves' mean strengths differ by 24 and each covers 8% of the frame, so a page whose edge a shadow hides from the brightness is still outlined against a coloured surface. `detect(bitmap)` supplies it; the live analyser, which only has the brightness plane, does not (R57).
+- `scanner/DocumentEdgeDetector.kt`: a sixth candidate source for faint page edges (Canny with low limits on a widely blurred copy). Measured by `androidTest/.../scanner/ScanDetectionBenchmarkTest.kt`: 12 generated scenes with exact corners, run on a phone with `am instrument` (never Gradle's connected tests, which uninstall the app).
+- `scanner/CameraScannerScreen.kt`: values that change every analysis frame (outline, shutter ring, guidance) are read while drawing or from a coroutine, not during composition, so the camera screen does not recompose per frame.
+- `imaging/PdfRepairEngine.kt`: Repair PDF (forgiving re-parse and rewrite, else rebuild readable pages as pictures).
+- `imaging/PdfToTextEngine.kt`: a third output, Excel; word positions come from a position-aware PDFBox stripper or OCR, and `intelligence/OcrLayout.table` rebuilds the columns for `XlsxExporter`.
+- `imaging/OfficeToHtml.kt` (`Pptx`): PowerPoint to PDF, one page per slide in slide order.
+- `imaging/PptxExporter.kt`, `imaging/PdfToPptEngine.kt`: PDF to PowerPoint, one picture slide per page; a dependency-free .pptx writer (master, layout, theme).
+- `core/ui/UiUtils.kt` `openFile`: a tool result opens with an "Open with" app chooser, not a share sheet.
+- `feature/tools`: the processing card is a large ring with the real percentage; `ToolResultDialog` plays a short success burst (skipped when animations are off); Compress PDF remembers its last level in the `tools_ui` preferences.
+- Decision: competitor studies (Adobe Scan, iLovePDF) informed patterns only; no proprietary assets or code. ScanPro stays offline: no cloud conversion, accounts or usage limits.
+
+## Home recents, tabs, Settings pages, launch (F140)
+
+- Home has one "Recent" section: `HomeRecentKind` chips (Scans, Opened, Your results) over `HomeRecentRow`, a `LazyRow` of `HomeRecentItem` cards (`feature/tools/RecentFilesStrip.kt`). Scans use `PaperThumbnail`, files `FileThumbnail(renderHeight = 175.dp)`.
+- "See all" for opened PDFs or results sets the one-shot `ToolsFocusRequest` and switches to Tools; the Tools list takes it once that list has loaded and scrolls with `LazyListState.scrollToKey` (`ToolsLanding.kt`).
+- Tab transitions (`ScanProNavHost.enterFor/exitFor`): between top-level tabs one layer fades over an opaque screen (pop: outgoing fades; navigate: incoming fades over `KeepUntilTransitionsFinished`); pushed screens slide without fades.
+- Settings: `SettingsPage` enum; the main page lists pages, `SettingsSection(page)` draws only on its page (`LocalSettingsPage`); each page has its own scroll and `SettingsLocator` inside an `AnimatedContent`.
+- Launch: `MainActivity.activityCreatedInProcess` makes the first activity of a process a launch even with saved state; the splash exit listener waits (max 1.5 s) for theme, palette and lock settings before handing over.
+
+- **Tool pages (F147):** `feature/tools/ToolPage.kt` is the shared full-screen scaffold for tool options (top bar with Close, scrolling option cards, sticky action button with a reason line when disabled); `ToolChoices.kt` holds the remembered OCR script choice. Multi-file tool results are unpacked on demand into `cache/exports/shared_parts/` for sharing (swept with the other exports after a day).
+
+### Second round 2026-11-16 (F160–F163)
+
+- Tools: `ToolSection.tiles` vs `tools`; `SEARCH_ONLY_TOOL_IDS`, `IMAGE_TOOLS_TILE` + `ImageToolsChooser`; `PdfToolCard.beta`. PDF to PowerPoint (`PdfToPptEngine`, `PptxExporter`) deleted.
+- Feedback: `feature/feedback/` (rating sheet: five stars, then thanks for 4–5 or the issue form for 1–3, F223; issue/feature form, whose state lives in `FeedbackFormHost` so the Settings sheet and the rating sheet share it), `data/FeedbackSchedule.kt` (`FeedbackPrompts`, SharedPreferences; scans 1 and 2, then 30 days); delivery through `core/ui/Support.kt` `contactSupport` with `SupportMessage` (email → share → clipboard), no network.
+- Edit PDF text (F194): `imaging/PdfTextEditor` (pure PDFBox: a `PDFTextStripper` subclass that also records which page-level show-text instruction and glyph each letter came from; `apply` rewrites those instructions without the edited letters and appends the new words in a chosen font), `imaging/PdfTextEditTool` (Android session: private copy, PdfRenderer pages, one-page previews; final save), `feature/tools/EditPdfTextEditor` (full-screen dialog). F205: the editor keeps its changes as one immutable list with undo and redo stacks of earlier lists; the page zooms with a `graphicsLayer` inside a `detectTransformGestures` box (taps stay on the page canvas, so they map to page points at any zoom); Find and replace runs `PdfTextEditSession.find` over every page and turns the matches into ordinary edits; `Edit.dx/dy` move a line in display points. F206: an edit's text is first laid out (`plan`: rows with their place, list markers, indents, spacing) and then drawn (`drawBlock`), so the room it takes is known before anything is cut; lines below that must move are lowered with a text-rise instruction around their own letters (font untouched). `apply` returns `placed` (the box of each edit's words) and `moved`; `PdfTextEditSession.render` passes them on as `PagePreview`. Joined scripts go through `PdfTextEditor.Shaper` (`PhoneTextShaper`: `Paint.getTextPath` outlines, filled as paths). The editor is `EditPdfTextEditor` (state: edits, selection, undo stacks, open sheet) over a stateless `EditPdfWorkspace(EditorState, EditorCalls)`; the panel and sheets are in `EditPdfPanels.kt`, and sheets are drawn inside the editor's own layout (not as dialogs) so they can be captured in tests. F207: carried fonts. `res/font` holds Roboto (googlefonts/roboto-2, Apache 2.0), Inter 4.1 (rsms/inter, OFL 1.1), Montserrat (JulietaUla/Montserrat, OFL 1.1) and Gelasio (SorkinType/Gelasio, OFL 1.1; stands in for Georgia, which cannot be shipped), each regular, bold, italic and bold italic, subset to Latin with fontTools; none has a Reserved Font Name. The engine asks a `FontSource` for them (`CarriedFonts` loads the resource with `PDType0Font.load(doc, stream, true)`, so PDFBox embeds a subset); Compose shows samples from the same resources. To add a font: four files in `res/font`, a `Family` value, a branch in `CarriedFonts.resourceOf` and in `familyName`/`fontOf`, its licence in `assets/licences` and a credit on the About page.
+- Files on this phone (F191): above the list, `StorageOverview` (counts, Downloads, Processed files from `ToolResultsStore`, cloud drives through `ActivityResultContracts.OpenDocument`); `PhoneFilesState.folderPath` drives the Folders view from `PhoneFiles.subfolders`/`filesIn`; `grid` switches the `LazyVerticalGrid` between one column and thumbnails.
+- Files on this phone: `feature/phonepdfs/` (`PhonePdfSource` MediaStore query and change observer, `PhoneFiles` filters/sort, `PhoneThumbnails`, screen and view model), `data/FilesAccessPrompts.kt`; permissions `MANAGE_EXTERNAL_STORAGE` (opt-in) and `READ_EXTERNAL_STORAGE` maxSdk 29. Read only.
+- Introductions: `core/designsystem/IntroArt.kt` (Canvas art: phone scan, receipts, private tools, sample document, ID card front/back, open book, `renderSampleScanBitmap`), `scanner/BookSplitOverlay.kt`, `BookSpread.leftFirst/swapped` (layout 1 = A|B, 2 = B|A).
+- F165 (camera): `scanner/GuidanceHold.kt` steadies the live hint; `CameraScannerScreen` waits `CAMERA_BIND_DELAY_MS` before its first bind and fades the preview in on `PreviewView.StreamState.STREAMING`; `MainActivity` starts `ProcessCameraProvider` at launch; the nav host sets `predictivePop*Transition` equal to the pop transitions.
+- F165 (tools progress): `PdfToolsViewModel.toolRunning` (start/stop only) feeds the screen; `ToolProgressHost` in `ProcessingOverlay.kt` collects the progress ticks; `report` is throttled to one update per 66 ms (the last always passes). F219: when a run ends in a result, `launchTool` keeps the card for `ToolFinish.holdMillis` (2 s in all, at least 0.7 s; none with animations off) by setting `ToolProgress.finishMillis`, and only then publishes the result; `ProcessingOverlay` plays the finish in that time and picks its arrangement with `progressCardLayout(width, height)`.
+- F166 (background work): `core/concurrent/BackgroundWork` has two small low-priority pools. `thumbnails` (2 threads) serves every thumbnail, preview and viewer page render; `tools` (cores-1, 2 to 4) serves the PDF and image engines and `PdfToolsViewModel.launchTool`. Use these instead of `Dispatchers.IO` for heavy, non-urgent work; `Dispatchers.IO` stays for short file and provider calls. `PdfPreviewSession` keeps thumbnails (16 MB) and large pages (14 MB) in separate caches.

@@ -2,18 +2,19 @@ package com.example.scanpro.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -44,6 +45,11 @@ import com.example.scanpro.feature.qr.QrGeneratorRoute
 import com.example.scanpro.feature.qr.QrHistoryRoute
 import com.example.scanpro.feature.trash.TrashRoute
 import com.example.scanpro.feature.viewer.PdfViewerScreen
+import com.example.scanpro.feature.phonepdfs.PhoneFile
+import com.example.scanpro.feature.phonepdfs.PhoneFileActions
+import com.example.scanpro.feature.phonepdfs.PhoneFileKind
+import com.example.scanpro.feature.phonepdfs.PhonePdfSource
+import com.example.scanpro.feature.phonepdfs.PhonePdfsRoute
 import com.example.scanpro.scanner.CameraScannerScreen
 
 /** Back handlers use dropUnlessResumed so a double tap during the exit animation can't pop two screens. */
@@ -64,7 +70,9 @@ fun ScanProNavHost(
     saveFolders: List<String> = emptyList(),
     defaultFilter: PageFilter? = null,
     /** Check pages before saving (Settings): whether the camera's Done opens the review. */
-    reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.ALWAYS
+    reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.ALWAYS,
+    /** Copies a PDF from shared storage into the library (Files on this phone > Add to ScanPro). */
+    onImportPdfUri: (android.net.Uri) -> Unit = {},
 ) {
     val context = LocalContext.current
     val pdfDocumentTitle = stringResource(R.string.nav_pdf_document)
@@ -87,7 +95,12 @@ fun ScanProNavHost(
         enterTransition = { if (motion) enterFor(pop = false) else EnterTransition.None },
         exitTransition = { if (motion) exitFor(pop = false) else ExitTransition.None },
         popEnterTransition = { if (motion) enterFor(pop = true) else EnterTransition.None },
-        popExitTransition = { if (motion) exitFor(pop = true) else ExitTransition.None }
+        popExitTransition = { if (motion) exitFor(pop = true) else ExitTransition.None },
+        // The back gesture follows the same transitions as the close buttons. Left unset, the library's own predictive
+        // transition took over: the camera shrank into a card while its controls re-laid themselves out (seen in an
+        // owner's screen recording), which looked like dropped frames.
+        predictivePopEnterTransition = { if (motion) enterFor(pop = true) else EnterTransition.None },
+        predictivePopExitTransition = { if (motion) exitFor(pop = true) else ExitTransition.None }
     ) {
         // Search shares the library screen but is pushed on top of a tab rather than being one.
         listOf(ScanProDestinations.HOME, ScanProDestinations.FILES, ScanProDestinations.SEARCH).forEach { route ->
@@ -99,11 +112,14 @@ fun ScanProNavHost(
                     onStartScan = { folder -> navController.navigate(ScanProDestinations.cameraInFolder(folder)) },
                     onQuickScan = { mode -> navController.navigate(ScanProDestinations.camera(mode)) },
                     onOpenTools = { onTab(ScanProDestinations.TOOLS) },
+                    onOpenPdfViewer = onOpenPdfViewer,
                     onImportImages = onImportImages,
                     onImportPdf = onImportPdf,
                     onTrash = { navController.navigate(ScanProDestinations.TRASH) },
                     onKeptScans = { navController.navigate(ScanProDestinations.KEPT_SCANS) { launchSingleTop = true } },
                     onSearch = { navController.navigate(ScanProDestinations.SEARCH) { launchSingleTop = true } },
+                    onPhonePdfs = { navController.navigate(ScanProDestinations.PHONE_PDFS) { launchSingleTop = true } },
+                    onImportPdfUri = onImportPdfUri,
                     onBack = dropUnlessResumed { navController.popBackStack() },
                     onTab = onTab
                 )
@@ -113,7 +129,9 @@ fun ScanProNavHost(
             SettingsRoute(
                 snackbarHostState = snackbarHostState,
                 onAppLockChange = onAppLockChange,
-                bottomBar = { ScanProBottomBar(selectedRoute = ScanProDestinations.SETTINGS, onTab = onTab, onScan = onScan) }
+                bottomBar = { ScanProBottomBar(selectedRoute = ScanProDestinations.SETTINGS, onTab = onTab, onScan = onScan) },
+                onOpenFiles = { onTab(ScanProDestinations.FILES) },
+                onOpenRecycleBin = { navController.navigate(ScanProDestinations.TRASH) }
             )
         }
         composable(ScanProDestinations.TOOLS) {
@@ -131,15 +149,36 @@ fun ScanProNavHost(
         ) { entry ->
             val pdfUri = entry.arguments?.getString(ScanProDestinations.PDF_URI_ARG).orEmpty().toUri()
             val title = entry.arguments?.getString(ScanProDestinations.PDF_TITLE_ARG) ?: pdfDocumentTitle
+            // One of the moments after which the "default PDF viewer" sheet may be offered on Home.
+            LaunchedEffect(Unit) { com.example.scanpro.data.FilesAccessPrompts.markPdfOpened(context) }
             PdfViewerScreen(
                 title = title,
                 pdfUri = pdfUri,
                 onBack = dropUnlessResumed { navController.popBackStack() },
                 onShare = {
-                    // Files ScanPro made are shared through its FileProvider; picked files are passed on as they are.
-                    if (pdfUri.scheme == "file") shareFile(context, pdfUri.path.orEmpty(), "application/pdf", title)
-                    else shareUri(context, pdfUri, "application/pdf", title)
+                    val path = pdfUri.path.orEmpty()
+                    when {
+                        // Files ScanPro made are shared through its FileProvider; picked files are passed on as they are.
+                        pdfUri.scheme == "file" && !PhonePdfSource.isInSharedStorage(path) ->
+                            shareFile(context, path, "application/pdf", title)
+                        // A PDF that Files on this phone found by walking shared storage: ScanPro's FileProvider
+                        // covers only its own folders, so it is shared by its MediaStore address.
+                        pdfUri.scheme == "file" -> PhonePdfSource.shareableUri(context, PhoneFile(pdfUri, title, PhoneFileKind.PDF, "application/pdf", 0, 0, path = path)) { uri ->
+                            if (uri != null) shareUri(context, uri, "application/pdf", title)
+                        }
+                        else -> shareUri(context, pdfUri, "application/pdf", title)
+                    }
                 }
+            )
+        }
+        composable(ScanProDestinations.PHONE_PDFS) {
+            PhonePdfsRoute(
+                onBack = dropUnlessResumed { navController.popBackStack() },
+                actions = PhoneFileActions(
+                    onOpenPdf = onOpenPdfViewer,
+                    onAddToScanPro = onImportPdfUri,
+                    onOpenTools = { onTab(ScanProDestinations.TOOLS) }
+                )
             )
         }
         composable(
@@ -221,42 +260,64 @@ fun ScanProNavHost(
     }
 }
 
-private const val PushDuration = 260
-private const val FadeThroughDuration = 210
-private const val SheetEnterDuration = 220
-private const val SheetExitDuration = 200
+private const val PushDuration = 300
+
+/**
+ * Material 3's emphasized decelerate curve (F197): a quick start that settles softly, which reads as smoother than
+ * FastOutSlowIn for full-width slides. Same duration, so no extra frames are drawn.
+ */
+private val EmphasizedDecelerate = androidx.compose.animation.core.CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+private const val TabFadeDuration = 150
+/** How long the camera takes to appear; the camera screen waits this long before binding the camera (see there). */
+internal const val CameraEnterDuration = 180
+private const val CameraExitDuration = 150
 
 private fun NavBackStackEntry.isTopLevel() = destination.route in ScanProDestinations.topLevel
 private fun NavBackStackEntry.isSheetLike() = destination.route?.startsWith("camera") == true
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs() = initialState.isTopLevel() && targetState.isTopLevel()
+
+/*
+ * Tabs (F140). Switching to Home pops back to the start destination, so it used to take the "back" branch: Home slid in
+ * from the side like a closing screen while the other way round faded and scaled. Each tab draws its own bottom bar, so
+ * the bar shrank to 96 % and both bars were half transparent at the same moment, letting the background flash through.
+ * Now a tab switch is one layer fading over a screen that stays opaque underneath, whichever way the back stack moved:
+ * the incoming tab fades in on top (navigate), or the outgoing tab fades off the incoming one (pop to Home). The bar's
+ * pixels are the same in both, so only the selected tab's highlight changes.
+ *
+ * Pushed screens slide without fading (Android's parallax): fading both layers at once dimmed the screen mid-way, and
+ * every alpha layer costs an offscreen buffer per frame.
+ */
 
 /** The transition for the screen coming in. */
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Boolean): EnterTransition = when {
-    // Returning to a tab or moving between tabs: fade through.
-    !pop && targetState.isTopLevel() && initialState.isTopLevel() ->
-        fadeIn(tween(FadeThroughDuration, delayMillis = 60)) + scaleIn(tween(FadeThroughDuration, delayMillis = 60), initialScale = 0.96f)
+    betweenTabs() -> if (pop) EnterTransition.None else fadeIn(tween(TabFadeDuration, easing = LinearOutSlowInEasing))
     // Sheet rising from bottom: opaque slide up over the stationary caller screen with maximum initial velocity on frame 1.
+    // The camera grows a little and fades in over the caller. It used to slide up the whole screen: a full-height
+    // slide shows every late frame as a jump, and the camera's first frames are its heaviest. A short fade with a small
+    // scale covers the same distance in pixels of almost nothing, so a late frame is not seen.
     !pop && targetState.isSheetLike() ->
-        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(SheetEnterDuration, easing = LinearOutSlowInEasing))
+        fadeIn(tween(CameraEnterDuration, easing = LinearOutSlowInEasing)) +
+            scaleIn(tween(CameraEnterDuration, easing = LinearOutSlowInEasing), initialScale = 0.94f)
     // Sheet popping back to caller: caller is already rendered and stationary underneath.
     pop && initialState.isSheetLike() -> EnterTransition.None
-    pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it / 4 }) +
-        fadeIn(tween(PushDuration / 2))
+    // The screen underneath comes back from a quarter of the way across, opaque.
+    pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = EmphasizedDecelerate)) { it / 4 }
     // The pushed screen draws its own background, so it slides in opaque.
-    else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it })
+    else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = EmphasizedDecelerate)) { it }
 }
 
 /** The transition for the screen going out, mirroring [enterFor]. */
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.exitFor(pop: Boolean): ExitTransition = when {
-    !pop && targetState.isTopLevel() && initialState.isTopLevel() -> fadeOut(tween(90))
-    // Sheet rising on top: the caller screen stays stationary and fully visible underneath.
-    !pop && targetState.isSheetLike() -> ExitTransition.None
+    betweenTabs() -> if (pop) fadeOut(tween(TabFadeDuration, easing = FastOutLinearInEasing)) else ExitTransition.KeepUntilTransitionsFinished
+    // Sheet rising on top: the caller screen stays stationary and fully visible underneath. ExitTransition.None removed
+    // the caller on the first frame, so the camera faded in over the bare background (a flash of empty screen).
+    !pop && targetState.isSheetLike() -> ExitTransition.KeepUntilTransitionsFinished
     // Sheet popping: drops immediately off-screen accelerating downward with zero hesitation.
     pop && initialState.isSheetLike() ->
-        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(SheetExitDuration, easing = FastOutLinearInEasing))
-    pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it }) +
-        fadeOut(tween(PushDuration / 2))
-    else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it / 4 }) +
-        fadeOut(tween(PushDuration / 2))
+        fadeOut(tween(CameraExitDuration, easing = FastOutLinearInEasing)) +
+            scaleOut(tween(CameraExitDuration, easing = FastOutLinearInEasing), targetScale = 0.96f)
+    pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = EmphasizedDecelerate), targetOffset = { it })
+    else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = EmphasizedDecelerate), targetOffset = { it / 4 })
 }
 
 /** Switches bottom-bar tabs the standard way: one copy of each tab, with its state saved and restored. */

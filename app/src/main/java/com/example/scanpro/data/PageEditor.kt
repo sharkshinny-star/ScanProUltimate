@@ -375,12 +375,13 @@ internal class PageEditor(private val store: DocumentStore) {
 
     /**
      * Deletes signature images that neither the document nor any undo step uses. Removing a signature keeps its
-     * image so Undo can bring it back; this runs when the document is closed.
+     * image so Undo can bring it back; this runs when the document is closed. [alsoInUse] holds pages kept outside
+     * the document, such as a removed page still offered for Undo.
      */
-    suspend fun cleanUnusedSignatures(documentId: String) = withContext(Dispatchers.IO) {
+    suspend fun cleanUnusedSignatures(documentId: String, alsoInUse: List<ScanPage> = emptyList()) = withContext(Dispatchers.IO) {
         val doc = db.loadDocument(documentId) ?: return@withContext
         val folder = File(doc.pdfPath).parentFile ?: return@withContext
-        val inUse = (doc.pages + history.retained(documentId))
+        val inUse = (doc.pages + history.retained(documentId) + alsoInUse)
             .flatMap { it.annotations }
             .mapNotNull { it.assetPath.takeIf(String::isNotBlank)?.let { path -> File(path).canonicalPath } }
             .toSet()

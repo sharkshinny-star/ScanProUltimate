@@ -1,5 +1,10 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.rememberScrollState
+
+import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.TextButton
@@ -7,25 +12,28 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.AssistChip
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -41,11 +49,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material.icons.rounded.Badge
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Clear
@@ -63,7 +69,9 @@ import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.TravelExplore
 import androidx.compose.material3.Button
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -155,8 +163,21 @@ fun LibraryRoute(
     onQuickScan: (String) -> Unit = {},
     onOpenTools: () -> Unit = {},
     onKeptScans: () -> Unit = {},
+    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> },
+    /** The full "Files on this phone" list (Home's See all, the Files menu). */
+    onPhonePdfs: () -> Unit = {},
+    /** Copies a PDF from the phone into the library. */
+    onImportPdfUri: (android.net.Uri) -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
+    val promptContext = LocalContext.current
+    var phonePdfsCardDismissed by remember { mutableStateOf(com.example.scanpro.data.FilesAccessPrompts.phonePdfsCardDismissed(promptContext)) }
+    var homeFilesCardDismissed by remember { mutableStateOf(com.example.scanpro.data.FilesAccessPrompts.homeFilesCardDismissed(promptContext)) }
+    val phoneFileActions = remember(onOpenPdfViewer, onImportPdfUri, onOpenTools) {
+        com.example.scanpro.feature.phonepdfs.PhoneFileActions(onOpenPdf = onOpenPdfViewer, onAddToScanPro = onImportPdfUri, onOpenTools = onOpenTools)
+    }
+    val homeRecentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
+    val homeToolResults by viewModel.toolResults.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val overview by viewModel.overview.collectAsStateWithLifecycle()
     val folder by viewModel.folder.collectAsStateWithLifecycle()
@@ -194,6 +215,9 @@ fun LibraryRoute(
     LibraryScreen(
         mode = mode,
         overview = overview,
+        recentPdfs = homeRecentPdfs,
+        toolResults = homeToolResults,
+        onOpenPdfViewer = onOpenPdfViewer,
         items = items,
         folder = folder,
         favoritesOnly = favoritesOnly,
@@ -241,6 +265,7 @@ fun LibraryRoute(
             viewModel.combinePdfs(ids) { file -> com.example.scanpro.core.ui.shareFile(context, file.absolutePath, "application/pdf", file.name) }
         },
         onRenameFolder = viewModel::renameFolder,
+        onRenameDocument = viewModel::renameDocument,
         onTab = onTab,
         onQuickScan = onQuickScan,
         onOpenTools = onOpenTools,
@@ -253,6 +278,42 @@ fun LibraryRoute(
                 TipAction.Search -> onSearch()
                 TipAction.Settings -> onTab(ScanProDestinations.SETTINGS)
             }
+        },
+        onPhonePdfs = onPhonePdfs,
+        // Files on this phone (F168): Home's section, the card above My documents and the On this phone pane.
+        homePhoneFiles = if (mode != ScanProDestinations.HOME || !com.example.scanpro.feature.phonepdfs.PhonePdfSource.available) null else {
+            {
+                com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
+                    actions = phoneFileActions,
+                    onSeeAll = onPhonePdfs,
+                    cardDismissed = homeFilesCardDismissed,
+                    onDismissCard = {
+                        com.example.scanpro.data.FilesAccessPrompts.dismissHomeFilesCard(context)
+                        homeFilesCardDismissed = true
+                    }
+                )
+            }
+        },
+        filesAccessCard = if (mode != ScanProDestinations.FILES || phonePdfsCardDismissed || !com.example.scanpro.feature.phonepdfs.PhonePdfSource.available) null else {
+            {
+                com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
+                    actions = phoneFileActions,
+                    onSeeAll = onPhonePdfs,
+                    cardDismissed = false,
+                    onDismissCard = {
+                        com.example.scanpro.data.FilesAccessPrompts.dismissPhonePdfsCard(context)
+                        phonePdfsCardDismissed = true
+                    },
+                    showFiles = false,
+                    modifier = Modifier.padding(vertical = 6.dp)
+                )
+            }
+        },
+        phoneFilesPane = if (mode != ScanProDestinations.FILES) null else {
+            { com.example.scanpro.feature.phonepdfs.PhoneFilesPane(actions = phoneFileActions, onNotNow = null, showSearch = false) }
+        },
+        phoneFilesSearch = if (mode != ScanProDestinations.FILES) null else {
+            { modifier -> com.example.scanpro.feature.phonepdfs.PhoneFilesSearchField(modifier) }
         }
     )
 }
@@ -307,6 +368,7 @@ internal fun LibraryScreen(
     /** Shares the selection as one combined PDF, in selection order. */
     onShareCombined: (List<String>) -> Unit = {},
     onRenameFolder: (String, String) -> Unit,
+    onRenameDocument: (id: String, title: String) -> Unit = { _, _ -> },
     onTab: (String) -> Unit,
     onQuickScan: (String) -> Unit = {},
     onOpenTools: () -> Unit = {},
@@ -314,16 +376,37 @@ internal fun LibraryScreen(
     onKeptScans: () -> Unit = {},
     showTips: Boolean = false,
     onHideTips: () -> Unit = {},
-    onTipAction: (TipAction) -> Unit = {}
+    onTipAction: (TipAction) -> Unit = {},
+    recentPdfs: List<com.example.scanpro.data.RecentPdf> = emptyList(),
+    toolResults: List<com.example.scanpro.data.ToolResultFile> = emptyList(),
+    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> },
+    /** Files > Files on this phone: the full list, from the Files menu and Home's See all. */
+    onPhonePdfs: () -> Unit = {},
+    /** Home: Files on this phone (access card or newest files). */
+    homePhoneFiles: (@Composable () -> Unit)? = null,
+    /** Files, On this phone tab: its search field, shown in the top bar beside the title. */
+    phoneFilesSearch: (@Composable (Modifier) -> Unit)? = null,
+    /** Files > My documents: the access card, until granted or closed. */
+    filesAccessCard: (@Composable () -> Unit)? = null,
+    /** Files > On this phone. Null hides the My documents / On this phone switch. */
+    phoneFilesPane: (@Composable () -> Unit)? = null
 ) {
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
+    var phoneFilesTab by rememberSaveable { mutableStateOf(false) }
+    // On this phone has its own search, sort and grid switch, and lists other files than the documents the top bar
+    // counts: while it shows, the bar keeps only its title and menu (two searches and two sorts on one screen read
+    // as clutter, and the bar's ones acted on the tab that was not showing).
+    val onPhoneTab = phoneFilesPane != null && phoneFilesTab
     // Files keeps the saved layout; Search is always a list. The saved sort orders both.
     val gridMode = mode == ScanProDestinations.FILES && savedGrid
     var moveToFolderOpen by rememberSaveable { mutableStateOf(false) }
     // The document whose card ⋮ asked to move it; null when no such dialog is open.
     var movingDocument by rememberSaveable { mutableStateOf<String?>(null) }
+    // The document whose card ⋮ asked to rename it (id to current title); null when the dialog is closed.
+    var renamingDocument by rememberSaveable { mutableStateOf<Pair<String, String>?>(null) }
     fun cardMenu(doc: DocumentSummary) = DocumentCardMenu(
+        onRename = { renamingDocument = doc.id to doc.title },
         onShare = { onShareSelected(setOf(doc.id)) },
         onMoveToFolder = { movingDocument = doc.id },
         onToggleFavourite = { onSetFavorite(setOf(doc.id), !doc.isFavorite) },
@@ -402,23 +485,34 @@ internal fun LibraryScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopBarWithProgress(busy, onStop = onStop) {
+            // Home's title is the greeting, so the banner carries the task's words there; the other titles show them.
+            TopBarWithProgress(busy, onStop = onStop, status = if (isHome) busyLabel else null) {
                 TopAppBar(
                     colors = topBarColors,
                     scrollBehavior = scrollBehavior,
+                    // Files and Search: a lower bar, so the list starts higher (owner, 2026-11-19: "a lot of gap").
+                    expandedHeight = if (isHome) TopAppBarDefaults.TopAppBarExpandedHeight else 56.dp,
                     title = {
                         when {
                             selecting -> TitleWithStatus(pluralStringResource(R.plurals.lib_title_selected_count, selected.size, selected.size), if (busy) busyLabel else null)
-                            isHome -> BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
+                            isHome -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
+                                // The space beside the name: a small scene, a different one at random each time.
+                                com.example.scanpro.core.designsystem.HeaderSceneStrip(Modifier.weight(1f).padding(start = 8.dp).height(52.dp))
+                            }
                             isSearch -> Text(stringResource(R.string.common_search))
-                            else -> TitleWithStatus(
-                                stringResource(R.string.lib_title_files),
-                                when {
-                                    busy -> busyLabel
-                                    overview.documentCount == 0 -> null
-                                    else -> pluralStringResource(R.plurals.lib_document_count, overview.documentCount, overview.documentCount)
-                                }
-                            )
+                            else -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                TitleWithStatus(
+                                    stringResource(R.string.lib_title_files),
+                                    when {
+                                        busy -> busyLabel
+                                        overview.documentCount == 0 || onPhoneTab -> null
+                                        else -> pluralStringResource(R.plurals.lib_document_count, overview.documentCount, overview.documentCount)
+                                    }
+                                )
+                                // On this phone: the search sits here, in the free space beside the title.
+                                if (onPhoneTab) phoneFilesSearch?.invoke(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp))
+                            }
                         }
                     },
                     navigationIcon = {
@@ -436,16 +530,16 @@ internal fun LibraryScreen(
                         if (selecting) {
                             // Several documents: separate PDFs, or one combined PDF in the order they were picked.
                             var shareChoice by remember { mutableStateOf(false) }
-                            androidx.compose.foundation.layout.Box {
+                            Box {
                                 IconButton(onClick = { if (selected.size > 1) shareChoice = true else onShareSelected(selected.toSet()) }) {
                                     Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.lib_cd_share_selected))
                                 }
-                                androidx.compose.material3.DropdownMenu(expanded = shareChoice, onDismissRequest = { shareChoice = false }) {
-                                    androidx.compose.material3.DropdownMenuItem(
+                                DropdownMenu(expanded = shareChoice, onDismissRequest = { shareChoice = false }) {
+                                    DropdownMenuItem(
                                         text = { Text(stringResource(R.string.lib_share_separate, selected.size)) },
                                         onClick = { shareChoice = false; onShareSelected(selected.toSet()) }
                                     )
-                                    androidx.compose.material3.DropdownMenuItem(
+                                    DropdownMenuItem(
                                         text = { Text(stringResource(R.string.lib_share_one_pdf)) },
                                         onClick = { shareChoice = false; onShareCombined(selected.toList()) }
                                     )
@@ -493,12 +587,12 @@ internal fun LibraryScreen(
                                 }
                             }
                         } else {
-                            if (!isSearch && !isHome) {
+                            if (!isSearch && !isHome && !onPhoneTab) {
                                 IconButton(onClick = onSearch) {
                                     Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.common_search))
                                 }
                             }
-                            if (!isHome) Box {
+                            if (!isHome && !onPhoneTab) Box {
                                 IconButton(onClick = { sortMenuOpen = true }) {
                                     Icon(Icons.AutoMirrored.Rounded.Sort, contentDescription = stringResource(R.string.lib_cd_sort))
                                 }
@@ -527,7 +621,7 @@ internal fun LibraryScreen(
                                     }
                                 }
                             }
-                            if (mode == ScanProDestinations.FILES) IconButton(onClick = { onGridChange(!gridMode) }) {
+                            if (mode == ScanProDestinations.FILES && !onPhoneTab) IconButton(onClick = { onGridChange(!gridMode) }) {
                                 Icon(
                                     if (gridMode) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
                                     contentDescription = stringResource(if (gridMode) R.string.lib_cd_show_as_list else R.string.lib_cd_show_as_grid)
@@ -549,6 +643,11 @@ internal fun LibraryScreen(
                                         leadingIcon = { Icon(Icons.Rounded.PictureAsPdf, contentDescription = null) },
                                         enabled = !busy,
                                         onClick = { moreMenuOpen = false; onImportPdf() }
+                                    )
+                                    if (mode == ScanProDestinations.FILES) DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.phone_pdfs_title)) },
+                                        leadingIcon = { Icon(Icons.Rounded.TravelExplore, contentDescription = null) },
+                                        onClick = { moreMenuOpen = false; onPhonePdfs() }
                                     )
                                     if (mode == ScanProDestinations.FILES && folder.isNotBlank()) {
                                         val folderLocked = com.example.scanpro.core.security.FolderLock.key(folder) in lockedFolders
@@ -615,10 +714,36 @@ internal fun LibraryScreen(
                     onToggleSelection = ::toggleSelection,
                     showTips = showTips,
                     onHideTips = onHideTips,
-                    onTipAction = onTipAction
+                    onTipAction = onTipAction,
+                    recentPdfs = recentPdfs,
+                    toolResults = toolResults,
+                    onOpenPdfViewer = onOpenPdfViewer,
+                    phoneFiles = homePhoneFiles
                 )
             } else {
                 Column(Modifier.fillMaxSize().widthIn(max = 1100.dp)) {
+                    // Files: ScanPro's own documents, or every file on the phone (F168).
+                    // Kept while selecting, only disabled (2026-11-18): hiding it moved the list 48dp up under the finger
+                    // that had just long-pressed a document.
+                    if (phoneFilesPane != null) {
+                        androidx.compose.material3.SingleChoiceSegmentedButtonRow(
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                        ) {
+                            listOf(R.string.phone_files_tab_mine, R.string.phone_files_tab_phone).forEachIndexed { index, label ->
+                                SegmentedButton(
+                                    selected = phoneFilesTab == (index == 1),
+                                    enabled = !selecting,
+                                    onClick = { phoneFilesTab = index == 1 },
+                                    shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 2),
+                                    label = { Text(stringResource(label), maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                                )
+                            }
+                        }
+                    }
+                    if (onPhoneTab && !selecting) {
+                        phoneFilesPane?.invoke()
+                        return@Column
+                    }
                     if (isSearch) {
                         SearchField(
                             query = query,
@@ -640,6 +765,8 @@ internal fun LibraryScreen(
                             }
                         }
                     }
+
+                    if (filesAccessCard != null && !isSearch && folder.isBlank() && !selecting) filesAccessCard()
 
                     // Folder/favourite filters only earn their space once there is something to filter.
                     var tagSheetOpen by rememberSaveable { mutableStateOf(false) }
@@ -719,13 +846,16 @@ internal fun LibraryScreen(
                         ) {
                             items(count = list.itemCount, key = list.itemKey { it.id }, contentType = { "document_grid_card" }) { index ->
                                 val doc = list[index] ?: return@items
-                                DocumentGridCard(
-                                    document = doc,
-                                    selected = doc.id in selected,
-                                    onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                    onLongClick = { toggleSelection(doc.id) },
-                                    menu = if (selecting) null else cardMenu(doc)
-                                )
+                                // New, deleted and re-sorted documents fade and glide into place (F146).
+                                Box(Modifier.animateItem()) {
+                                    DocumentGridCard(
+                                        document = doc,
+                                        selected = doc.id in selected,
+                                        onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
+                                        onLongClick = { toggleSelection(doc.id) },
+                                        menu = if (selecting) null else cardMenu(doc)
+                                    )
+                                }
                             }
                         }
                         else -> LazyColumn(
@@ -735,13 +865,15 @@ internal fun LibraryScreen(
                         ) {
                             items(count = list.itemCount, key = list.itemKey { it.id }, contentType = { "document_list_card" }) { index ->
                                 val doc = list[index] ?: return@items
-                                DocumentListCard(
-                                    document = doc,
-                                    selected = doc.id in selected,
-                                    onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                    onLongClick = { toggleSelection(doc.id) },
-                                    menu = if (selecting) null else cardMenu(doc)
-                                )
+                                Box(Modifier.animateItem()) {
+                                    DocumentListCard(
+                                        document = doc,
+                                        selected = doc.id in selected,
+                                        onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
+                                        onLongClick = { toggleSelection(doc.id) },
+                                        menu = if (selecting) null else cardMenu(doc)
+                                    )
+                                }
                             }
                         }
                     }
@@ -762,6 +894,19 @@ internal fun LibraryScreen(
                 onSetFolderLocked(name, true)
             }
         )
+    }
+    renamingDocument?.let { (id, title) ->
+        TextInputDialog(
+            title = stringResource(R.string.doc_rename_document),
+            initial = title,
+            label = stringResource(R.string.doc_name),
+            confirmLabel = stringResource(R.string.common_rename),
+            onDismiss = { renamingDocument = null },
+        ) { name ->
+            val clean = name.trim().take(120)
+            if (clean.isNotEmpty() && clean != title) onRenameDocument(id, clean)
+            renamingDocument = null
+        }
     }
     renameFolderSource?.let { source ->
         TextInputDialog(
@@ -838,7 +983,7 @@ internal fun LibraryScreen(
 // ---------------------------------------------------------------------------------------------
 
 /** The tags in use as chips, one selectable, plus All tags to clear the filter (R35). */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TagFilterSheet(tags: List<String>, selected: String, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
@@ -918,7 +1063,11 @@ private fun EmptyLibrary(
 ) {
     val fresh = query.isBlank() && !favoritesOnly && folder.isBlank()
     Box(Modifier.fillMaxSize().padding(horizontal = 32.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(max = 360.dp)) {
+        // Scrolls when it doesn't fit (a phone on its side, a 2x font): the buttons at the bottom were cut off.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.widthIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(vertical = 16.dp)
+        ) {
             IconTile(
                 icon = when {
                     query.isNotBlank() -> Icons.Rounded.Search
@@ -999,7 +1148,11 @@ private fun HomeDashboard(
     onKeptScans: () -> Unit = {},
     showTips: Boolean = false,
     onHideTips: () -> Unit = {},
-    onTipAction: (TipAction) -> Unit = {}
+    onTipAction: (TipAction) -> Unit = {},
+    recentPdfs: List<com.example.scanpro.data.RecentPdf> = emptyList(),
+    toolResults: List<com.example.scanpro.data.ToolResultFile> = emptyList(),
+    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> },
+    phoneFiles: (@Composable () -> Unit)? = null
 ) {
     val recent = overview.recent
     val documentCount = overview.documentCount
@@ -1020,9 +1173,17 @@ private fun HomeDashboard(
             listState.scrollToItem(0, 0)
         }
     }
-    val selectedSet = remember(selected) { selected.toSet() }
-    val columns = if (wide) 4 else 2
-    val chunkedRecent = remember(recent, columns) { recent.chunked(columns) }
+    // Not remember(selected): the list is one SnapshotStateList instance, so that key never changes and the
+    // set stayed empty, leaving selected cards unhighlighted. Reading it here re-runs this on every change.
+    val selectedSet = selected.toSet()
+    val recentKinds = buildList {
+        if (recent.isNotEmpty()) add(com.example.scanpro.feature.tools.HomeRecentKind.SCANS)
+        if (recentPdfs.isNotEmpty()) add(com.example.scanpro.feature.tools.HomeRecentKind.OPENED)
+        if (toolResults.isNotEmpty()) add(com.example.scanpro.feature.tools.HomeRecentKind.RESULTS)
+    }
+    // Scans first; a chip the user picked is kept while that kind still has something.
+    var pickedRecentKind by rememberSaveable { mutableStateOf<com.example.scanpro.feature.tools.HomeRecentKind?>(null) }
+    val recentKind = pickedRecentKind?.takeIf { it in recentKinds } ?: recentKinds.firstOrNull()
 
     LazyColumn(
         state = listState,
@@ -1038,52 +1199,116 @@ private fun HomeDashboard(
                 KeptScansBanner(count = keptScanCount, onClick = onKeptScans, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
-        // The promo card is the empty state only: once there are documents, the camera button is the call to action.
-        if (documentCount == 0) {
-            item(key = "hero", contentType = "hero") {
-                ScanHeroCard(onStartScan = onStartScan, enabled = !busy, modifier = Modifier.padding(horizontal = 16.dp))
-            }
+        // Home redesign (2026-11-16): scanning is what the app is for, so the brand card that starts a scan is always
+        // the first thing on Home, with every scan mode one tap away inside it. It used to appear only while the library
+        // was empty, which left returning users a page of pale tiles. Once there are documents it is the compact form.
+        item(key = "hero", contentType = "hero") {
+            ScanHeroCard(
+                onStartScan = onStartScan,
+                enabled = !busy,
+                // Compact until the first library read too: it started full size and shrank on every cold start.
+                compact = documentCount > 0 || overview.revision == 0L,
+                onQuickScan = onQuickScan,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
         item(key = "quick_actions", contentType = "quick_actions") {
-            // Four shortcuts, one row. Text, QR, Receipt and Photos live in the camera's mode strip and the Files menu.
+            // What is not a scan: bringing files in, and the PDF tools. The scan modes moved into the card above.
             QuickActions(
                 enabled = !busy,
                 actions = listOf(
-                    QuickAction(Icons.Rounded.Badge, stringResource(R.string.lib_quick_id_card), TileTone.Indigo) { onQuickScan(ScanMode.ID_CARD.name) },
-                    QuickAction(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.lib_quick_book), TileTone.Amber) { onQuickScan(ScanMode.BOOK.name) },
+                    QuickAction(Icons.Rounded.Image, stringResource(R.string.lib_menu_import_photos), TileTone.Indigo) { onImportImages() },
                     QuickAction(Icons.Rounded.PictureAsPdf, stringResource(R.string.lib_menu_import_pdf), TileTone.Coral) { onImportPdf() },
                     QuickAction(Icons.Rounded.Handyman, stringResource(R.string.lib_quick_pdf_tools), TileTone.Slate) { onOpenTools() }
                 ),
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
-        if (recent.isNotEmpty()) {
+        // F140: one "Recent" section. Opened PDFs and tool results used to have their own "Recent files" strip above the
+        // scans grid, so Home showed two recent sections; now chips under the one heading pick what it shows, and every
+        // kind is the same sideways row of page-shaped cards.
+        if (recentKind != null) {
             item(key = "recent_header", contentType = "recent_header") {
                 SectionHeader(
                     stringResource(R.string.lib_sort_recent),
                     modifier = Modifier.padding(horizontal = 20.dp),
-                    actionLabel = if (documentCount > recent.size) stringResource(R.string.lib_see_all) else null,
-                    onAction = onSeeAll
+                    actionLabel = stringResource(R.string.lib_see_all),
+                    onAction = when (recentKind) {
+                        com.example.scanpro.feature.tools.HomeRecentKind.SCANS -> onSeeAll
+                        com.example.scanpro.feature.tools.HomeRecentKind.OPENED -> {
+                            {
+                                com.example.scanpro.feature.tools.ToolsFocusRequest.pending.value = com.example.scanpro.feature.tools.ToolsFocus.RECENT_PDFS
+                                onOpenTools()
+                            }
+                        }
+                        com.example.scanpro.feature.tools.HomeRecentKind.RESULTS -> {
+                            {
+                                com.example.scanpro.feature.tools.ToolsFocusRequest.pending.value = com.example.scanpro.feature.tools.ToolsFocus.RESULTS
+                                onOpenTools()
+                            }
+                        }
+                    }
                 )
             }
-            // A grid of large thumbnails, like the leading scanner apps' home screens: two columns on phones.
-            items(chunkedRecent, key = { row -> row.first().id }, contentType = { "recent_row" }) { row ->
-                Row(
-                    Modifier.padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    row.forEach { doc ->
-                        DocumentRecentCard(
-                            document = doc,
+            if (recentKinds.size > 1) {
+                item(key = "recent_kinds", contentType = "recent_kinds") {
+                    com.example.scanpro.feature.tools.HomeRecentKindChips(
+                        kinds = recentKinds,
+                        selected = recentKind,
+                        onSelect = { pickedRecentKind = it },
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+            }
+            item(key = "recent_row", contentType = "recent_row") {
+                val context = LocalContext.current
+                // One clock per visit to Home, so the captions don't change under the reader's eye.
+                val now = remember { System.currentTimeMillis() }
+                val items = if (recentKind == com.example.scanpro.feature.tools.HomeRecentKind.SCANS) {
+                    recent.map { doc ->
+                        com.example.scanpro.feature.tools.HomeRecentItem(
+                            key = "s:" + doc.id,
+                            title = doc.title,
+                            caption = com.example.scanpro.core.ui.pagesLabel(context, doc.pageCount) + " · " +
+                                com.example.scanpro.feature.tools.recentTime(doc.updatedAt, now),
                             selected = doc.id in selectedSet,
                             onClick = { if (selected.isNotEmpty()) onToggleSelection(doc.id) else onOpenDocument(doc.id) },
                             onLongClick = { onToggleSelection(doc.id) },
-                            modifier = Modifier.weight(1f)
+                            thumbnail = { m ->
+                                Box(m, contentAlignment = Alignment.Center) {
+                                    PaperThumbnail(
+                                        doc,
+                                        Modifier.fillMaxHeight(0.94f).aspectRatio(0.74f),
+                                        com.example.scanpro.core.designsystem.THUMBNAIL_MEDIUM,
+                                        corner = 6.dp
+                                    )
+                                }
+                            }
                         )
                     }
-                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                } else {
+                    com.example.scanpro.feature.tools.fileRecentItems(
+                        kind = recentKind,
+                        recentPdfs = recentPdfs,
+                        toolResults = toolResults,
+                        onOpenPdf = onOpenPdfViewer,
+                        onOpenResult = { result ->
+                            val file = result.file
+                            if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(android.net.Uri.fromFile(file), file.name)
+                            else com.example.scanpro.core.ui.openFile(
+                                context, file.absolutePath, com.example.scanpro.feature.tools.mimeFor(file), file.name
+                            )
+                        },
+                        now = now
+                    )
                 }
+                // A fresh row per chip, so a new list starts at its beginning rather than at the old one's scroll.
+                androidx.compose.runtime.key(recentKind) { com.example.scanpro.feature.tools.HomeRecentRow(items) }
             }
+        }
+        // Files on this phone (F168): the access card until granted or closed, then the newest files with See all.
+        if (phoneFiles != null) {
+            item(key = "phone_files", contentType = "phone_files") { phoneFiles() }
         }
         if (showTips) {
             item(key = "tips", contentType = "tips") {
@@ -1170,20 +1395,29 @@ private fun PrivacyLine(modifier: Modifier = Modifier) {
 
 /** The hero: primary entry point on the home screen, on the brand gradient with the mark as a motif. */
 @Composable
-private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
+private fun ScanHeroCard(
+    onStartScan: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    /** With documents in the library: no eyebrow or tagline, just the headline, the button and the modes. */
+    compact: Boolean = false,
+    /** Opens the camera in a mode (a [ScanMode] name or "QR"); null leaves the mode pills out. */
+    onQuickScan: ((String) -> Unit)? = null
+) {
     val brand = ScanProTheme.colors
     // A scan beam sweeps down the page glyph and back, like the scanner finding a page. Read while drawing,
     // so it never recomposes the card; still when animations are off.
     val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
-    val beam = androidx.compose.animation.core.rememberInfiniteTransition(label = "hero").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            androidx.compose.animation.core.tween(2_400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-            androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "beam"
-    )
+    // Overhaul 2026-11-18: the beam used to sweep forever, redrawing Home every frame for as long as it was open (battery,
+    // and frames taken from scrolling). It now sweeps down and back once when Home appears, then rests at the top.
+    val beam = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(motion) {
+        if (!motion) return@LaunchedEffect
+        val sweep = androidx.compose.animation.core.tween<Float>(1_400, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        beam.snapTo(0f)
+        beam.animateTo(1f, sweep)
+        beam.animateTo(0f, sweep)
+    }
     Box(
         modifier
             .fillMaxWidth()
@@ -1202,13 +1436,14 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                         radius = size.width * 0.5f,
                         center = Offset(size.width * 0.1f, 0f)
                     )
-                    // The brand glyph, large and faint, running off the right edge.
-                    // Kept to the right third so the faint glyph (and its scan line) never runs behind the text.
-                    // Capped by the width too: a large font makes the card taller, and a glyph sized by height alone
-                    // then grew leftwards behind the text and the button.
-                    val glyph = minOf(size.height * 1.05f, size.width * 0.75f)
-                    val left = size.width - glyph * 0.62f
-                    val top = (size.height - glyph) / 2f
+                    // The brand glyph, faint, whole and inside the right third of the card. It used to be larger and run
+                    // off the right edge, which cut its brackets and the moving scan line in half and read as a clipped
+                    // picture. Capped by the width (a large font makes the card taller, and a glyph sized by height
+                    // alone grew leftwards behind the text) and kept above the mode pills.
+                    val glyphArea = size.height - if (onQuickScan != null) 64.dp.toPx() else 0f
+                    val glyph = minOf(glyphArea * 0.96f, size.width * 0.32f)
+                    val left = size.width - glyph - 6.dp.toPx()
+                    val top = (glyphArea - glyph) / 2f
                     translate(left = left, top = top) {
                         drawScanGlyph(
                             glyph,
@@ -1242,27 +1477,45 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                     }
                 }
             }
-            .padding(horizontal = 18.dp, vertical = 14.dp)
+            .padding(vertical = 16.dp)
     ) {
-        Column(Modifier.fillMaxWidth(0.68f)) {
-            Eyebrow(stringResource(R.string.lib_hero_eyebrow), color = brand.onGradientMuted)
-            Spacer(Modifier.height(4.dp))
+      Column(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(0.68f).padding(horizontal = 18.dp)) {
+            if (!compact) {
+                Eyebrow(stringResource(R.string.lib_hero_eyebrow), color = brand.onGradientMuted)
+                Spacer(Modifier.height(4.dp))
+            }
             Text(
                 stringResource(R.string.lib_hero_title),
-                style = MaterialTheme.typography.titleLarge,
+                style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
                 color = brand.onGradient
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(R.string.lib_hero_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = brand.onGradientMuted
+            if (!compact) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.lib_hero_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = brand.onGradientMuted
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            val btnInteraction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            val btnPressed by btnInteraction.collectIsPressedAsState()
+            val btnScale by androidx.compose.animation.core.animateFloatAsState(
+                targetValue = if (btnPressed && motion) 0.94f else 1.0f,
+                animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 600f),
+                label = "heroBtnScale"
             )
-            Spacer(Modifier.height(10.dp))
             Button(
                 onClick = onStartScan,
                 enabled = enabled,
+                interactionSource = btnInteraction,
                 shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.graphicsLayer {
+                    scaleX = btnScale
+                    scaleY = btnScale
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
                     contentColor = brand.gradientStart,
@@ -1273,18 +1526,52 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
             ) {
                 Icon(Icons.Rounded.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                // One line: at a large font size the label shrinks to fit rather than breaking onto two lines.
-                val labelStyle = MaterialTheme.typography.labelLarge
-                Text(
+                // One line that shrinks to fit. Its lower limit used to be 12 sp, which was not small enough at 150 % text
+                // ("Start scanninc") or for the longer Tamil label: both were cut mid-letter at the button's edge.
+                com.example.scanpro.core.designsystem.FitText(
                     stringResource(R.string.lib_hero_start_scanning),
-                    style = labelStyle,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    softWrap = false,
-                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = labelStyle.fontSize)
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
+        if (onQuickScan != null) {
+            Spacer(Modifier.height(14.dp))
+            // Every other way to scan, as frosted pills on the gradient. The row runs edge to edge and scrolls, with the
+            // last pill cut by the card's edge so it is plain there are more.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(androidx.compose.foundation.rememberScrollState())
+                    .padding(horizontal = 18.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val modes = listOf(
+                    ScanMode.ID_CARD.name to stringResource(ScanMode.ID_CARD.labelRes),
+                    ScanMode.RECEIPT.name to stringResource(ScanMode.RECEIPT.labelRes),
+                    ScanMode.BOOK.name to stringResource(ScanMode.BOOK.labelRes),
+                    com.example.scanpro.navigation.ScanProDestinations.CAMERA_QR to stringResource(R.string.scan_qr_code),
+                    ScanMode.WHITEBOARD.name to stringResource(ScanMode.WHITEBOARD.labelRes)
+                )
+                modes.forEach { (mode, label) ->
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = brand.onGradient,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = if (enabled) 0.18f else 0.08f))
+                            .border(1.dp, Color.White.copy(alpha = 0.28f), CircleShape)
+                            .clickable(enabled = enabled, role = Role.Button) { onQuickScan(mode) }
+                            .heightIn(min = 40.dp)
+                            .padding(horizontal = 16.dp)
+                            .wrapContentHeight(Alignment.CenterVertically)
+                    )
+                }
+            }
+        }
+      }
     }
 }
 
@@ -1294,15 +1581,19 @@ private class QuickAction(val icon: ImageVector, val label: String, val tone: Ti
 @Composable
 private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier: Modifier = Modifier) {
     // All on screen in rows of four (eight on wide windows): a sideways-scrolling row hid shortcuts with no hint.
-    val perRow = if (com.example.scanpro.navigation.isWideWindow()) 8 else 4
+    val perRow = minOf(if (com.example.scanpro.navigation.isWideWindow()) 8 else 4, actions.size.coerceAtLeast(1))
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         actions.chunked(perRow).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // The tiles of a row share the height of the tallest one, and each centres its icon and label. Every label
+            // used to reserve two lines, which left a one-line label (all three, in English) sitting above an empty band.
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { action ->
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                         modifier = Modifier
                             .weight(1f)
+                            .fillMaxHeight()
                             .clip(RoundedCornerShape(18.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable(enabled = enabled, role = Role.Button, onClick = action.onClick)
@@ -1316,9 +1607,7 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
                             style = MaterialTheme.typography.labelMedium,
                             textAlign = TextAlign.Center,
                             maxLines = 2,
-                            minLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize),
                             lineHeight = MaterialTheme.typography.labelMedium.lineHeight
                         )
                     }
@@ -1333,7 +1622,7 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
 /** Picks an existing folder, types a new one, or takes the documents out of any folder. */
 @Composable
 private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
-    var name by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(pluralStringResource(R.plurals.lib_move_documents_title, count, count)) },
@@ -1349,12 +1638,12 @@ private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () 
                 )
                 if (folders.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 240.dp)) {
+                    LazyColumn(Modifier.heightIn(max = 240.dp)) {
                         items(folders, key = { it }) { existing ->
-                            androidx.compose.material3.TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
+                            TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(Icons.Rounded.Folder, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
@@ -1362,12 +1651,12 @@ private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () 
             }
         },
         confirmButton = {
-            androidx.compose.material3.Button(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.lib_move)) }
+            Button(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.lib_move)) }
         },
         dismissButton = {
             Row {
-                androidx.compose.material3.TextButton(onClick = { onConfirm("") }) { Text(stringResource(R.string.lib_no_folder)) }
-                androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+                TextButton(onClick = { onConfirm("") }) { Text(stringResource(R.string.lib_no_folder)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
             }
         }
     )

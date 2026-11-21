@@ -13,6 +13,7 @@ import com.example.scanpro.scanner.OpenCvScanProcessor
 import java.io.File
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
@@ -283,6 +284,9 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
      * Deletes the files of a removed page once it can no longer be restored. With [pageId], only that
      * page is purged, so a message going away late cannot drop a page removed after it.
      */
+    /** The page removed from [documentId] that Undo can still bring back, if any. */
+    fun pendingRemovedPage(documentId: String): ScanPage? = removedPages[documentId]?.page
+
     fun purgeRemovedPage(documentId: String, pageId: String? = null) {
         val current = removedPages[documentId] ?: return
         if (pageId != null && current.page.id != pageId) return
@@ -349,20 +353,32 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val source = File(sourceDir, "book_$id.jpg")
         val rendered = File(renderedDir, "book_$id.jpg")
         try {
-            ImageProcessor.saveBitmapJpeg(half, source, 98)
-            ImageProcessor.saveBitmapJpeg(half, rendered, 96)
-        } finally {
-            if (half !== bitmap) half.recycle()
+            try {
+                ImageProcessor.saveBitmapJpeg(half, source, 98)
+                ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+            } finally {
+                if (half !== bitmap) half.recycle()
+            }
+            val read = try {
+                ocr.recognizeDetailed(rendered, script)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                OcrResult("", emptyList())
+            }
+            return ScanPage(
+                id = id,
+                documentId = docId,
+                position = index,
+                sourcePath = source.absolutePath,
+                imagePath = rendered.absolutePath,
+                ocrText = read.text,
+                ocrWords = read.words
+            )
+        } catch (error: Throwable) {
+            source.delete()
+            rendered.delete()
+            throw error
         }
-        val read = runCatching { ocr.recognizeDetailed(rendered, script) }.getOrNull() ?: OcrResult("", emptyList())
-        return ScanPage(
-            id = id,
-            documentId = docId,
-            position = index,
-            sourcePath = source.absolutePath,
-            imagePath = rendered.absolutePath,
-            ocrText = read.text,
-            ocrWords = read.words
-        )
     }
 }

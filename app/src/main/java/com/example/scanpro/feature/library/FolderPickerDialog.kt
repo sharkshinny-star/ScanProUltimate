@@ -59,7 +59,7 @@ internal fun FolderPickerDialog(
                 if (folders.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
                     LazyColumn(Modifier.heightIn(max = 240.dp)) {
-                        items(folders, key = { it }) { existing ->
+                        items(folders, key = { it }, contentType = { "folder_item" }) { existing ->
                             TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(Icons.Rounded.Folder, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))

@@ -11,6 +11,7 @@ import com.example.scanpro.imaging.PdfExporter
 import com.example.scanpro.imaging.ThumbnailStore
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -46,7 +47,8 @@ internal class DocumentStore(
     val ocr: OcrEngine,
     val settings: SettingsStore,
 ) {
-    val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
+    // Lazy: Hilt builds this on the main thread at start-up, and the first filesDir access reads from disk.
+    val rootDir: File by lazy { File(context.filesDir, "documents").apply { mkdirs() } }
 
 
     /**
@@ -56,6 +58,9 @@ internal class DocumentStore(
     internal val pdfLocks = java.util.concurrent.ConcurrentHashMap<String, Any>()
 
     internal val history = EditHistory()
+
+    /** Tests can set this to throw before saving, to check clean-up when a save fails. */
+    internal var onBeforeSave: ((ScanDocument) -> Unit)? = null
 
     /** Draws a page from its photo; a property so tests can stand in for the native image pipeline. */
     internal var pageRenderer: PageRenderer = PageRenderer { source, destination, filter, manualRotationDegrees, crop, adjustments, annotations ->
@@ -147,6 +152,7 @@ internal class DocumentStore(
      * may include words that are now covered.
      */
     internal suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false, script: OcrScript? = null): ScanPage {
+        ThumbnailStore.forget(context, page.imagePath)
         pageRenderer.render(
             source = File(page.sourcePath),
             destination = File(page.imagePath),
@@ -164,7 +170,15 @@ internal class DocumentStore(
             val script = script ?: db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
             // Recognition runs on the flattened image, where covered text is gone. If it fails, a redacted page
             // must end up with no text rather than keep the old text that includes what was covered.
-            val read = runCatching { ocr.recognizeDetailed(File(page.imagePath), script) }.getOrNull()
+            // Not runCatching: that would swallow a cancellation (Stop, or the system stopping an import worker)
+            // and the edit or import would be saved anyway.
+            val read = try {
+                ocr.recognizeDetailed(File(page.imagePath), script)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                null
+            }
             when {
                 read != null -> page.copy(ocrEdited = false, ocrText = read.text, ocrWords = read.words)
                 hasRedaction -> page.copy(ocrEdited = false, ocrText = "", ocrWords = emptyList())
@@ -186,6 +200,7 @@ internal class DocumentStore(
      * or leaving the document.
      */
     internal fun saveWithStalePdf(document: ScanDocument): ScanDocument {
+        onBeforeSave?.invoke(document)
         val sorted = document.pages.sortedBy { it.position }
         userRequire(sorted.isNotEmpty(), R.string.err_document_has_no_pages)
         val final = document.copy(pages = sorted, updatedAt = now())
@@ -227,6 +242,43 @@ internal class DocumentStore(
             partial.delete()
         }
         return pdf.length()
+    }
+
+    /**
+     * Rebuilds [id]'s PDF with the compact exporter and keeps the new file only when it is smaller, so a PDF written
+     * the old, lossless way (several times larger than needed) shrinks and nothing ever grows. Returns the bytes saved.
+     * A document with edits waiting is rebuilt by [ensurePdfNow] instead, which also clears its stale marker.
+     */
+    internal fun compactPdf(id: String): Long = synchronized(pdfLock(id)) {
+        val doc = requireDocument(id)
+        val pdf = File(doc.pdfPath)
+        if (!pdf.isFile) return@synchronized 0L
+        val before = pdf.length()
+        if (doc.stalePdfMarker.exists()) {
+            ensurePdfNow(id)
+            return@synchronized (before - File(doc.pdfPath).length()).coerceAtLeast(0L)
+        }
+        val partial = File(pdf.parentFile, "${pdf.name}.partial")
+        try {
+            PdfExporter.export(
+                pages = doc.pages.sortedBy { it.position },
+                destination = partial,
+                quality = doc.pdfQuality,
+                pageSize = doc.pdfPageSize,
+                searchable = doc.searchablePdf,
+                pageNumbers = doc.pageNumbers
+            )
+            val after = partial.length()
+            // rename() replaces the old file atomically; only the size column changes, like a deferred rebuild.
+            if (after in 1 until before && partial.renameTo(pdf)) {
+                db.updateSize(id, after)
+                before - after
+            } else {
+                0L
+            }
+        } finally {
+            partial.delete()
+        }
     }
 
     internal fun regenerateAndSave(document: ScanDocument, touch: Boolean = true): ScanDocument = synchronized(pdfLock(document.id)) {

@@ -76,7 +76,6 @@ object SharpnessGate {
     const val SHARE_OF_BEST = 0.9
 
     fun shouldFire(recentBlurScores: Collection<Double>, current: Double): Boolean {
-        if (recentBlurScores.size < 3) return true
-        return current >= recentBlurScores.max() * SHARE_OF_BEST
+        return recentBlurScores.size < 3 || current >= recentBlurScores.max() * SHARE_OF_BEST
     }
 }

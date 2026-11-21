@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home-screen widget (F197). Machine translation, not yet reviewed by a speaker. -->
+    <string name="widget_tools">கருவிகள்</string>
+    <string name="widget_files">கோப்புகள்</string>
+    <string name="widget_scan_document">ஆவணத்தை ஸ்கேன் செய்</string>
+    <string name="widget_large_subtitle">உங்கள் ஃபோனிலேயே ஸ்கேன், கையொப்பம், மாற்றம்</string>
+</resources>

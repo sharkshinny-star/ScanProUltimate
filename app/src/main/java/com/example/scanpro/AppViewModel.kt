@@ -20,7 +20,9 @@ import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.data.WHATS_NEW_VERSION
 import com.example.scanpro.navigation.RetakeTarget
 import com.example.scanpro.scanner.SESSION_ROOT
+import com.example.scanpro.core.ui.PromptQueue
 import com.example.scanpro.work.ImportScanWorker
+import kotlinx.coroutines.CancellationException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -52,16 +54,16 @@ class AppViewModel @Inject constructor(
     val themeMode: StateFlow<ThemeMode?> = settings.themeMode
         .map<ThemeMode, ThemeMode?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    /**
-     * The Play in-app review flow is due once, after the third saved scan, when the app is in a calm place
-     * (the document screen). Google decides whether a card is shown; nothing in the app promises one.
-     */
-    /** The one-time rating sheet, due after the first saved scan (the owner's "New Look" design). */
-    val ratingDue: StateFlow<Boolean> = combine(settings.completedScans, settings.feedbackPromptShown) { scans, shown ->
-        scans >= RATING_AFTER_SCANS && !shown
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    /** "Rate your experience" is waiting for a calm moment (see [com.example.scanpro.data.FeedbackSchedule]). */
+    val feedbackPrompt: StateFlow<Boolean> get() = operations.feedbackPrompt
+    /** A "Scan saved" sheet is waiting or open; the rating sheet never shows over it. */
+    val scanSavedPending: StateFlow<String?> get() = operations.scanSaved
 
-    fun markRatingShown() { viewModelScope.launch { settings.setFeedbackPromptShown() } }
+    /** The rating sheet is on screen: it counts as shown whatever the user does with it. */
+    fun onFeedbackPromptShown() {
+        com.example.scanpro.data.FeedbackPrompts.markShown(context)
+        operations.clearFeedbackPrompt()
+    }
 
     /** Wallpaper-derived colours (Android 12+); applied as soon as it is known, false until then. */
     /** Camera defaults from Settings: the mode it opens in and the filter new scans start with. */
@@ -93,8 +95,12 @@ class AppViewModel @Inject constructor(
     val launchStateReady: Boolean
         get() = themeMode.value != null && accentPalette.value != null && appLockEnabled.value != null
 
-    /** Closing the welcome also counts as having seen the current "What's new": it covers the same ground. */
+    /**
+     * Closing the welcome also counts as having seen the current "What's new": it covers the same ground. It also arms
+     * the first-time introductions (F146), before the welcome is marked seen, so the Home tour finds them armed.
+     */
     fun markWelcomeSeen() {
+        com.example.scanpro.data.FirstRunHints.arm(context)
         viewModelScope.launch {
             settings.setWhatsNewSeen(WHATS_NEW_VERSION)
             settings.setWelcomeSeen()
@@ -203,6 +209,7 @@ class AppViewModel @Inject constructor(
     fun importScan(pdfUri: Uri?, imageUris: List<Uri>) {
         operations.enqueue(context.getString(R.string.msg_import_scan_progress), null) {
             val document = repository.importScan(pdfUri, imageUris, settings.pdfQuality.first(), settings.autoTitle.first())
+            com.example.scanpro.data.FeedbackPrompts.recordCompletedScan(context)
             operations.offerScanSaved(document.id)
             operations.requestOpenDocument(document.id)
         }
@@ -222,18 +229,19 @@ class AppViewModel @Inject constructor(
     /** A protected PDF waiting for its password; the shell shows a prompt for it. */
     data class PdfPasswordRequest(val uri: Uri, val wrongPassword: Boolean)
 
-    private val _pdfPasswordRequest = MutableStateFlow<PdfPasswordRequest?>(null)
-    val pdfPasswordRequest: StateFlow<PdfPasswordRequest?> = _pdfPasswordRequest.asStateFlow()
-    fun cancelPdfPassword() { _pdfPasswordRequest.value = null }
+    // A queue, not one slot: several protected PDFs shared at once each get their own prompt, one after another.
+    private val pdfPasswordRequests = PromptQueue<PdfPasswordRequest> { a, b -> a.uri == b.uri }
+    val pdfPasswordRequest: StateFlow<PdfPasswordRequest?> = pdfPasswordRequests.head
+    fun cancelPdfPassword() = pdfPasswordRequests.dropHead()
 
     fun importPdf(uri: Uri, password: String? = null) {
-        _pdfPasswordRequest.value = null
+        pdfPasswordRequests.remove { it.uri == uri }
         operations.enqueue(context.getString(R.string.msg_import_pdf_progress), null) {
             try {
                 repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first(), password)
                 operations.showMessage(context.getString(R.string.msg_pdf_imported))
             } catch (needsPassword: PdfPasswordRequiredException) {
-                _pdfPasswordRequest.value = PdfPasswordRequest(uri, needsPassword.wrongPassword)
+                pdfPasswordRequests.offer(PdfPasswordRequest(uri, needsPassword.wrongPassword))
             }
         }
     }
@@ -266,10 +274,15 @@ class AppViewModel @Inject constructor(
         operations.enqueue(context.getString(R.string.msg_adding_pages), context.getString(R.string.msg_pages_added)) {
             try {
                 repository.appendImages(documentId, imageUris, crops, filters, adjustments)
-            } finally {
-                imageUris.firstOrNull()?.takeIf { it.scheme == "file" }?.path?.let { File(it).parentFile }
-                    ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
+            } catch (error: Throwable) {
+                // The photos exist nowhere else: keep them under "Unsaved scans" rather than deleting them.
+                ImportScanWorker.keepUnsaved(
+                    ImportScanWorker.inputFor(imageUris, ScanMode.DOCUMENT, crops, filters, adjustments),
+                    error.takeUnless { it is CancellationException }
+                )
+                throw error
             }
+            deleteCameraSession(imageUris.first())
         }
     }
 
@@ -285,17 +298,23 @@ class AppViewModel @Inject constructor(
         operations.enqueue(context.getString(R.string.msg_replacing_page, number), context.getString(R.string.msg_page_retaken, number)) {
             try {
                 repository.replacePage(target.documentId, target.pageId, imageUri, crop, filter, adjustments)
-            } finally {
-                if (imageUri.scheme == "file") imageUri.path?.let { File(it).parentFile }
-                    ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
+            } catch (error: Throwable) {
+                ImportScanWorker.keepUnsaved(
+                    ImportScanWorker.inputFor(listOf(imageUri), ScanMode.DOCUMENT, listOf(crop), listOf(filter), listOf(adjustments)),
+                    error.takeUnless { it is CancellationException }
+                )
+                throw error
             }
+            deleteCameraSession(imageUri)
         }
+    }
+
+    /** Drops a scanner session folder once its photos have been copied into a document. */
+    private fun deleteCameraSession(photo: Uri) {
+        if (photo.scheme == "file") photo.path?.let { File(it).parentFile }
+            ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
     }
 
 }
 
 private const val MAX_IMPORT_IMAGES = 100
-
-
-/** Saved camera scans before the rating sheet appears (once). */
-const val RATING_AFTER_SCANS = 1

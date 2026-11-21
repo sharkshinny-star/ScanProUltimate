@@ -30,6 +30,7 @@ class SetAsideNewerDatabaseTest {
     private fun write(suffix: String, content: ByteArray) =
         File(context.getDatabasePath(name).path + suffix).also { it.writeBytes(content) }
 
+    /** A database written by a newer app version is renamed to `.newer-vN`, together with its -wal and -shm files and byte for byte, instead of being opened or deleted. */
     @Test fun aNewerDatabaseAndItsJournalFilesAreMovedAsideUnchanged() {
         val main = bytes(5)
         write("", main)

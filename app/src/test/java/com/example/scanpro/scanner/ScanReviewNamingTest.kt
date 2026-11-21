@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -16,7 +15,6 @@ import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.ThemeMode
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

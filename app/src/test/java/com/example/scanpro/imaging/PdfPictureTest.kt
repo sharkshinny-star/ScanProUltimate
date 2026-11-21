@@ -103,6 +103,17 @@ class PdfPictureTest {
     }
 
     @Test
+    fun aTransparentPngCroppedAsAPageGetsAWhiteBackground() {
+        // Gallery picks and Add page keep a PNG's bytes; the page crop used to save its transparent parts as black.
+        val page = File(dir, "page.jpg")
+        ImageProcessor.cropSourceToNewFile(logoPng(), page, com.example.scanpro.data.CropQuad.DEFAULT)
+        val reread = requireNotNull(ImageProcessor.decodeScaled(page.absolutePath, 400))
+
+        val corner = reread.getPixel(2, 2)
+        assertTrue("corner was ${Integer.toHexString(corner)}", Color.red(corner) > 240 && Color.green(corner) > 240 && Color.blue(corner) > 240)
+    }
+
+    @Test
     fun aRotatedPhotoIsStillTurnedUpright() {
         // Upright used to be baked in by the JPEG step; now the decode itself must do it.
         val photo = File(dir, "photo.jpg")

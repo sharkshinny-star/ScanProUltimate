@@ -1,6 +1,7 @@
-# PDF Tools: improvements left to do
+# PDF & Image Tools: improvements left to do
 
-Last updated: 2026-11-10 (items 5 to 7 built as F103 and F104, CI green, not on a device: see R44). Collected after F48 to F50 (Images to PDF on white, Merge password prompt, first-launch
+Last updated: 2026-11-10. F107 added standalone Crop Image tool, pre-crop capability in Image Tools dialogs, advanced image tools optimisation (dimensions vs percent, presets, direct PDF export), and new PDF Tools suite (Watermark, Page numbers, PDF to Text). F104 added Image Tools suite (compression to target KB/MB, 100% lossless JPG to PNG conversion, dimension resizing with aspect-ratio lock, passport/avatar presets). F103 resolved Unlock background notification and Split/Export naming. When an item is done, move it to `AUDIT_FINDINGS.md` (Fixed, with its F id and commit) and delete it here.
+Last updated: 2026-11-10 (items 5 to 7 built as F135 and F136, CI green, not on a device: see R44). Collected after F48 to F50 (Images to PDF on white, Merge password prompt, first-launch
 permissions). Nothing here is started. When an item is done, move it to `AUDIT_FINDINGS.md` (Fixed, with its F id and
 commit) and delete it here.
 
@@ -8,42 +9,33 @@ Suggested order: items 1 to 3 together (one change, mostly reuse of the F49 Merg
 
 ## Fixes to existing tools
 
-### 1. Every tool should ask for a protected PDF's password (P2)
-- **Now:** only Merge asks (F49). Split, Extract, Rotate, Organise (`PdfToolsEngine.kt`), Fill form (`PdfFormEngine.kt`)
-  and Make searchable (`PdfOcrEngine.kt`) open files with `PdfToolsEngine.loadPdf`, which stops a password-protected
-  PDF with "This PDF is password-protected. Unlock it first with the Unlock PDF tool."
-- **Do:** give these tools the Merge treatment: an `openPdf(file, password)` call, a "needs password" exception, a
-  question in `PdfToolsViewModel` (memory-only password, cleared when the job ends) and the existing `PasswordDialog`.
-  Also check Compress and PDF to Images (they render with `PdfRenderer`).
-- **Note:** the output is unprotected, as with Merge; the dialog must say so (no silent weakening of security).
-
-### 2. Unlock's background notification says "Done" while it waits (P3)
-- **Now:** `inspectForUnlock` and a wrong unlock password end the job with a `null` result, so `launchTool` posts the
-  generic "Done" notice when the app is out of sight, although the app is waiting for a password.
-- **Do:** set `endedWithQuestion` and post the question with `notifications.taskFailed(…)`, as `runMerge` does.
-
-### 3. Split and PDF to Images name their files generically (P3)
-- **Now:** files in the zip are `page_001.pdf`, `part_1_pages_1_to_5.pdf`, `range_1_pages_…pdf`, `page_001.jpg`
-  (`PdfToolsEngine.splitPdf`, `pdfToImages`), so unpacked files don't say which PDF they came from.
-- **Do:** prefix the source name (`sourceBaseName`), e.g. `Invoice page 001.pdf`; keep names file-safe and short.
+Item 1 (every tool asks for a protected PDF's password) was built as F155 (pushed as F148), 2026-11-12.
 
 ## New tools (reuse existing code)
 
-### 4. Page numbers and watermark for any PDF (P2)
-`PdfExporter` already numbers pages for scan exports. Add a tool that stamps "n / total" (position, size) and/or a
-text watermark (text, opacity, angle) onto an existing PDF with PDFBox content streams.
+### 4. Page numbers and watermark for any PDF (Fixed in F107)
+Implemented in F107 (`page_numbers` and `watermark` in `PdfToolsEngine`, `PdfToolsViewModel`, and `PdfToolsScreen`):
+stamps custom text watermark diagonally at 45° or horizontally at 0° with colour chips, opacity, and font size sliders;
+and stamps page numbers in 5 positions ("Page 1 of N", "1 / N", "- 1 -", "1") with option to skip cover page.
 
 ### 5. Sign PDF (P2)
 Reuse the signature pad and placement step from the document editor (F25) on pages rendered from any PDF; stamp the
 signature image with PDFBox at the chosen spot.
 
-### 6. PDF to Word or text (P3)
-Text recognition (`OcrEngine`, `PdfOcrEngine`) and the Word export (`DocxExporter`) already exist for scans; chain them
-for any PDF, using the PDF's own text layer when it has one.
+### 6. PDF to Word or text (P3 - Text extraction fixed in F107)
+Text recognition (`OcrEngine`, `PdfOcrEngine`) and the Word export (`DocxExporter`) exist for scans. In F107, added `pdf2text` tool extracting text layer to `.txt` files with word and page counts. PDF to Word (`.docx`) remains for full multi-format export.
 
 ### 7. Insert pages in Organise (P3)
 Add a blank page or pages from another PDF at a chosen position in the Organise sheet (`organizePages` takes
 `PageSpec`s; extend it with an inserted-page source).
+
+## Added 2026-11-18 (F172)
+
+Crop PDF pages (auto-trim or margins, crop box only) and Redact text (words blacked out, matched pages rasterised) are
+in the Edit section; Protect and Unlock no longer reopen the finished file to count pages. N-up (2 or 4 pages per
+sheet, vector-preserving) and Header and footer ({page}/{total} placeholders, any script via picture text) followed as
+F173. Redact by drawing boxes followed as F174 (`RedactBoxesEditor`, reusing F172's redaction writer). Still missing
+against the leading apps: compare two PDFs.
 
 ## Open items in `AUDIT_FINDINGS.md` that touch the tools
 

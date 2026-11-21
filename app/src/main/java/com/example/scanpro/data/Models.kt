@@ -23,9 +23,14 @@ enum class ReviewMode(@StringRes val labelRes: Int) {
     NEVER(R.string.data_review_mode_never)
 }
 
+/**
+ * The longest side of a page picture in an exported PDF. For A4 (11.7 in): High about 290 dpi, Balanced about 240 and
+ * Small about 120. Raised 2026-11-18 from 3200 and 2200 (about 270 and 190 dpi): Balanced, the default, was softer than
+ * other scanner apps' default PDFs (owner's report).
+ */
 enum class PdfQuality(@StringRes val labelRes: Int, val maxImageDimension: Int) {
-    HIGH(R.string.data_pdf_quality_high, 3200),
-    BALANCED(R.string.data_pdf_quality_balanced, 2200),
+    HIGH(R.string.data_pdf_quality_high, 3400),
+    BALANCED(R.string.data_pdf_quality_balanced, 2800),
     SMALL(R.string.data_pdf_quality_small, 1400)
 }
 

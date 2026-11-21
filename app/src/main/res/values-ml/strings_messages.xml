@@ -123,7 +123,9 @@
     <string name="msg_tools_compressing">PDF കംപ്രസ് ചെയ്യുന്നു…</string>
     <string name="msg_tools_compression_failed">കംപ്രഷൻ പരാജയപ്പെട്ടു</string>
     <string name="msg_tools_compressed_by">%1$d%% കംപ്രസ് ചെയ്തു (%2$s → %3$s)</string>
+    <string name="msg_tools_compress_no_gain">ഇതിനകം ഏറ്റവും ചെറുതാണ്: ഇതിലും ചെറിയ പതിപ്പ് സാധ്യമായില്ല (%1$s)</string>
     <string name="msg_tools_compressed_not_searchable">. പേജുകൾ ചിത്രങ്ങളാക്കി മാറ്റിയതിനാൽ ടെക്സ്റ്റ് ഇനി തിരഞ്ഞെടുക്കാനോ തിരയാനോ കഴിയില്ല.</string>
+    <string name="msg_tools_compress_missed_target">. %1$s എത്താൻ കഴിഞ്ഞില്ല, ഇതിലും ചെറുതാകില്ല. വലിയ ലക്ഷ്യം പരീക്ഷിക്കുക.</string>
     <string name="msg_tools_exporting_pages">പേജുകൾ എക്സ്പോർട്ട് ചെയ്യുന്നു…</string>
     <string name="msg_tools_export_failed">എക്സ്പോർട്ട് പരാജയപ്പെട്ടു</string>
     <plurals name="msg_tools_exported_page_images">
@@ -150,7 +152,6 @@
     <string name="msg_tools_merge_failed">PDF-കൾ ലയിപ്പിക്കാനായില്ല</string>
     <string name="msg_tools_reading_form_fields">ഫോം ഫീൽഡുകൾ വായിക്കുന്നു…</string>
     <string name="msg_tools_read_form_failed">ഈ PDF-ന്റെ ഫോം വായിക്കാനായില്ല</string>
-    <string name="msg_tools_no_fillable_fields">ഈ PDF-ൽ പൂരിപ്പിക്കാവുന്ന ഫീൽഡുകളൊന്നുമില്ല. ഇത് നിങ്ങളുടെ ഡോക്യുമെന്റുകളിലേക്ക് ഇംപോർട്ട് ചെയ്ത് ടെക്സ്റ്റ് ചേർക്കുക ഉപയോഗിച്ച് ടൈപ്പ് ചെയ്യുക.</string>
     <string name="msg_tools_filling_form">ഫോം പൂരിപ്പിക്കുന്നു…</string>
     <string name="msg_tools_save_form_failed">പൂരിപ്പിച്ച ഫോം സേവ് ചെയ്യാനായില്ല</string>
     <string name="msg_tools_making_searchable">PDF തിരയാവുന്നതാക്കുന്നു…</string>
@@ -194,4 +195,6 @@
     <string name="msg_scan_photos_unavailable">പൂർത്തിയാകാത്ത സ്കാനിന്റെ ഫോട്ടോകൾ ഇപ്പോൾ ലഭ്യമല്ല</string>
     <string name="msg_tools_out_of_memory">ഈ PDF-ന് ആവശ്യത്തിന് മെമ്മറി ഇല്ല. ചെറിയ ഫയലോ കുറച്ച് പേജുകളോ പരീക്ഷിക്കുക.</string>
     <string name="msg_tools_form_nothing_changed">ഇതുവരെ ഒന്നും മാറ്റിയിട്ടില്ല</string>
+    <string name="msg_tools_repairing">PDF നന്നാക്കുന്നു…</string>
+    <string name="msg_tools_repair_failed">PDF നന്നാക്കാൻ കഴിഞ്ഞില്ല</string>
 </resources>

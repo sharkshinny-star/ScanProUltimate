@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="scan_guidance_align_page">பக்கத்தைச் சட்டகத்தில் நேராக வைக்கவும்</string>
+    <string name="scan_check_sharp">தெளிவு</string>
+    <string name="scan_check_blur">மங்கல்</string>
+    <string name="scan_check_clear">ஒளிப் பிரதிபலிப்பு இல்லை</string>
+    <string name="scan_check_glare">ஒளிப் பிரதிபலிப்பு</string>
+    <string name="scan_check_level">நேராக உள்ளது</string>
+    <string name="scan_check_tilt">சாய்ந்துள்ளது</string>
+    <string name="scan_check_summary">படத் தரம்: %1$s, %2$s, %3$s</string>
+</resources>

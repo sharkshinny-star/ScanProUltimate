@@ -145,6 +145,9 @@
     <string name="scan_quit_discard">हटाएं</string>
     <string name="scan_detection_mode">ऑटो कैप्चर</string>
     <string name="scan_detect_edges">पेज के किनारे पहचानें</string>
+    <string name="scan_hd_capture">HD कैप्चर</string>
+    <string name="scan_hd_on">HD कैप्चर चालू: ज़्यादा साफ़ पन्ने, थोड़ा धीमा</string>
+    <string name="scan_hd_off">HD कैप्चर बंद</string>
     <string name="scan_show_grid">ग्रिड</string>
     <string name="scan_show_level">लेवल</string>
     <string name="scan_more_options">और विकल्प</string>
@@ -156,9 +159,19 @@
     <string name="scan_exposure">एक्सपोज़र</string>
     <string name="scan_id_front_only">सिर्फ़ आगे</string>
     <string name="scan_id_both_sides">दोनों तरफ़</string>
+    <string name="scan_id_passport">पासपोर्ट</string>
+    <string name="scan_id_passport_page">फ़ोटो वाला पेज</string>
+    <string name="scan_id_side_step">%1$s · %3$d में से %2$d</string>
     <string name="scan_book_one_page">एक पेज</string>
     <string name="scan_book_two_pages">दो पेज</string>
     <string name="scan_book_two_pages_rtl">दो पेज, दायाँ पहले</string>
+    <string name="scan_book_intro_title">किताब स्कैन करना</string>
+    <string name="scan_book_intro_body">खुली किताब के बाएँ और दाएँ पेज को एक साथ स्कैन करें। ScanPro उन्हें दो पेज में बाँटता है: पहले A, फिर B। दाएँ से बाएँ पढ़ी जाने वाली किताबों के लिए “दो पेज, दायाँ पहले” चुनें।</string>
+    <string name="scan_idcard_intro_title">आईडी कार्ड स्कैन करना</string>
+    <string name="scan_idcard_intro_body">कार्ड को सादी, अलग रंग की सतह पर सीधा रखें और फ्रेम भरें। पहले आगे का हिस्सा, फिर पीछे का स्कैन करें। ScanPro दोनों तरफ़ एक पेज पर रखता है, आगे का हिस्सा ऊपर। चमक से बचें और किनारों पर उँगली न रखें।</string>
+    <string name="scan_doc_intro_title">दस्तावेज़ स्कैन करना</string>
+    <string name="scan_doc_intro_body">पेज को अच्छी रोशनी में सीधा रखें और फ़ोन स्थिर रखें। ScanPro किनारे पहचानकर पेज सीधा करता और साफ़ करता है। शटर दबाएँ, या ऑटो कैप्चर चालू रखकर स्थिर रहें। और पेज जोड़ें, फिर पूर्ण पर टैप करें।</string>
+    <string name="scan_book_intro_start">अभी शुरू करें</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">फैले पन्ने को पेज %1$d और %2$d में बाँटा</string>
     <string name="scan_take_photo">फ़ोटो लें</string>
     <string name="scan_import_photos">फ़ोटो इंपोर्ट करें</string>
@@ -204,10 +217,6 @@
     <string name="scan_error_camera_stopped">कैमरे ने काम करना बंद कर दिया। फिर से कोशिश करें या कम्पैटिबिलिटी स्कैनर इस्तेमाल करें।</string>
     <string name="scan_flash_state">फ़्लैश: %1$s</string>
     <string name="scan_zoom_level">ज़ूम %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">बैच में %1$d पेज</item>
-        <item quantity="other">बैच में %1$d पेज</item>
-    </plurals>
     <string name="scan_flash_off">बंद</string>
     <string name="scan_flash_auto">ऑटो</string>
     <string name="scan_flash_on">चालू</string>
@@ -253,10 +262,12 @@
     <string name="scan_review_folder_label">फ़ोल्डर</string>
     <string name="scan_review_folder_dialog_title">फ़ोल्डर में सहेजें</string>
     <string name="scan_review_adjust">समायोजित करें</string>
+    <string name="scan_review_reorder">क्रम बदलें</string>
     <string name="scan_guidance_glare">पेज पर चमक है · फ़ोन थोड़ा झुकाएं</string>
     <string name="scan_quality_blurry">यह पेज धुंधला लग रहा है: छोटा टेक्स्ट पढ़ना मुश्किल हो सकता है</string>
     <string name="scan_quality_glare">चमक इस पेज का कुछ हिस्सा छिपा रही है</string>
     <string name="scan_quality_dark">यह पेज बहुत गहरा लग रहा है</string>
+    <string name="scan_quality_blank">यह पेज खाली लग रहा है</string>
     <string name="scan_quality_retake">फिर से लें</string>
     <string name="scan_quality_page_flagged">पेज %1$d, शायद फिर से लेना पड़े</string>
     <string name="scan_strip_delete_hint">हटाने के लिए देर तक दबाएं</string>

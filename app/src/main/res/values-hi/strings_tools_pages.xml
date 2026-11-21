@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Page tools (F210). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_reading_pdf">PDF पढ़ा जा रहा है…</string>
+    <string name="pages_count_unknown">पेज गिने नहीं जा सके: PDF खराब हो सकता है या उसे पासवर्ड चाहिए। आप फिर भी कोशिश कर सकते हैं।</string>
+
+    <string name="pages_split_how">कैसे बाँटें</string>
+    <string name="pages_split_ranges_hint" tools:ignore="TypographyDashes">हर रेंज अपनी अलग फ़ाइल बनती है, जैसे 1-3, 4, 8-10</string>
+    <string name="pages_split_overlap">कुछ फ़ाइलों में एक जैसे पेज हैं: वे पेज एक से ज़्यादा फ़ाइल में आएँगे।</string>
+    <plurals name="pages_split_zip_hint">
+        <item quantity="one">%1$d फ़ाइल एक ZIP फ़ाइल में सहेजी जाती है।</item>
+        <item quantity="other">%1$d फ़ाइलें एक साथ एक ZIP फ़ाइल में सहेजी जाती हैं।</item>
+    </plurals>
+    <plurals name="pages_split_file_line">
+        <item quantity="one">फ़ाइल %1$d: पेज %2$s (%3$d पेज)</item>
+        <item quantity="other">फ़ाइल %1$d: पेज %2$s (%3$d पेज)</item>
+    </plurals>
+    <plurals name="pages_split_more_files">
+        <item quantity="one">…और %1$d फ़ाइल</item>
+        <item quantity="other">…और %1$d फ़ाइलें</item>
+    </plurals>
+
+    <string name="pages_numbers_where">कहाँ</string>
+    <string name="pages_numbers_edge_top">ऊपर</string>
+    <string name="pages_numbers_edge_bottom">नीचे</string>
+    <string name="pages_numbers_align_left">बाएँ</string>
+    <string name="pages_numbers_align_centre">बीच में</string>
+    <string name="pages_numbers_align_right">दाएँ</string>
+    <string name="pages_numbers_latin_note">ऐप की भाषा कोई भी हो, नंबर लैटिन अक्षरों और अंकों में लिखे जाते हैं (जैसे Page 3 of 12)।</string>
+    <string name="pages_numbers_cover_hint">कवर सादा रहता है पर गिना जाता है, इसलिए नंबर 2 से शुरू होते हैं।</string>
+    <string name="pages_numbers_only_cover">इस PDF में एक ही पेज है, वही कवर जिसे आपने छोड़ना चुना: किसी पेज पर नंबर नहीं लगेगा।</string>
+    <string name="pages_numbers_preview_page_two">पेज 2 पर दिखाया गया है, जो नंबर पाने वाला पहला पेज है।</string>
+    <plurals name="pages_numbers_numbered">
+        <item quantity="one">%1$d पेज पर नंबर लगेगा</item>
+        <item quantity="other">%1$d पेजों पर नंबर लगेंगे</item>
+    </plurals>
+
+    <string name="pages_nup_per_sheet_title">हर शीट पर पेज</string>
+    <plurals name="pages_nup_sheets">
+        <item quantity="one">%1$d शीट</item>
+        <item quantity="other">%1$d शीटें</item>
+    </plurals>
+    <string name="pages_nup_scale">हर पेज अपने आकार के लगभग %1$d%% पर छपता है।</string>
+    <string name="pages_nup_small_print">इतना छोटा टेक्स्ट कागज़ पर पढ़ना मुश्किल हो सकता है। हर शीट पर कम पेज रखने से वह बड़ा रहता है।</string>
+    <plurals name="pages_nup_last_sheet">
+        <item quantity="one">आख़िरी शीट पर %1$d पेज है; बाकी जगह खाली रहती है।</item>
+        <item quantity="other">आख़िरी शीट पर %1$d पेज हैं; बाकी जगह खाली रहती है।</item>
+    </plurals>
+
+    <plurals name="pages_blank_found_count">
+        <item quantity="one">%2$d में से %1$d पेज खाली लगता है</item>
+        <item quantity="other">%2$d में से %1$d पेज खाली लगते हैं</item>
+    </plurals>
+    <string name="pages_blank_review">टिक किए गए पेज हटाए जाते हैं। जो पेज रखना हो, उसका टिक हटा दें।</string>
+    <string name="pages_blank_none_ticked">हटाने के लिए कम से कम एक पेज पर टिक करें।</string>
+    <string name="pages_blank_copy_note">ये एक नई कॉपी में हटाए जाते हैं; मूल फ़ाइल जैसी है वैसी रहती है।</string>
+
+    <string name="pages_insert_pick_first">वह PDF चुनें जिससे पेज लेने हैं।</string>
+    <string name="pages_insert_change_pdf">दूसरा PDF चुनें</string>
+    <plurals name="pages_insert_summary">
+        <item quantity="one">%1$d पेज पेज %2$d के बाद जुड़ता है, कुल %3$d पेज।</item>
+        <item quantity="other">%1$d पेज पेज %2$d के बाद जुड़ते हैं, कुल %3$d पेज।</item>
+    </plurals>
+    <plurals name="pages_insert_summary_start">
+        <item quantity="one">%1$d पेज शुरू में जुड़ता है, कुल %2$d पेज।</item>
+        <item quantity="other">%1$d पेज शुरू में जुड़ते हैं, कुल %2$d पेज।</item>
+    </plurals>
+
+    <string name="pages_merge_counting">पेज गिने जा रहे हैं…</string>
+    <string name="pages_merge_summary">%1$s का एक PDF, लगभग %2$s</string>
+    <plurals name="pages_merge_not_counted">
+        <item quantity="one">गिना नहीं गया: %1$d फ़ाइल जो लॉक है या पढ़ी नहीं जा सकी।</item>
+        <item quantity="other">गिनी नहीं गईं: %1$d फ़ाइलें जो लॉक हैं या पढ़ी नहीं जा सकीं।</item>
+    </plurals>
+    <string name="pages_merge_unreadable">पढ़ी नहीं जा सकी · %1$s</string>
+
+    <plurals name="pages_org_turned">
+        <item quantity="one">%1$d पेज घुमाया गया</item>
+        <item quantity="other">%1$d पेज घुमाए गए</item>
+    </plurals>
+    <string name="pages_org_nothing_changed">पहले कोई पेज खिसकाएँ, घुमाएँ या हटाएँ: अभी PDF बिल्कुल वैसा ही निकलेगा।</string>
+    <string name="pages_org_turn_one">किसी पेज को घुमाने के लिए उस पर टैप करें: अभी कोई पेज नहीं घुमाया गया है।</string>
+    <string name="pages_org_pick_pages">जो पेज निकालने हैं उन पर टैप करें।</string>
+
+    <string name="pages_compress_estimating">हर स्तर से क्या मिलेगा, यह निकाला जा रहा है…</string>
+    <string name="pages_compress_level">कितना छोटा</string>
+    <string name="pages_compress_no_change">कोई बदलाव नहीं</string>
+    <string name="pages_compress_text_note">यह PDF ज़्यादातर टेक्स्ट है, जो पहले से ही छोटा होता है। कंप्रेस करने से सिर्फ़ इसकी तस्वीरें छोटी होती हैं, इसलिए ज़्यादा फ़र्क नहीं पड़ेगा; टेक्स्ट साफ़ और खोजने लायक रहता है।</string>
+    <string name="pages_compress_no_gain">इस स्तर पर यह PDF शायद छोटा नहीं होगा, इसलिए आपको उसी आकार की कॉपी मिलेगी।</string>
+    <string name="pages_compress_picture_note">इस PDF में टेक्स्ट लेयर नहीं है, इसलिए इस स्तर पर हर पेज फिर से तस्वीर के रूप में सहेजा जाता है। नतीजे का प्रीव्यू दिखाता है कि पहला पेज कैसा दिखेगा।</string>
+    <string name="pages_compress_target_unreachable">यह PDF ज़्यादा से ज़्यादा लगभग %1$s तक छोटा हो सकता है, इसलिए इससे छोटा लक्ष्य शायद पूरा न हो।</string>
+    <string name="pages_compress_target_text_warning">इतना छोटा आकार पाने के लिए पेज तस्वीरों के रूप में सहेजे जा सकते हैं: तब उनका टेक्स्ट खोजा या कॉपी नहीं किया जा सकेगा।</string>
+    <string name="pages_compress_estimate_failed">इस PDF का अनुमान नहीं निकल सका। काम पूरा होने पर असली आकार दिखाया जाएगा।</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_numbers_bold">बोल्ड</string>
+    <string name="pages_numbers_closeup">क्लोज़-अप</string>
+    <string name="pages_numbers_colour">रंग</string>
+    <string name="pages_numbers_colour_green">हरा</string>
+    <string name="pages_numbers_colour_grey">गहरा स्लेटी</string>
+    <string name="pages_numbers_colour_red">लाल</string>
+    <string name="pages_numbers_font">फ़ॉन्ट</string>
+    <string name="pages_numbers_font_twins">Helvetica या Times के रूप में लिखा गया, जो Arial और Times New Roman के जुड़वाँ हैं और हर PDF रीडर में होते हैं: वही आकार और चौड़ाई, इसलिए फ़ाइल में कुछ जोड़ना नहीं पड़ता।</string>
+    <string name="pages_numbers_italic">इटैलिक</string>
+    <string name="pages_numbers_look">स्टाइल</string>
+    <string name="pages_numbers_regular">सामान्य</string>
+    <string name="pages_numbers_size">साइज़</string>
+    <string name="pages_numbers_size_value">%1$d pt</string>
+    <string name="pages_numbers_style">लुक</string>
+    <string name="pages_numbers_underline">रेखांकित</string>
+</resources>

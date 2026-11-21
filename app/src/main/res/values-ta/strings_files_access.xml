@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Machine translation; needs a native speaker's read. -->
+<resources>
+    <string name="phone_pdfs_title">இந்த ஃபோனில் உள்ள கோப்புகள்</string>
+    <string name="phone_files_card_title">உங்கள் அனைத்துக் கோப்புகளையும் இங்கே பாருங்கள்</string>
+    <string name="phone_pdfs_card_body">பதிவிறக்கங்கள், அரட்டை ஆப்ஸ் மற்றும் பிற கோப்புறைகளில் உள்ள PDF, படங்கள், Office கோப்புகளைக் கண்டறியுங்கள். எதுவும் உங்கள் ஃபோனை விட்டு வெளியேறாது, இது விருப்பத்திற்குரியது.</string>
+    <string name="phone_pdfs_card_hide">இந்தக் கார்டை மறை</string>
+    <string name="phone_files_tab_mine">எனது ஆவணங்கள்</string>
+    <string name="phone_files_tab_phone">இந்த ஃபோனில்</string>
+    <string name="phone_pdfs_explainer_title">உங்கள் ஃபோனில் உள்ள ஒவ்வொரு கோப்பையும் பாருங்கள்</string>
+    <string name="phone_pdfs_explainer_why">உங்கள் ஃபோனில் எங்கிருந்தாலும், உதாரணமாக பதிவிறக்கங்களில் அல்லது அரட்டை ஆப்ஸில் பெற்ற கோப்புகளில் உள்ள, PDF, படங்கள், Office கோப்புகளைக் கண்டறிந்து திறக்க ScanProக்கு அனைத்துக் கோப்புகளுக்கான அணுகல் தேவை.</string>
+    <string name="phone_pdfs_explainer_private">எதுவும் உங்கள் ஃபோனை விட்டு வெளியேறாது. ScanPro உங்கள் கோப்புகளைப் படிக்க மட்டுமே செய்யும்; நீங்கள் கேட்காமல் அவற்றை ஒருபோதும் மாற்றாது அல்லது நீக்காது.</string>
+    <string name="phone_pdfs_explainer_optional">இது விருப்பத்திற்குரியது. ஸ்கேன் செய்தல், உங்கள் ஆவணங்கள் மற்றும் அனைத்துக் கருவிகளும் இது இல்லாமலும் இயங்கும்.</string>
+    <string name="phone_pdfs_explainer_steps">அடுத்த திரையில் ScanProக்கு \"அனைத்துக் கோப்புகளையும் நிர்வகிக்க அணுகலை அனுமதி\" என்பதை இயக்கி, பிறகு திரும்பி வாருங்கள்.</string>
+    <string name="phone_pdfs_explainer_steps_dialog">ScanPro உங்கள் கோப்புகளைப் படிக்கலாமா என்று Android கேட்கும்.</string>
+    <string name="phone_pdfs_allow">அணுகலை அனுமதி</string>
+    <string name="phone_pdfs_not_now">இப்போது வேண்டாம்</string>
+    <string name="phone_pdfs_settings_failed">அமைப்புகள் பக்கத்தைத் திறக்க முடியவில்லை. அமைப்புகள் &gt; ஆப்ஸ் என்பதில் ScanProக்கு அனைத்துக் கோப்புகளுக்கான அணுகலை அனுமதிக்கவும்.</string>
+    <string name="phone_pdfs_refresh">புதுப்பி</string>
+    <string name="phone_pdfs_search_hint">கோப்புகளைத் தேடு</string>
+    <string name="phone_pdfs_clear_search">தேடலை அழி</string>
+    <string name="phone_files_filter_all">அனைத்தும்</string>
+    <string name="phone_files_filter_pdf">PDF</string>
+    <string name="phone_files_filter_images">படங்கள்</string>
+    <string name="phone_files_filter_word">Word</string>
+    <string name="phone_files_filter_excel">Excel</string>
+    <string name="phone_files_filter_powerpoint">PowerPoint</string>
+    <string name="phone_files_filter_text">உரை</string>
+    <string name="phone_pdfs_sort_name">பெயர்</string>
+    <string name="phone_pdfs_sort_date">தேதி</string>
+    <string name="phone_pdfs_sort_size">அளவு</string>
+    <string name="phone_pdfs_sort_ascending">ஏறுவரிசை</string>
+    <string name="phone_pdfs_sort_descending">இறங்குவரிசை</string>
+    <plurals name="phone_files_count">
+        <item quantity="one">%1$d கோப்பு</item>
+        <item quantity="other">%1$d கோப்புகள்</item>
+    </plurals>
+    <plurals name="phone_files_selected">
+        <item quantity="one">%1$d தேர்ந்தெடுக்கப்பட்டது</item>
+        <item quantity="other">%1$d தேர்ந்தெடுக்கப்பட்டன</item>
+    </plurals>
+    <string name="phone_pdfs_loading">கோப்புகளைத் தேடுகிறது…</string>
+    <string name="phone_pdfs_empty">இந்த ஃபோனில் கோப்புகள் எதுவும் இல்லை.</string>
+    <string name="phone_pdfs_no_match">\"%1$s\" உடன் பொருந்தும் கோப்புகள் இல்லை.</string>
+    <string name="phone_pdfs_more">%1$sக்கான கூடுதல் விருப்பங்கள்</string>
+    <string name="phone_pdfs_open">திற</string>
+    <string name="phone_pdfs_add">ScanPro இல் சேர்</string>
+    <string name="phone_pdfs_share">பகிர்</string>
+    <string name="phone_files_open_with">இதன் மூலம் திற</string>
+    <string name="phone_files_convert">PDF ஆக மாற்று</string>
+    <string name="phone_files_merge">இணை</string>
+    <string name="phone_files_images_to_pdf">படங்களிலிருந்து PDF</string>
+    <string name="phone_files_clear_selection">தேர்வை அழி</string>
+    <string name="phone_files_close">மூடு</string>
+    <string name="phone_files_no_app">இந்த ஃபோனில் உள்ள எந்த ஆப்ஸாலும் இந்தக் கோப்பைத் திறக்க முடியாது.</string>
+    <string name="default_viewer_title">ScanProவை உங்கள் இயல்புநிலை PDF வியூவராக அமைக்கவும்</string>
+    <string name="default_viewer_body">பிற ஆப்ஸிலிருந்து வரும் PDFகளை நேரடியாக ScanPro இல், அதன் வியூவர் மற்றும் கருவிகளுடன் திறக்கவும்.</string>
+    <string name="default_viewer_hint">PDFஐ எந்த ஆப்ஸ் திறக்க வேண்டும் என்று Android கேட்கும்போது, ScanProவைத் தேர்ந்தெடுத்து எப்போதும் என்பதைத் தட்டவும்.</string>
+    <string name="default_viewer_set">இயல்புநிலையாக அமை</string>
+    <string name="default_viewer_not_now">இப்போது வேண்டாம்</string>
+    <string name="default_viewer_settings_failed">அமைப்புகள் பக்கத்தைத் திறக்க முடியவில்லை.</string>
+    <string name="import_tip_title">கோப்புகளை இறக்குவது எப்படி?</string>
+    <string name="import_tip_body">ஒரு கோப்பைத் தேர்ந்தெடுக்கத் தட்டவும், பலவற்றைத் தேர்ந்தெடுக்க நீண்ட நேரம் அழுத்தவும், பிறகு இறக்க மேலே வலதுபுறத்தில் உள்ள தேர்ந்தெடு என்பதைத் தட்டவும்.</string>
+    <string name="import_tip_cancel">ரத்துசெய்</string>
+    <string name="import_tip_import">இறக்கு</string>
+    <string name="phone_files_folders">கோப்புறைகள்</string>
+    <string name="phone_files_show_grid">கட்டமாகக் காட்டு</string>
+    <string name="phone_files_show_list">பட்டியலாகக் காட்டு</string>
+    <string name="phone_files_my_storage">என் சேமிப்பகம்</string>
+    <string name="phone_files_internal_storage">உள் சேமிப்பகம்</string>
+    <string name="phone_files_downloads">பதிவிறக்கங்கள்</string>
+    <string name="phone_files_processed">ScanPro-வில் உருவானவை</string>
+    <string name="phone_files_cloud_title">கிளவுட் டிரைவ்களும் பிற ஆப்களும்</string>
+    <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… இலிருந்து திற</string>
+    <string name="phone_files_all_files">எல்லாக் கோப்புகளும்</string>
+    <string name="phone_files_up">ஒரு கோப்புறை மேலே</string>
+</resources>

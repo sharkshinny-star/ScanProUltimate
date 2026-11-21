@@ -119,6 +119,9 @@ class ColourThemeScreenshotTest {
                 )
             }
         }
+        // F140: the main page lists the pages; the colour themes are on Appearance.
+        capture("light_settings_main")
+        compose.onNodeWithText("Appearance").performClick()
         capture("light_settings_sunset")
         compose.onNodeWithText("Ocean").performClick()
         capture("light_settings_ocean")

@@ -32,4 +32,23 @@
     <string name="settings_notify_backup_body">जब आपने एक महीने से बैकअप न लिया हो</string>
     <string name="settings_notifications_system_title">सिस्टम नोटिफ़िकेशन सेटिंग्स</string>
     <string name="settings_notifications_system_body">हर तरह की सूचना के लिए आवाज़, लॉक स्क्रीन और बहुत कुछ</string>
+    <string name="settings_notify_water_title">पानी पीने के रिमाइंडर</string>
+    <string name="settings_notify_water_body">दिन भर में एक गिलास पानी पीने की हल्की याद</string>
+    <string name="notify_channel_water">पानी पिएँ</string>
+    <string name="notify_channel_water_description">दिन भर पानी पीने की याद, अगर आप इन्हें चालू रखें</string>
+    <string name="notify_water_title">एक गिलास पानी का समय</string>
+    <string name="notify_water_body_morning">अभी एक घूँट सुबह को तरोताज़ा रखता है। 💧</string>
+    <string name="notify_water_body_midday">दोपहर हो गई — ब्रेक के साथ एक गिलास पानी पी लें।</string>
+    <string name="notify_water_body_later">समय निकल रहा है — अभी एक गिलास पानी आपको तरोताज़ा रखेगा।</string>
+    <string name="notify_water_body_last">आज की आख़िरी याद: एक और गिलास आपको चलाए रखेगा।</string>
+    <string name="notify_water_drank">पी लिया</string>
+    <string name="notify_water_skip">छोड़ें</string>
+    <string name="settings_group_water_times">पानी के रिमाइंडर का समय</string>
+    <string name="settings_notify_water_first_title">पहला रिमाइंडर</string>
+    <string name="settings_notify_water_last_title">इसके बाद रिमाइंडर नहीं</string>
+    <string name="settings_notify_water_every_title">याद दिलाने का अंतराल</string>
+    <plurals name="settings_notify_water_every_value">
+        <item quantity="one">%d घंटा</item>
+        <item quantity="other">%d घंटे</item>
+    </plurals>
 </resources>

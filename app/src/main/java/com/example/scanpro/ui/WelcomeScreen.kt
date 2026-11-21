@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.snap
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material3.TextButton
@@ -45,10 +46,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.AutoFixHigh
-import androidx.compose.material.icons.rounded.DocumentScanner
-import androidx.compose.material.icons.rounded.Draw
-import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -77,21 +74,34 @@ import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
 import com.example.scanpro.R
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.core.view.WindowCompat
+import com.example.scanpro.core.designsystem.PhoneScanArt
+import com.example.scanpro.core.designsystem.PrivateToolsArt
+import com.example.scanpro.core.designsystem.ReceiptGridArt
+import kotlinx.coroutines.launch
 import com.example.scanpro.core.designsystem.AuroraBackground
+import com.example.scanpro.data.FilesAccessPrompts
+import com.example.scanpro.feature.phonepdfs.PhonePdfSource
 import com.example.scanpro.core.designsystem.BrandLockup
 import com.example.scanpro.core.designsystem.GradientButton
 import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.designsystem.rememberMotionEnabled
-
-private class WelcomePoint(val icon: ImageVector, @StringRes val text: Int, val tone: TileTone)
-
-private val points = listOf(
-    WelcomePoint(Icons.Rounded.DocumentScanner, R.string.ui_welcome_point_scan, TileTone.Indigo),
-    WelcomePoint(Icons.Rounded.AutoFixHigh, R.string.ui_welcome_point_clean, TileTone.Teal),
-    WelcomePoint(Icons.Rounded.Draw, R.string.ui_welcome_point_share, TileTone.Violet)
-)
 
 /**
  * The runtime permissions asked for together once, right after the welcome on first launch, as most scanner apps do:
@@ -100,21 +110,32 @@ private val points = listOf(
  * user says no here, each is asked for again where it is used: the camera screen and Settings > Notifications.
  */
 internal object StartupPermissions {
+    /**
+     * Not an Android runtime permission: "All files access" (Android 11+), granted on a system settings page rather
+     * than in a dialog. Listed with the others so the page explains it in the same place (F196, owner's request).
+     */
+    const val FILES_ACCESS = "com.example.scanpro.permission.FILES_ACCESS"
+
     fun wanted(): List<String> = buildList {
         add(Manifest.permission.CAMERA)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+        // Up to Android 10 reading shared storage is an ordinary runtime permission, asked with the others.
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) add(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
-    fun missing(context: Context): List<String> =
-        wanted().filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
+    fun missing(context: Context): List<String> = buildList {
+        addAll(wanted().filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED })
+        if (com.example.scanpro.BuildConfig.ALL_FILES_ACCESS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !PhonePdfSource.hasAccess(context)) {
+            add(FILES_ACCESS)
+        }
+    }
 }
 
 /**
- * Shown once on first launch: one page with the promise, the privacy line and three things the app does, then a
- * single button. If Android has not granted the camera and notifications yet, a second page explains why the app
- * would like them and asks for both in one go, so the first scan opens straight into the camera. [onGetStarted]
- * runs when the user is through (Back on either page skips the rest). Drawn edge to edge over the ambient brand
- * backdrop, with the content stepping aside for the system bars.
+ * Shown once on first launch: three full-bleed pages, each a large picture over a bold headline and a line with its
+ * key words in bold (scan; manage files; PDF tools that never leave the phone), with page dots and a Next pill. On
+ * the last page Get started goes on, as before, to the permission page if Android has not granted the camera and
+ * notifications yet, then [onGetStarted]. Skip (or Back, handled by the caller) jumps straight to that step.
  */
 @Composable
 fun WelcomeScreen(onGetStarted: () -> Unit) {
@@ -130,32 +151,201 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
         if (asking) {
             PermissionsPage(onDone = onGetStarted)
         } else {
-            OnboardingPage(
-                heroIcon = Icons.Rounded.Shield,
-                heroTone = TileTone.Teal,
-                title = stringResource(R.string.ui_welcome_title),
-                body = stringResource(R.string.ui_welcome_tagline),
-                points = points.map { OnboardingPoint(it.icon, it.tone, stringResource(it.text)) },
-                primary = stringResource(R.string.ui_welcome_get_started),
-                onPrimary = {
-                    // Nothing left to ask (granted already, e.g. reinstalled with permissions restored): straight in.
-                    if (StartupPermissions.missing(context).isEmpty()) onGetStarted() else askingPermissions = true
+            WelcomePager(onFinish = {
+                // Nothing left to ask (granted already, e.g. reinstalled with permissions restored): straight in.
+                if (StartupPermissions.missing(context).isEmpty()) onGetStarted() else askingPermissions = true
+            })
+        }
+    }
+}
+
+/** One welcome page: its picture, headline, and a line whose %1$s is filled with [keyword], shown in bold. */
+private class WelcomeSlide(
+    @StringRes val title: Int,
+    @StringRes val body: Int,
+    @StringRes val keyword: Int,
+    val art: @Composable (Modifier) -> Unit
+)
+
+private val welcomeSlides = listOf(
+    WelcomeSlide(R.string.intro_welcome_scan_title, R.string.intro_welcome_scan_body, R.string.intro_welcome_scan_keyword) { PhoneScanArt(it) },
+    WelcomeSlide(R.string.intro_welcome_files_title, R.string.intro_welcome_files_body, R.string.intro_welcome_files_keyword) { ReceiptGridArt(it) },
+    WelcomeSlide(R.string.intro_welcome_tools_title, R.string.intro_welcome_tools_body, R.string.intro_welcome_tools_keyword) { PrivateToolsArt(it) }
+)
+
+@Composable
+private fun WelcomePager(onFinish: () -> Unit) {
+    val pager = rememberPagerState { welcomeSlides.size }
+    val scope = rememberCoroutineScope()
+    val motion = rememberMotionEnabled()
+    val last = welcomeSlides.lastIndex
+    val background = MaterialTheme.colorScheme.background
+    // The pictures sit under the status bar on a dark desk: light status-bar icons while the welcome is up.
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val window = (view.context as? android.app.Activity)?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+        val before = controller?.isAppearanceLightStatusBars
+        controller?.isAppearanceLightStatusBars = false
+        onDispose { if (before != null) controller.isAppearanceLightStatusBars = before }
+    }
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .background(background)
+            // Taps on empty parts of the welcome must not reach the app drawn underneath it.
+            .pointerInput(Unit) { detectTapGestures { } }
+    ) {
+        val artHeight = maxHeight * (if (maxHeight < 620.dp) 0.42f else 0.52f)
+        Column(Modifier.fillMaxSize()) {
+            HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), verticalAlignment = Alignment.Top) { page ->
+                val slide = welcomeSlides[page]
+                Column(Modifier.fillMaxSize()) {
+                    Box(Modifier.fillMaxWidth().height(artHeight)) {
+                        slide.art(Modifier.fillMaxSize())
+                        // The picture fades into the page below it.
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .background(Brush.verticalGradient(listOf(Color.Transparent, background)))
+                        )
+                    }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 28.dp)
+                    ) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            stringResource(slide.title),
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.semantics { heading() }
+                        )
+                        Spacer(Modifier.height(14.dp))
+                        val keyword = stringResource(slide.keyword)
+                        val body = stringResource(slide.body, keyword)
+                        val onSurface = MaterialTheme.colorScheme.onSurface
+                        Text(
+                            buildAnnotatedString {
+                                append(body)
+                                val at = body.indexOf(keyword)
+                                if (at >= 0) addStyle(SpanStyle(fontWeight = FontWeight.Bold, color = onSurface), at, at + keyword.length)
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(start = 28.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                WelcomeDots(welcomeSlides.size, pager.currentPage)
+                Spacer(Modifier.weight(1f))
+                val onLast = pager.currentPage == last
+                Button(
+                    onClick = {
+                        if (onLast) {
+                            onFinish()
+                        } else {
+                            scope.launch {
+                                if (motion) pager.animateScrollToPage(pager.currentPage + 1) else pager.scrollToPage(pager.currentPage + 1)
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(50),
+                    contentPadding = PaddingValues(horizontal = 28.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                        stringResource(if (onLast) R.string.ui_welcome_get_started else R.string.hint_next),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+        // Skip, over the picture: a dark pill so it reads on the desk in either theme.
+        if (pager.currentPage < last) {
+            TextButton(
+                onClick = onFinish,
+                colors = ButtonDefaults.textButtonColors(containerColor = Color.Black.copy(alpha = 0.38f), contentColor = Color.White),
+                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 8.dp, end = 16.dp)
+            ) { Text(stringResource(R.string.hint_skip), fontWeight = FontWeight.SemiBold) }
+        }
+    }
+}
+
+/** Page dots, the current one a wider pill; read out as "Page 1 of 3". */
+@Composable
+private fun WelcomeDots(count: Int, current: Int) {
+    val description = stringResource(R.string.intro_welcome_page, current + 1, count)
+    Row(Modifier.clearAndSetSemantics { contentDescription = description }, verticalAlignment = Alignment.CenterVertically) {
+        repeat(count) { index ->
+            val selected = index == current
+            Box(
+                Modifier
+                    .padding(end = 8.dp)
+                    .height(8.dp)
+                    .width(if (selected) 24.dp else 8.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f))
             )
         }
     }
 }
 
-/** The second welcome page: why the app would like each permission it does not have yet, then Android's own dialogs. */
+/**
+ * The second welcome page: why the app would like each permission it does not have yet, then Android's own dialogs
+ * and, on Android 11 and newer, the "All files access" settings page; the app opens when the person comes back.
+ */
 @Composable
 private fun PermissionsPage(onDone: () -> Unit) {
     val context = LocalContext.current
     // Fixed while the page is up, so the rows don't change under Android's dialogs as each answer comes in.
     val asked = remember { StartupPermissions.missing(context) }
+    val runtime = remember(asked) { asked.filter { it != StartupPermissions.FILES_ACCESS } }
+    val wantsFilesPage = StartupPermissions.FILES_ACCESS in asked
+    // Waiting for the person to come back from the settings page.
+    var waitingForSettings by rememberSaveable { mutableStateOf(false) }
+
+    fun finish() {
+        // Asked here, so the one-time prompt for people who passed the welcome before (ScanProApp) never repeats it.
+        FilesAccessPrompts.markStartFilesAsked(context)
+        onDone()
+    }
+    fun openFilesPage() {
+        if (PhonePdfSource.openAllFilesAccessSettings(context)) waitingForSettings = true else finish()
+    }
+
     // Whatever the answers, the app opens next; a "no" is asked again where that permission is needed.
-    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { onDone() }
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (wantsFilesPage && !PhonePdfSource.hasAccess(context)) openFilesPage() else finish()
+    }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, waitingForSettings) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME && waitingForSettings) {
+                waitingForSettings = false
+                finish()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var requested by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(asked) { if (asked.isEmpty()) onDone() }
+    LaunchedEffect(asked) { if (asked.isEmpty()) finish() }
     OnboardingPage(
         heroIcon = Icons.Rounded.PhotoCamera,
         heroTone = TileTone.Indigo,
@@ -171,6 +361,14 @@ private fun PermissionsPage(onDone: () -> Unit) {
                     Icons.Rounded.Notifications, TileTone.Amber,
                     stringResource(R.string.ui_permission_notifications_title), stringResource(R.string.ui_permission_notifications_body)
                 )
+                Manifest.permission.READ_EXTERNAL_STORAGE -> OnboardingPoint(
+                    Icons.Rounded.Folder, TileTone.Teal,
+                    stringResource(R.string.ui_permission_files_title), stringResource(R.string.ui_permission_files_body_dialog)
+                )
+                StartupPermissions.FILES_ACCESS -> OnboardingPoint(
+                    Icons.Rounded.Folder, TileTone.Teal,
+                    stringResource(R.string.ui_permission_files_title), stringResource(R.string.ui_permission_files_body_settings)
+                )
                 else -> null
             }
         },
@@ -179,10 +377,10 @@ private fun PermissionsPage(onDone: () -> Unit) {
         primaryEnabled = !requested,
         onPrimary = {
             requested = true
-            request.launch(asked.toTypedArray())
+            if (runtime.isNotEmpty()) request.launch(runtime.toTypedArray()) else openFilesPage()
         },
         secondary = stringResource(R.string.ui_permissions_not_now),
-        onSecondary = onDone
+        onSecondary = { finish() }
     )
 }
 
@@ -359,28 +557,30 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
     val brand = ScanProTheme.colors
     val scheme = MaterialTheme.colorScheme
     val sweep = rememberInfiniteTransition(label = "scan")
-    val beam by sweep.animateFloat(
+    val beam = sweep.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(2_600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "beam"
     )
-    val glow by sweep.animateFloat(
+    val glow = sweep.animateFloat(
         initialValue = 0.85f,
         targetValue = 1.05f,
         animationSpec = infiniteRepeatable(tween(1_800, easing = LinearEasing), RepeatMode.Reverse),
         label = "glow"
     )
-    val float by sweep.animateFloat(
+    val float = sweep.animateFloat(
         initialValue = -1f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(3_400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "float"
     )
     val motion = rememberMotionEnabled()
-    val beamPosition = if (motion) beam else 0.5f
-    val haloScale = if (motion) glow else 1f
-    val bob = if (motion) float else 0f
+    // Read only inside graphicsLayer and Canvas blocks (2026-11-18): read here, they recomposed the illustration on every
+    // frame of the three endless animations.
+    fun beamPosition() = if (motion) beam.value else 0.5f
+    fun haloScale() = if (motion) glow.value else 1f
+    fun bob() = if (motion) float.value else 0f
     // Lock-on: as the screen comes into view the brackets start loose and white, then snap tight and mint,
     // the way the scanner's own outline does when it finds a page.
     val lock by animateFloatAsState(
@@ -399,24 +599,24 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         Box(
             Modifier
                 .size(sheetWidth * 1.8f)
-                .graphicsLayer { scaleX = haloScale; scaleY = haloScale }
+                .graphicsLayer { scaleX = haloScale(); scaleY = haloScale() }
                 .background(
                     Brush.radialGradient(listOf(brand.gradientEnd.copy(alpha = 0.22f), Color.Transparent)),
                     CircleShape
                 )
         )
         // Two sheets behind, fanned out; the whole stack drifts gently, the back sheets a little more.
-        Box(Modifier.graphicsLayer { translationY = bob * 7.dp.toPx(); rotationZ = bob * 1.2f }) {
+        Box(Modifier.graphicsLayer { translationY = bob() * 7.dp.toPx(); rotationZ = bob() * 1.2f }) {
             Sheet(sheetWidth, sheetHeight, rotation = -9f, offsetX = -backOffsetX - 4.dp, offsetY = 8.dp, alpha = 0.55f, lines = false)
         }
-        Box(Modifier.graphicsLayer { translationY = -bob * 5.dp.toPx(); rotationZ = -bob * 0.8f }) {
+        Box(Modifier.graphicsLayer { translationY = -bob() * 5.dp.toPx(); rotationZ = -bob() * 0.8f }) {
             Sheet(sheetWidth, sheetHeight, rotation = 6f, offsetX = backOffsetX, offsetY = 5.dp, alpha = 0.75f, lines = false)
         }
         // Front sheet with text lines and the beam.
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.graphicsLayer { translationY = bob * 3.dp.toPx() }) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.graphicsLayer { translationY = bob() * 3.dp.toPx() }) {
             Sheet(sheetWidth, sheetHeight, rotation = 0f, offsetX = 0.dp, offsetY = 0.dp, alpha = 1f, lines = true)
             Canvas(Modifier.size(sheetWidth + 30.dp, sheetHeight)) {
-                val y = size.height * (0.12f + 0.76f * beamPosition)
+                val y = size.height * (0.12f + 0.76f * beamPosition())
                 // Wake of the beam: a faint band fading upwards.
                 drawRect(
                     brush = Brush.verticalGradient(

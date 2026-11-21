@@ -71,6 +71,39 @@ class SignPdfEngineTest {
     }
 
     @Test
+    fun aDigitallySignedFileIsRecognisedAndAPlainOneIsNot() {
+        assertFalse(SignPdfEngine.hasDigitalSignature(pdf("plain.pdf", pages = 1)))
+        // A signature field whose value is a signature dictionary, as a signing tool leaves it (F215).
+        val signed = File(dir, "signed-digitally.pdf")
+        PDDocument().use { document ->
+            document.addPage(PDPage(PDRectangle.A4))
+            val form = com.tom_roush.pdfbox.pdmodel.interactive.form.PDAcroForm(document)
+            document.documentCatalog.acroForm = form
+            val field = com.tom_roush.pdfbox.cos.COSDictionary().apply {
+                setName(com.tom_roush.pdfbox.cos.COSName.FT, "Sig")
+                setString(com.tom_roush.pdfbox.cos.COSName.T, "Signature1")
+                setItem(com.tom_roush.pdfbox.cos.COSName.V, com.tom_roush.pdfbox.cos.COSDictionary().apply {
+                    setName(com.tom_roush.pdfbox.cos.COSName.TYPE, "Sig")
+                })
+            }
+            val fields = form.cosObject.getDictionaryObject(com.tom_roush.pdfbox.cos.COSName.FIELDS) as com.tom_roush.pdfbox.cos.COSArray
+            fields.add(field)
+            document.save(signed)
+        }
+        assertTrue(SignPdfEngine.hasDigitalSignature(signed))
+        // A file that is not a PDF is not reported as signed; the tool fails later with its own message.
+        assertFalse(SignPdfEngine.hasDigitalSignature(File(dir, "missing.pdf")))
+    }
+
+    @Test
+    fun theScratchLimitNeverRefusesAnHonestFile() {
+        assertEquals(PdfToolsEngine.MIN_SCRATCH_BYTES, PdfToolsEngine.scratchLimit(0))
+        assertEquals(PdfToolsEngine.MIN_SCRATCH_BYTES, PdfToolsEngine.scratchLimit(20_000))
+        assertEquals(8L * 500L * 1024L * 1024L, PdfToolsEngine.scratchLimit(500L * 1024L * 1024L))
+        assertEquals(PdfToolsEngine.MIN_SCRATCH_BYTES, PdfToolsEngine.scratchLimit(-1))
+    }
+
+    @Test
     fun severalStampsOnSeveralPagesAreAllDrawn() = runBlocking {
         val source = pdf("two.pdf", pages = 2)
         val output = File(dir, "signed.pdf")

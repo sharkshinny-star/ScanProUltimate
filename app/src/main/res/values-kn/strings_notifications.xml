@@ -32,4 +32,23 @@
     <string name="settings_notify_backup_body">ಒಂದು ತಿಂಗಳಿಂದ ನೀವು ಬ್ಯಾಕಪ್ ಮಾಡದಿದ್ದಾಗ</string>
     <string name="settings_notifications_system_title">ಸಿಸ್ಟಂ ಅಧಿಸೂಚನೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
     <string name="settings_notifications_system_body">ಪ್ರತಿ ರೀತಿಯ ಸೂಚನೆಗೆ ಶಬ್ದಗಳು, ಲಾಕ್ ಸ್ಕ್ರೀನ್ ಮತ್ತು ಇನ್ನಷ್ಟು</string>
+    <string name="settings_notify_water_title">ನೀರು ಕುಡಿಯುವ ಜ್ಞಾಪನೆಗಳು</string>
+    <string name="settings_notify_water_body">ದಿನವಿಡೀ ಒಂದು ಲೋಟ ನೀರು ಕುಡಿಯಲು ಮೃದುವಾದ ನೆನಪು</string>
+    <string name="notify_channel_water">ನೀರು ಕುಡಿಯಿರಿ</string>
+    <string name="notify_channel_water_description">ನೀವು ಆನ್ ಇಟ್ಟರೆ, ದಿನವಿಡೀ ನೀರು ಕುಡಿಯುವ ಜ್ಞಾಪನೆ</string>
+    <string name="notify_water_title">ಒಂದು ಲೋಟ ನೀರಿನ ಸಮಯ</string>
+    <string name="notify_water_body_morning">ಈಗ ಒಂದು ಗುಟುಕು ಬೆಳಗ್ಗೆಯನ್ನು ಚುರುಕಾಗಿಡುತ್ತದೆ. 💧</string>
+    <string name="notify_water_body_midday">ಮಧ್ಯಾಹ್ನವಾಯಿತು — ವಿರಾಮದ ಜೊತೆ ಒಂದು ಲೋಟ ನೀರು ಕುಡಿಯಿರಿ.</string>
+    <string name="notify_water_body_later">ಸಮಯ ಸರಿಯುತ್ತಿದೆ — ಈಗ ಒಂದು ಲೋಟ ನೀರು ನಿಮ್ಮನ್ನು ತಾಜಾ ಆಗಿಡುತ್ತದೆ.</string>
+    <string name="notify_water_body_last">ಇಂದಿನ ಕೊನೆಯ ನೆನಪು: ಇನ್ನೊಂದು ಲೋಟ ನಿಮ್ಮನ್ನು ಚೈತನ್ಯದಿಂದ ಇಡುತ್ತದೆ.</string>
+    <string name="notify_water_drank">ಕುಡಿದೆ</string>
+    <string name="notify_water_skip">ಬಿಟ್ಟುಬಿಡಿ</string>
+    <string name="settings_group_water_times">ನೀರಿನ ಜ್ಞಾಪನೆ ಸಮಯ</string>
+    <string name="settings_notify_water_first_title">ಮೊದಲ ಜ್ಞಾಪನೆ</string>
+    <string name="settings_notify_water_last_title">ಇದರ ನಂತರ ಜ್ಞಾಪನೆ ಇಲ್ಲ</string>
+    <string name="settings_notify_water_every_title">ಜ್ಞಾಪನೆಗಳ ನಡುವಿನ ಅಂತರ</string>
+    <plurals name="settings_notify_water_every_value">
+        <item quantity="one">%d ಗಂಟೆ</item>
+        <item quantity="other">%d ಗಂಟೆ</item>
+    </plurals>
 </resources>

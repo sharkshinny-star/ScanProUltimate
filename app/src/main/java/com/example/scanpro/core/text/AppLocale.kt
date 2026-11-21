@@ -33,6 +33,13 @@ object AppLocale {
     // Android 12 and older), so fall back to the context given; shared preferences are per app either way.
     private fun prefs(context: Context) = (context.applicationContext ?: context).getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+    /**
+     * Starts loading the language preferences without waiting for them: Android reads the file on its own thread, so
+     * calling this early in start-up (while Hilt builds the rest) means [isChosen] finds it loaded instead of blocking
+     * the main thread for the first read.
+     */
+    fun warmUp(context: Context) { prefs(context) }
+
     /** True once the user has picked a language (first-launch screen shown). */
     fun isChosen(context: Context): Boolean = prefs(context).getBoolean(KEY_CHOSEN, false)
 

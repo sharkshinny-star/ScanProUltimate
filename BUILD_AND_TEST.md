@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-09, `a352579` (unit tests rerun after F96; the other rows below keep the date and commit they were run on). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-18 (CI run 183 compiled F193, 1 test premise fixed; F194 Edit PDF text: engine 7/7 on the desktop, editor not compiled; F193 not compiled, new tests not run; F192 (Protect PDF) not compiled; F191 Files storage overview and folders, not compiled; F189–F190 not compiled; F188 (hexagon colour picker for signatures, not compiled); F186 capture and PDF quality, F187 AGP 9.5.1; F181–F185: Invert PDF, filters, page-area save, live colour detection, blue outline; desktop tests only; F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -8,7 +8,7 @@ had ever been built).
 | Tool | Version |
 |---|---|
 | JDK | 17 or newer |
-| Gradle (wrapper) | 9.8.2 |
+| Gradle (wrapper) | 9.9.0 |
 | Android Gradle Plugin | 9.5.0 |
 | Kotlin / Compose compiler | 2.4.21 |
 | KSP | 2.3.13 |
@@ -23,8 +23,12 @@ had ever been built).
 ./gradlew :app:testDebugUnitTest                  # JVM unit tests
 ./gradlew :app:lintDebug                          # Android lint (config: app/lint.xml)
 ./gradlew :app:bundleRelease                      # Play bundle, R8 on, with :translate as on-demand module
+#   for upload: add -Pscanpro.allFilesAccess=false -Pscanpro.privacyPolicyUrl=https://... (the task stops without both, F225);
+#   a test bundle that will not be uploaded: -Pscanpro.allowMissingPolicy=true (what CI passes)
+bash scripts/setup-upload-key.sh                  # once, on the owner's computer: upload key + SCANPRO_* signing values (outside the repo)
 ./gradlew -Pscanpro.sideload=true :app:assembleRelease   # per-ABI + universal APKs, translation built in
 scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release
+python3 -I scripts/remaining-work.py              # rewrite the open-items block of REMAINING_WORK.md from AUDIT_FINDINGS.md (--check: only compare)
 ```
 
 Gradle properties:
@@ -39,20 +43,531 @@ Gradle properties:
 | `-Pscanpro.composeMetrics=true` | Compose compiler metrics in `build/compose_metrics` |
 | `-Pscanpro.privacyPolicyUrl=…`, `-Pscanpro.termsUrl=…` | Settings links (hidden when empty) |
 
-CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report, on pushes to `main`, pull requests and manual runs (20-minute timeout; artifacts only on manual runs). Not yet run with the new limits; if the build exceeds 20 minutes, raise `timeout-minutes`.
+CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
-## Latest results (2026-11-09, working tree on branch claude/awesome-clarke-ussjo3)
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:aace4a40f4e51dbeb82930502b1f9640430e87df5592dc693c3286089213c40d -->
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
+
+## Latest results (2026-11-20, PR 18 round 2 on `619d0ac4` plus working patch)
+
+- `./gradlew --no-daemon :app:testDebugUnitTest --tests '*EncryptedDocumentPackageTest' --tests '*ChunkedAeadTest' :app:lintDebug`: PASS in 7m 35s; 20 package tests, zero failures/errors/skips; lint passed. The ChunkedAeadTest filter matched no class; package tests exercise encrypted round trips.
+- `./gradlew --no-daemon :app:testDebugUnitTest --tests '*ImportBackupTest' --tests '*BackupAllTest'`: PASS in 59s; 10 caller tests, zero failures/errors/skips. Lint and package passes reused for unchanged inputs.
+- Same Java 25.0.2 / Gradle 9.9.0 / Android 37.0 r2 toolchain as round 1. No broad suite or release build; CodeQL on the published patch remains unverified locally.
+
+## Latest results (2026-11-20, PR 18 repair on `b240676d` plus working patch)
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+- `./gradlew --no-daemon :app:testDebugUnitTest --tests '*ResultShareTest' :app:lintDebug`: PASS (7m 9s), six tests, zero failures/errors/skips; lint completed successfully. App and test Kotlin compilation passed as dependencies. No full test suite or release/package build run for this scoped repair.
+- Exact extraction function and `ResultShareTest` also compiled standalone: six JUnit tests passed (Kotlin 2.4.21, Java 25.0.2).
+- Initial Gradle attempts were blocked by Java CA trust and missing SDK; repaired using a separate truststore and SDK installation. Final run used Java 25.0.2, Gradle 9.9.0 and Android platform 37.0 r2. No device run or local CodeQL scan.
+
+## Latest CI results (2026-11-19, branch `claude/awesome-clarke-ussjo3`, GitHub Actions "Android CI")
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+- Runs 285 and 287 (`e87cd142`, `8b332165`): FAILED in 15 s at "Source audit": 600 missing translations (the 120 strings of F234-F243 in hi, kn, ml, ta, te). Nothing after that step ran. Fixed in F245 (`b222f194`).
+- Run 289 (`b222f194`): source audit and Room schema check passed; `:app:compileDebugKotlin` FAILED with one error (an internal type exposed by the public `PageNumbersConfig`, F242). Fixed in F246. Unit tests and lint were not reached. Not yet known: whether anything else in F234-F244 fails to compile or fails a test.
+- Run 291 (`d0cd51ea`, 6 min 51 s): audit, Room check and `:app:compileDebugKotlin` PASSED (the app code of F234-F246 compiles, with the usual deprecation and unnecessary-safe-call warnings); `:app:compileDebugUnitTestKotlin` FAILED with one error in a test I wrote (F242, a missing `suspend`). Fixed in F247. Unit tests and lint still not reached.
+- Run 293 (`c0b4c1ff`, 5 min): audit, compile and the unit-test compile passed; `:app:testDebugUnitTest` ran and reported no failure; `:app:lintDebug` FAILED with 6 errors (5 plurals untranslated, F248; the sixth not shown in the log). Play bundle and APK steps skipped.
+- Run 295 (`0d83572a`, 4 min 26 s): audit, compile, unit-test compile and `:app:testDebugUnitTest` as in run 293; `:app:lintDebug` FAILED with 1 error, ByteOrderMark in `FileFormat.kt` (a stray invisible character), fixed in F249. The five untranslated plurals of run 293 are gone. Play bundle and APK steps still skipped.
+- **Run 297 (`9b61b22e`, 2026-11-20, 18 min): GREEN, every step.** Source audit, Room schema check, `:app:testDebugUnitTest` and `:app:lintDebug` (6 min 24 s), Play bundle (7 min), exported Room schemas committed, sideload APKs (4 min 27 s) and the size report all passed; "Test results" and "Build outputs" are failure-only steps and were skipped. Not read: the number of tests (the log does not print it) and the APK and bundle sizes (the size report goes to the run summary page). First green run of F234 to F250. What it does not show: nothing of this work has been tried on a phone, and the new tests cover logic, not screens.
+
+## Latest results (2026-11-19, F234 Files search in the top bar, Linux cloud container)
+
+- `:app:testDebugUnitTest` 1,163 tests, 0 failed, 0 errors, 163 skipped (counted from the result XML); `:app:lintDebug` passed, 0 errors, 166 warnings.
+- A first test run with `--max-workers=2` lost its Gradle daemon to the container's memory limit (daemons left over from lint); `./gradlew --stop` and `--max-workers=1` passed.
+- NOT run: a render of the changed Files top bar, `:app:bundleRelease`, sideload `assembleRelease`, anything on a device (R91).
+
+## Latest results (2026-11-19, F233 header scenes, Linux cloud container)
+
+- `:app:testDebugUnitTest` 1,163 tests, 0 failed, 0 errors, 163 skipped (counted from the result XML; new `HeaderSceneBagTest`, 4 tests); `:app:lintDebug` passed, 0 errors, 166 warnings (this run also covers F232, whose lint could not be run). `HeaderScenesScreenshotTest` (`-Pscanpro.screenshots=true`) rendered all 17 scenes in light and dark; the stills were looked at.
+- NOT run: `:app:bundleRelease`, sideload `assembleRelease`, anything on a device (motion and frame cost of the scenes: R89).
+
+## Latest results (2026-11-19, F232 drink-water reminder timings, merged with F231, Linux cloud container)
+
+- On the merge of F232 with `73d05d3` (F231): `:app:testDebugUnitTest` 1,157 tests, 0 failed, 0 errors, 161 skipped (counted from the result XML; `HydrationScheduleTest` rewritten, 10 tests); `python3 -I scripts/ci/scanpro-quality-audit.py` PASS before the merge.
+- NOT run: `:app:lintDebug` (ten attempts before the merge, each stopped by Maven Central answering HTTP 429 for a `:translate` dependency), `:app:bundleRelease`, sideload `assembleRelease`, anything on a device (R90).
+- SDK installed again in `/opt/android-sdk` with `sdkmanager` (cmdline-tools 13114758, platform `android-37.0`, Build-Tools 36.0.0). Maven Central rate-limited this container: the first compile needed five attempts with `--max-workers=1`.
+
+**CI run 183 (2026-11-18, `3c06b85`, includes F193):** compiled (warnings only); 965 tests, 1 failed: `compressImage_withTargetSize_producesSmallerFile` assumed Compress shrinks a picture already under its 50 KB target (F193 keeps it); test corrected in F197 to a target below the file's size. **F195–F197:** not compiled locally; pushed for CI.
+
+**F193 (2026-11-18, cloud container): not compiled and not run.** Three new Robolectric tests (`cropToFile_turnsThenCutsAndKeepsPngTransparency`, `compressImage_targetMetAtFullResolution_keepsResolution`, `convertImage_sameNames_bothKept`) were written but not run: Gradle cannot resolve the Android Gradle Plugin here. CI or the owner's Mac must compile and run `testDebugUnitTest --tests "*ImageToolsEngineTest*"`.
+
+**F189, F190, F192 (2026-11-18, cloud container): not compiled and not run**, for the same reason as F188 below.
+
+**F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
+
+## Latest results (2026-11-19, F231 header scene polish, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest --max-workers=1`: **1,153 tests, 0 failed** (162 screenshot tests skipped; `HeaderScenesScreenshotTest` run with `-Pscanpro.screenshots=true` separately). `:app:lintDebug`: **0 errors**, 165 warnings.
+- Rendered and looked at: `header-scenes-topbar-{light,dark}.png` (the strip at real size beside the name).
+- NOT run: `bundleRelease`, anything on a device (motion unverified, R89).
+
+## Latest results (2026-11-19, F229 snake reverted to the F221 bar, cloud container with the Android SDK)
+
+- `LoadingAnimations.kt` and `TaskBannerTest.kt` restored to their state before `995b275`. Main and test code compile; `TaskBannerTest` 5/5 (2 renders skipped without the screenshots flag) and `ToolProgressCardTest` 9/9 pass.
+- NOT run: the full suite, lint, `bundleRelease`, anything on a device.
+
+## Latest results (2026-11-19, F230 About list and version wording, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest --max-workers=1`: **1,149 tests, 0 failed** (159 screenshot tests skipped without `-Pscanpro.screenshots=true`; `SettingsPagesScreenshotTest` was run with it separately). `:app:lintDebug`: **0 errors**, 165 warnings.
+- NOT run: `bundleRelease`, anything on a device.
+## Latest results (2026-11-19, F229 snake loading strip, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true` (one worker): **1,146 tests, 0 failed, 2 skipped** (result XML); `./gradlew :app:lintDebug`: **0 errors**, 165 warnings (none in the changed file). That run was on the tree at `bd5b6b8` plus this change (and a Files change of this session that was then dropped in favour of the other session's F226).
+- After merging the twelve commits other sessions pushed meanwhile: main and test code compile; `TaskBannerTest` 6/6 and `ToolProgressCardTest` 9/9 pass. The full suite was not repeated on that tree.
+- Rendered and looked at: `task_snake-{700,1300,2050}`, `task_banner-dark`.
+- An earlier run with two workers was killed for lack of memory (the Gradle daemon disappeared and left a 4.6 GB test worker behind); with `--max-workers=1`, after `./gradlew --stop` and killing the orphan, it passed.
+- NOT run: `bundleRelease` (left to CI), anything on a device (R87).
+
+## Latest results (2026-11-19, F227 header scenes and F228 Files spacing, merged with F221–F224, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true --max-workers=1`: **1,149 tests, 0 failed, 2 skipped** (result XML). `:app:lintDebug`: **0 errors**, 165 warnings.
+- Rendered and looked at: `files-08-overview-light.png`, `header-scenes-{1,2}-{light,dark}.png`.
+- NOT run: `bundleRelease` (left to CI), anything on a device.
+
+## Latest results (2026-11-19, F227 header scenes, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true --max-workers=1`: **1,061 tests, 0 failed, 2 skipped** (result XML). `:app:lintDebug`: **0 errors**, 160 warnings (none in `HeaderScenes.kt`). With two workers the test daemon was killed for memory once; one worker is reliable here.
+- Rendered and looked at: `header-scenes-{1,2}-{light,dark}.png` (each scene frozen part-way), `02-home-light.png`.
+- NOT run: `bundleRelease` (left to CI), anything on a device (the scenes' motion is unverified: R89).
+## Latest results (2026-11-19, F225 Play bundle without All files access, cloud container, SDK installed in the session)
+
+- On the merge `e44128fc` (F221–F224 of other sessions plus F225): `:app:testDebugUnitTest` **1,145 tests, 0 failed, 155 skipped** (result XML, screenshots flag off).
+- `:app:bundleRelease -Pscanpro.allFilesAccess=false -Pscanpro.privacyPolicyUrl=https://sharkshinny-star.github.io/scanpro-privacy/`: passed; `app-release.aab` 50,723,672 bytes (48.4 MiB), unsigned (no key here). The task's own check printed that the bundle does not declare `MANAGE_EXTERNAL_STORAGE`; read back from the bundle's base manifest: 0 occurrences; its storage permission is `READ_EXTERNAL_STORAGE` only (Android 10 and older).
+- The guard, with the packaging tasks excluded: an upload bundle without `-Pscanpro.allFilesAccess` stops with the new message; `-Pscanpro.allowMissingPolicy=true` (CI's command) passes; an explicit `=true` passes.
+- NOT run: `:app:lintDebug`, the sideload build, instrumented tests, anything on a device (the Files tab of the build without the access has never been seen on a phone).
+
+## Latest results (2026-11-19, F221 task banner and Files top bar, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true`: **1,082 tests, 0 failed, 2 skipped** (result XML). `./gradlew :app:lintDebug`: **0 errors**, 160 warnings (none in the changed files). Quality audit PASS.
+- New: `TaskBannerTest` 5/5 (three always run, two renders with the screenshots flag). Rendered and looked at: `task_banner-{light,dark}`.
+- That full run was on the tree before another session's F206 (Edit PDF, files this change does not touch) was merged in. On the merged tree: main and test code compile, `TaskBannerTest` and `ToolProgressCardTest` re-run and pass; the full suite was not repeated.
+- NOT run: `bundleRelease` (left to CI), anything on a device; the Files top bar change was not rendered (R87).
+
+## Latest results (2026-11-19, F219 tools progress card, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true`: **1,077 tests, 0 failed, 2 skipped** (result XML). `./gradlew :app:lintDebug`: **0 errors**, 160 warnings (none in the changed files). Quality audit PASS.
+- New: `ToolProgressCardTest` 9/9 (always runs), `ProcessingOverlayScreenshotTest` 11 renders (with the screenshots flag). Rendered and looked at: `progress_card_*` (phone light, dark, no count, narrow, large text, on its side, tablet, and the arriving, closing, ripple and finished frames).
+- NOT run: `bundleRelease` (left to CI), anything on a device; the animation was judged from still frames, never seen moving (R86).
+## Latest results (2026-11-19, F222–F224 UI pass, rating sheet, How it works; merged onto `53890fe`; cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug` on the merged tree: **1,076 tests, 0 failed, 108 skipped** (result XML; the skips are the opt-in render and photo tests); lint **0 errors**, 160 warnings (none new in the changed files). `scripts/ci/scanpro-quality-audit.py` PASS (2,502 strings; it reports "0 tool tiles checked", so its tile check no longer finds the tiles since the Tools regrouping: not fixed here).
+- `ToolDemoCardTest` 5/5, `FeedbackModelTest` 3/3.
+- Rendered and looked at (`-Pscanpro.screenshots=true`, `ScreenScreenshotTest` and `FeedbackScreenshotTest`, 56 images): Home, Files grid and list, Search, document, review (portrait, landscape, 150 % text, 320 dp phone, Tamil), Settings, Recycle bin, Unsaved scans, Lock, Welcome, Tools, and the rating prompt, both thank-yous and the problem step, light and dark. `ScreenScreenshotTest` had been switched to the v2 Compose rule, under which the Files grid and the text-search result render empty (see Known errors); it uses the v1 rule again and both render.
+- `:app:bundleRelease`: the first run stopped at the F210 guard ("Play bundle without a privacy policy link"), after R8 had passed; with `-Pscanpro.allowMissingPolicy=true` it **passed**: `app-release.aab` 50,536,871 bytes (48.2 MiB), **unsigned** (no signing key here), modules `base` and `translate`, ABIs arm64-v8a, armeabi-v7a, x86_64, all 16 64-bit `.so` files with LOAD alignment of 16 KB or more (`readelf -lW`). Merged release manifest: `com.scanpro.app`, versionCode 7, 4.2.0, minSdk 24, targetSdk 37, not debuggable, cleartext off, `MANAGE_EXTERNAL_STORAGE` present (default build). This test bundle carries no policy link and must not be uploaded.
+- NOT run: anything on a device or emulator (the container has no KVM, so no emulator either); the sideload `assembleRelease`; instrumented tests. No animation was seen moving (R87).
+- After the second merge (`81189a9`: F206, F218–F220 of other sessions): `:app:testDebugUnitTest` again, **1,140 tests, 0 failed, 153 skipped**. After the third merge (`590e00a`, the other session's F221 task banner): **1,145 tests, 0 failed, 155 skipped**. Lint and the bundle were **not** re-run on the later merges (they ran on the first merge, above); CI runs them on the push. This session's entries were renumbered twice as other sessions took the IDs: they are F222–F224 and R88 (commit `1752c6a` still says F221-F223).
+- Environment: this session's checkout started at `84bd4a3` (F174), 115 commits behind the branch; it fetched and merged `53890fe` before these runs. Fetch the branch before starting work.
+
+## Latest results (2026-11-19, F217 Settings and Files layout, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true`: **1,053 tests, 0 failed, 2 skipped** (result XML). `./gradlew :app:lintDebug`: **0 errors**, 159 warnings (none new in the changed files). Quality audit PASS.
+- Rendered and looked at: `settings_light_main`, `settings_light_about`, `files-08-overview-{light,dark}`. This run also compiled and tested F216 for the first time.
+- NOT run: `bundleRelease` (left to CI), anything on a device.
+
+## Latest results (2026-11-19, F207 Edit PDF fonts: Roboto, Inter, Gelasio, Montserrat; cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,122 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 31/31. Source audit PASS. `edit-pdf-02-font-light.png` looked at.
+- The font files were made with fontTools (`pyftsubset --no-hinting --layout-features=kern,liga`, Latin, punctuation and money signs) from the projects' own TTFs; the sources and licences are named in `ARCHITECTURE.md`.
+- After merging F221–F225 (other sessions): `:app:testDebugUnitTest :app:lintDebug` on the merged code: 1,146 tests, 0 failed (screenshot renders skipped in this run); lint 0 errors; source audit PASS.
+- NOT run: anything on a device (R71); release builds, so the APK size with the fonts was not measured (the 16 files are 1.1 MB before the APK's own compression).
+
+## Latest results (2026-11-19, F206 Edit PDF: remaining limits and the Word-like workspace; cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,101 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 30/30, `PhoneTextShaperTest` 2/2, `EditPdfScreenshotTest` 38/38. Source audit PASS.
+- Screens: `./gradlew :app:testDebugUnitTest --tests '*EditPdfScreenshotTest*' -Pscanpro.screenshots=true` writes `app/build/screenshots/edit-pdf-01-main-light.png` to `edit-pdf-19-lists-ta-dark.png`; all 19 light ones and five dark ones were looked at as contact sheets beside the owner's design.
+- After merging F218–F220 (other session): `:app:testDebugUnitTest :app:lintDebug` on the merged code: 1,121 tests, 0 failed (screenshot renders skipped in this run); lint 0 errors; source audit PASS.
+- NOT run: anything on a device (R71, R73: the gestures, the page preview, pushed lines on real PDFs, joined scripts); release builds.
+
+## Latest results (2026-11-19, F205 Edit PDF zoom, find and replace, changes list, Save name; cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,055 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 22/22. Source audit PASS.
+- `edit-pdf-options-{light,dark}.png` and `edit-pdf-changes-{light,dark}.png` rendered and looked at.
+- After merging F216 (other session, which could not compile it): `:app:testDebugUnitTest :app:lintDebug` on the merged code: 1,055 tests, 0 failed (screenshot renders skipped in this run); lint 0 errors; source audit PASS.
+- NOT run: anything on a device (pinch zoom, drag and the dialogs are unverified: R71); release builds.
+
+## Latest results (2026-11-19, F216 About page and More group, Linux cloud container, no Android SDK)
+
+- `python3 -I scripts/ci/scanpro-quality-audit.py` PASS. `./gradlew :app:compileDebugKotlin` **not run successfully**: the Android Gradle Plugin cannot be resolved here. Not compiled, no tests run; CI compiles it and `SettingsPagesScreenshotTest` opens the new page (R85).
+
+## Latest results (2026-11-19, F204 Edit PDF position and wrap, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,051 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 20/20.
+- `edit-pdf-options-{light,dark}.png` rendered and looked at.
+- NOT run: anything on a device.
+
+## Latest results (2026-11-19, F215 minor list, Linux cloud container, no Android SDK)
+
+- CI run 225 on `a2460c0` (F213 detection, F214 declutter, merged with F201–F202): source audit, Room schema check and **unit tests and lint passed** (6 min). Its Play bundle step was still running when the F215 push replaced the run, so the bundle and sideload APKs for this code are checked by the F215 run, not by 225.
+- F215 locally: `python3 -I scripts/ci/scanpro-quality-audit.py` PASS; desktop detector benchmark unchanged from the entry below (no detector change beyond a removed debug line). New tests `ShortcutTokenTest` (2) and two in `SignPdfEngineTest` were **not run locally** (they need Robolectric and the Android SDK); the CI run for the F215 commit is their first run. Nothing seen on a phone (R83).
+## Latest results (2026-11-19, F203 Tools tab fixes, cloud container with the Android SDK)
+
+- After merging the other session's F213–F214 (detection, decluttered Tools tab) with F203: `./gradlew :app:testDebugUnitTest :app:lintDebug`: 1,039 tests, 0 failed, 86 skipped; lint 0 errors. The merged Tools tab was rendered again (light, dark, Hindi) and looked at: two rows and "Show all" per group from F214, with F203's three-line names, Fill form icon and viewer row.
+- `./gradlew :app:testDebugUnitTest :app:lintDebug --no-configuration-cache`: 1,022 tests, 0 failed, 86 skipped; lint 0 errors.
+- `--tests '*ToolsLandingScreenshotTest*' -Pscanpro.screenshots=true`: `tools-landing-tall-{light,dark}.png` and `tools-landing-tall-hi-{light,dark}.png` rendered and looked at.
+- NOT run: anything on a device.
+
+## Latest results (2026-11-19, F213 detection and F214 declutter, Linux cloud container, no Android SDK)
+
+- Desktop detector benchmark, `cd scripts/scan-bench && gradle -q run --args="extra colour live"` (71 page scenes, 12 no-page scenes):
+  ID cards (new `k_` scenes) 9 of 9 under 2% corner error with colour, mean IoU 0.965 (before F213: 4 of 9); grey-only 6 of 9.
+  Main bench mean IoU 0.986, worst error 0.58% (unchanged); with colour 0.982 and 0.74%. Colour cases 17 of 17 grey-only (was 16) and with colour. Extra shadow cases 21 of 21 grey-only (was 19) and with colour. No-page scenes: same verdicts as before.
+- `gradle -q run --args="time"`: median 7.8 ms, mean 8.2 ms, max 12.9 ms grey-only (F170: 6.6 ms median); with colour about 12 ms a scene (was about 8).
+- `gradle -q run --args="extra jitter"` (new: 24 noisy frames of each scene): detector's own outlines 9 jumps, trembling 2.23; as drawn through `OutlineTracker` 1 jump, trembling 0.47 (thousandths of the frame); no missing frames either way.
+- `OutlineTrackerTest` (13), `LiveChromaTest` (8), `PageQualityTest` and `PageFramingTest` (14 together): 35 passed, 0 failed, in a temporary desktop JVM project against the benchmark's stubs and desktop OpenCV 4.9. Not run in the app build here.
+- `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS (2482 strings).
+- **Not run locally:** `:app:compileDebugKotlin`, `testDebugUnitTest`, `lintDebug`, `bundleRelease` (no Android SDK in this container); the CI run for this commit is the compile and test check. Nothing was seen on a phone (R81, R82).
+
+## Latest results (2026-11-18, CI run 219 on `07b2e0e`, run id `44385336522`)
+
+- All steps passed: source audit, Room schema check, unit tests and lint (6.5 min), Play bundle (`bundleRelease -Pscanpro.allowMissingPolicy=true`, test build, no policy URL), exported Room schemas, sideload APKs, size report. Whole job about 19.5 minutes.
+- Test count and bundle/APK sizes were not read from the log. First full green run since `a8f220c`: F193, F195–F197 and F210–F212 now compile and their unit tests pass.
+- Not covered: any device test, signing with the release key, the 16 KB check of the packaged bundle (release-check workflow not yet on the default branch).
+## Latest results (2026-11-19, F202 crop editor rotation, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest --tests '*CropEditorDialogTest*' --tests '*QuadMathTest*'`: 2/2 and 13/13. `:app:lintDebug`: 0 errors.
+- Full unit suite on `2dae3bb` (2026-11-19, owner asked): `./gradlew :app:testDebugUnitTest --no-configuration-cache`: BUILD SUCCESSFUL; 160 test classes, 1,020 tests, 0 failed, 0 errors, 84 skipped (opt-in screenshot and photo tests).
+- NOT run: anything on a device, so the freeze being gone is not measured.
+
+## Latest results (2026-11-19, F201 bug sweep, commit cce1cd3, cloud container with the Android SDK)
+
+- CI run 219 (`07b2e0e`, 2026-11-18): success end to end (source audit, unit tests, lint, Play bundle, sideload APKs). First green run with F181–F211 merged.
+- Local, on the F201 tree: `./gradlew :app:testDebugUnitTest :app:lintDebug --no-configuration-cache`: BUILD SUCCESSFUL; 1,019 tests, 0 failed, 0 errors, 84 skipped; lint 0 errors, 156 warnings. Of these: `PdfTextEditorTest` 14/14 (Robolectric, pdfbox-android), `PhoneFilesTest` 12/12, `LiveChromaTest` 4/4, `MatFiltersGoldenTest` 14/14, `PageAreaDecodeTest` 3/3, `PageFramingTest` 5/5.
+- NOT run: release builds locally, anything on a device.
+
+## Latest results (2026-11-18, `:app:lintDebug` in the cloud container)
+
+- 2 errors (CI run 215): `PhonePdfsScreen.kt:249` LocalContextGetResourceValueCall (F191 Files, fixed: the message is read with stringResource) and `widget_scan_large.xml:23` UseAppTint (another session's widget, reported to it). After the fix, lint locally: 1 error (the widget), 159 warnings.
+
+## Latest results (2026-11-18, F200 Tools regrouping, cloud container with the Android SDK)
+
+- Android SDK (platform android-37.0, build-tools 37.0.0) installed in the cloud container; Maven Central answered 429, so a local, uncommitted Gradle init script points it at Google's mirror. `:app:compileDebugKotlin` passed after merging the other session's `ToolDemos.kt` fix (before it, only `ToolDemos.kt:378/438/495/558` failed).
+- `ToolsLandingScreenshotTest` rendered the old layout; the new one was not rendered (stopped). Unit tests and lint not run locally.
+
+## Latest results (2026-11-18, F199 Edit PDF add text and colour, Linux cloud container)
+
+- `PdfTextEditorTest` 14/14 on the desktop JVM (Apache PDFBox 2.0.27); `scanpro-quality-audit.py` PASS.
+- CI note: GitHub skips a whole push when any commit in it carries `[skip ci]`, so `4de55b8` (F198) was not built (it carried another session's docs commit). This push has no `[skip ci]` commit. CI run 187 (`e8a31d3`) failed to compile in another session's `ToolDemos.kt:378`; that session was told.
+- NOT run: compile and unit suite (CI), anything on a device (R71).
+
+## Latest results (2026-11-18, F198 review fixes, commit 96b53bd, Linux cloud container)
+
+- `PdfTextEditorTest` 11/11 on the desktop JVM (Apache PDFBox 2.0.27); `scan-bench extra colour live`: benchmark mean IoU 0.985, colour 17/17, shadow 21/21 (unchanged); `scanpro-quality-audit.py` PASS.
+- NOT run here: compile and the unit suite (CI for the push), anything on a device (R71).
+
+## Latest results (2026-11-18, CI run 183 on `3c06b85`: F191 Files fix and F194 Edit PDF text)
+
+- `:app:compileDebugKotlin` passed (warnings only), so F181–F194 compile. `:app:testDebugUnitTest`: 965 tests, 1 failed (`ImageToolsEngineTest.compressImage_withTargetSize_producesSmallerFile`, F193 by another session, whose test premise it fixed in `c162957`), 82 skipped. Whether `PdfTextEditorTest` ran or was skipped is not in the log (no reports are uploaded for a failed run). Lint, the Play bundle and the APKs did not run. The next run (185, `c162957`) covers them.
+
+## Latest results (2026-11-18, CI run 177 on `b5f5192`, F191 Files)
+
+- `:app:compileDebugKotlin` FAILED: `PhonePdfsScreen.kt:529`, "No value passed for parameter 'onClick'" (the `StorageRow` helper took a trailing lambda as its last parameter, `subtitle`). Fixed by moving `onClick` last; the next CI run is the check. Runs 178 and 180 (another session's pushes) failed on the same file.
+
+## Latest results (2026-11-18, F194 Edit PDF text, commit ab4512e, Linux cloud container)
+
+- `PdfTextEditorTest` on the desktop JVM with Apache PDFBox 2.0.27 (the app's `PdfTextEditor.kt` with `com.tom_roush.pdfbox` renamed to `org.apache.pdfbox`; a throwaway Gradle project): 7 run, 7 passed. The pdfbox-android 2.0.27 AAR was checked with `javap` for every overridden or called method (`showGlyph` with the unicode argument, `showForm`, `processOperator`, `PDFStreamParser(PDContentStream)`, `ContentStreamWriter`, `PDVectorFont.hasGlyph`, `PDColor.toRGB`).
+- `scanpro-quality-audit.py`: PASS (34 new strings and plurals, six languages; also the Protect PDF strings another session left untranslated).
+- NOT run: compile of `EditPdfTextEditor.kt`, `PdfTextEditTool.kt` and the wiring, the Robolectric copy of the tests, the full unit suite, lint; nothing on a device (R70).
+
+## Latest results (2026-11-18, F191 (Files), commit b5f5192, Linux cloud container)
+
+- `PhoneFilesTest` (12 tests, 3 new for folders) on the desktop JVM with the app's `PhoneFiles.kt` unchanged and a stand-in `android.net.Uri` (Robolectric not available here): 12 passed.
+- `scanpro-quality-audit.py`: PASS (12 new strings, six languages).
+- NOT run: compile of `PhonePdfsScreen.kt` and `PhonePdfsViewModel.kt`, the full unit suite, lint; nothing seen on a device (R67).
+
+## Latest results (2026-11-18, translations for F188, Linux cloud container)
+
+- CI runs 171–174 (`fe39ccd` F188, `1d89999` F189–F190, pushed by another session) failed at the source audit: six new `doc_*` strings (colour picker, Save for next time hint) had no Hindi, Kannada, Malayalam, Tamil or Telugu text. Those runs also cancelled run 170, so F181–F190 had not been built. Translations added (by the assistant, unread by a speaker); `scanpro-quality-audit.py` PASS, Room schema check PASS. Gradle steps not run here.
+
+## Latest results (2026-11-18, F186–F187, commit eb2da5b, Linux cloud container)
+
+- Tool wiring traced in the code for all 36 tiles in `ToolCatalogue.kt`: each has a branch in `PdfToolsScreen.openTool` (or its own picker), and every `show…Dialog` flag has its dialog block. Not run on a device.
+- NOT run: compile, unit tests (`PdfShareTest` changed), lint, release builds; the CI run for the push is their first build. CI run 169 for `bf4af45` (F181–F185) was still in unit tests and lint when this was pushed and is cancelled by it; the new run covers both.
+
+## Latest results (2026-11-18, F181–F185, commit bf4af45, Linux cloud container)
+
+- Filter, detector and colour-map unit tests on the desktop JVM, with the app's sources unchanged, the `:opencv` Java wrappers and the vendored `opencv_java4.bin` the CI uses (a throwaway Gradle project, not committed): 31 run, 31 passed (`MatFiltersGoldenTest` 14, `MatFiltersEquivalenceTest` 6, `SmartAutoTest` 2, `PageFramingTest` 5, `LiveChromaTest` 4). Goldens `auto`, `color`, `gray`, `bw`, `whiteboard`, `chain` regenerated with `scanpro.updateGoldens=true` and compared by eye with the old ones.
+- `cd scripts/scan-bench && gradle -q run --args="enhance"`: Colour bgStd 0.0 to 1.4 (was 5.4 to 7.7), Grey 0.0 to 1.4 (was 2.9 to 7.7), halo 0.0 (was up to 4.7), on five degraded pages; Auto unchanged except the warm-lamp page, now cleaned as a document.
+- `gradle -q run --args="extra colour live"` (colour map at a quarter size, as the live camera makes it): 12 benchmark scenes mean IoU 0.985, worst error 0.58%; colour cases 17/17 under 2% (grey only 16/17); shadow cases 21/21 (grey only 19/21); no-page scenes: same answers as grey only.
+- `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS.
+- CI run 167 on `a8f220c` (F180): unit tests and lint passed, Play bundle built (with AGP 9.6.0-alpha04); the sideload step was still running when this was written.
+- NOT run: `:app` compile, the full unit suite, lint and release builds for F181–F185 (no Android SDK here; the CI run for the push is their first build), and anything on a device.
+
+## Latest results (2026-11-18, F180 repairs after the review of 8de31f6, commit a8f220c, Linux cloud container)
+
+- `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS. `bash scripts/ci/check-room-schema.sh`: schema files 1..3 present. The six edited string files parse as XML.
+- `PdfToolsScreen.kt` compared with `0bd0609`: identical apart from the saved-state path used by Save. `ScanIntroDialog` is identical to `0bd0609`.
+- NOT run: compile, unit tests, lint, release builds (no Android SDK in the cloud container) and anything on a device. The CI run for this push is the first build of F180.
+
+## Latest results (2026-11-18, F179 UI/motion overhaul, commit 5747828, owner's Mac, Android Studio Preview JBR)
+
+- Baseline before F179 (tree at `8de31f6`'s content): `:app:compileDebugKotlin :app:testDebugUnitTest` exit 0; 940 tests, 0 failed, 117 skipped.
+- After F179: `:app:compileDebugKotlin :app:testDebugUnitTest`: 948 tests run, 947 passed, 1 failed (HomeScrollTest: the test scrolled to the tips card with performScrollTo, which cannot reach a lazy-list item that is not composed; F179's taller Recent cards moved the card below that; the test now uses performScrollToNode and its 3 tests pass, re-run alone); 122 skipped (opt-in). The full suite was not re-run after that test-only change.
+- `:app:lintDebug`: exit 0; 0 errors, 114 warnings (counted from the SARIF report).
+- `:app:bundleRelease`: exit 0; `app-release.aab` 49,606,652 bytes (47.3 MiB), unsigned (no keystore here); 24 `.so` files, every arm64-v8a and x86_64 one has 16 KB LOAD alignment (ELF headers read from the AAB). Built with AGP 9.6.0-alpha04 (see R62).
+- NOT run: any device or emulator (the phone disconnected early in the session; the Mac, 8 GB, ran at load 15-24 with Android Studio indexing, so the emulator was not started), instrumented and screenshot tests, sideload `assembleRelease`, release signing (no keystore configured here).
+
+## Latest results (2026-11-18, F178 framed-object limits and phone benchmark update, commit 18deb2b, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra colour"`): new page scenes with a printed dark frame: inset 22 px (about 6 mm) 0 framed sides, a page (also on a white desk); at the paper's edge 4 framed, held back from auto-capture (also on a white desk and with a shadow); corner error 0.22 to 0.28% for all four. New clutter: silver laptop on a dark desk 0.68, 0 framed, still taken for a page; tablet showing a document 0.69, 4 framed, held back. Every earlier scene unchanged.
+- NOT run: `ScanDetectionBenchmarkTest` changes (three page scenes with floor assertions, `clutterIsNotTakenForAPage`) are written but not compiled or run; `:app` build, unit tests and lint (no Android SDK here); anything on a device (R56, R57, R59).
+
+## Latest results (2026-11-18, F177 framed-object check for R58, commit bd193c7, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra colour"`; the app's `DocumentEdgeDetector.kt` and new `PageFraming.kt` compiled unchanged): detection results identical to F176 on every scene; all 106 page results have 0 framed sides; laptop (wood, warm lamp) and keyboard 4 of 4 framed and no longer convincing pages; notebook cover 0 (still a page); phone, mug and pen, empty desks unchanged. Threshold sweep: at 15 grey levels two page scenes reach 1 framed side (the rule needs 3); at 60 and 90 only the keyboard stays framed. Grey-only `time`: median 5.87 ms.
+- `PageFramingTest` (5 tests): 5 passed, 0 failed, run once through a temporary JUnit set-up in the bench build against desktop OpenCV 4.9 (not committed); NOT run as part of `:app:testDebugUnitTest` (no Android SDK in this container), so the vendored-library run is pending.
+- NOT run: `:app` build, unit tests and lint, `ScanDetectionBenchmarkTest`, anything on a device (R56, R57).
+
+## Latest results (2026-11-18, F176 colour cases, clutter scenes, chromaticity colour map, commit f694416, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra colour"`; the app's `DocumentEdgeDetector.kt` compiled unchanged): benchmark scenes unchanged (grey-only mean IoU 0.986, colour 0.985, worst error 0.58%); shadow cases with colour 21 of 21 under 2%; new colour cases 13 of 13 under 2% with colour (grey-only 12 of 13: yellow paper with a shadow over most of one side, 10.69% → 0.11% with colour). Clutter scenes (R58): laptop 0.68 and keyboard 0.63 are taken for a page (above the 0.48 gate), notebook cover 0.49 (0.64 with colour); phone, mug and pen and empty desks 0.29 or less. Grey-only `time`: median 6.45 ms.
+- NOT run: `:app` build, unit tests and lint (no Android SDK in this container; the new OpenCV calls were checked by hand against the app's `:opencv` wrappers), `ScanDetectionBenchmarkTest`, anything on a device (R56, R57, R58).
+
+## Latest results (2026-11-18, F175 colour source for the page detector, commit 3f90bee, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra colour"`; the app's `DocumentEdgeDetector.kt` compiled unchanged): grey-only (the live camera's input) is identical to F170 on every earlier scene (12 benchmark scenes mean IoU 0.986, worst corner error 0.58%; 16 of 16 earlier shadow variants under 2%). Five new scenes, a shadow over most of one side: grey-only fails two (left 10.76%, right-sharp 11.64% corner error, both at confidence 0.50 to 0.52); with the colour map (the saved-photo path) all 21 extra scenes are under 2% (mean IoU 0.987), those two at 0.06% and 0.11%, and the corner-wedge and sharp-edged shadows rise from confidence 0.38 and 0.45 to 0.63. Colour benchmark mean IoU 0.985, worst error 0.58%. The four empty-desk scenes still give no convincing page (confidence 0.17 to 0.29). One-shot detection with colour takes about 7 to 12 ms (grey-only 5 to 10 ms).
+- NOT run: `:app` Gradle build, unit tests and lint (no Android SDK in this container; the change adds no JVM-testable code, the detector needs native OpenCV), `ScanDetectionBenchmarkTest` (two shadow scenes and their floor assertions added; written but not compiled or run), anything on a device (R56, R57).
+
+## Latest results (2026-11-18, F174 Redact areas, Linux cloud container)
+
+- `:app:testDebugUnitTest` 930 tests (5 new: `RedactBoxesEditorTest`, two more in `PdfCropRedactToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,886,534 bytes (47.6 MiB, +35 KB).
+- NOT run: anything on a device; the editor's drawing feel, tap targets and the protected-PDF preview fallback need a phone (R7).
+
+## Latest results (2026-11-18, F173 N-up and Header and footer, Linux cloud container)
+
+- `:app:testDebugUnitTest` 925 tests (9 new in `PdfLayoutToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,851,645 bytes (47.5 MiB, +37 KB).
+- NOT run: anything on a device (the two dialogs and the real look of the sheets and stamped text; R7), sideload `assembleRelease`, instrumented tests.
+
+## Latest results (2026-11-18, F172 Crop PDF pages and Redact text, Linux cloud container)
+
+- `:app:testDebugUnitTest` 916 tests (9 new in `PdfCropRedactToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,814,231 bytes (47.5 MiB, +40 KB), unsigned as configured.
+- NOT run: anything on a device (the two new tools' dialogs and the PdfRenderer paths of Crop and Redact have only their seam-level unit tests; R7), sideload `assembleRelease`, instrumented tests.
+
+## Latest results (2026-11-18, F171 enhancement benchmark and filter fixes, Linux cloud container)
+
+- Enhancement benchmark (`scripts/scan-bench`, `gradle -q run --args="enhance"`; the app's `MatFilters.kt` compiled unchanged): COLOR halo around strokes 19–22 → 3.8–4.7 grey levels, background spread 19–21 → 5.4–7.7, blown paper 38–40% → under 1%, colour-patch dE 28–30 → 9.7–15.0 (warm cast 27.5 → 10.5); GRAY halo 22–23 → 1.0–2.0, blown 38% → 0.5%; WHITEBOARD dE roughly halved; AUTO and BW byte-identical paths. Faint pencil/highlighter retention on GRAY 67–88% (the old 70–106% rode on the glow defect).
+- Golden images regenerated (`-Pscanpro.updateGoldens=true`) for color, gray, whiteboard and chain, and reviewed side by side with the old ones; the other goldens are unchanged.
+- Gradle on this commit: `:app:testDebugUnitTest` 907 tests, 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings; `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,774,304 bytes (47.5 MiB), unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device; OCR word accuracy per filter needs the phone (R56 and roadmap item 3).
+
+## Latest results (2026-11-18, F170 gradient snap and gated fallback sources, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra"`): 12 benchmark scenes mean IoU 0.986 (F169: 0.980), worst corner error 0.58% (F169: 0.97%); all 16 shadow variants under 2% (13 under 0.7%); 4 no-page scenes still produce no convincing page. Median detection time 6.6 ms (F169: 8.8 ms, F168: 12.8 ms), worst timed frame 11.6 ms; the straight-edge search on an empty patterned mat costs 8.9 ms.
+- Gradle on this commit: `:app:testDebugUnitTest` 907 tests, 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the changed files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,772,761 (47.5 MiB) bytes, unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device (R56).
+
+## Latest results (2026-11-18, F169 shadow detection widened and detector sped up, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra"`): all 12 benchmark scenes found, mean IoU 0.980 (F168: 0.975), worst corner error 0.97% (`white_page_white_table`; F168: 1.33%); all 16 shadow variants under 2% corner error (F168: 13; corner wedge 24.3% → 1.0%, two-side shadow 24.3% → 0.9%, sharp-edged shadow 11.9% → 0.2%); 4 no-page scenes still produce no convincing page. Median detection time 8.8 ms (F168: 12.8 ms; −31%), worst frame 13.2 ms; an empty patterned-mat frame costs 10.6 ms in the straight-edge search.
+- Gradle on this commit: `:app:testDebugUnitTest` 907 tests, 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the changed files); `:app:compileDebugAndroidTestKotlin` passed (the device benchmark now asserts ten scenes); `:app:bundleRelease` passed, `app-release.aab` 49,770,075 bytes (47.5 MiB), unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device (R56).
+
+## Latest results (2026-11-17, F168 hard-shadow detection, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra"`; the app's `DocumentEdgeDetector.kt`, `LineQuadFinder.kt`, `QuadGeometry.kt`, `PageQuality.kt` and `ScanAlignment.kt` compiled unchanged with Kotlin 2.0.21 against stubs and OpenCV 4.9): 12 benchmark scenes all found, mean IoU 0.975 (0.921 before), worst corner error 1.33% (10.86% before, `hard_shadow_across_page`, now 0.10%); 13 of 16 shadow variants under 2% (9 before); 4 no-page scenes unchanged; median detection time 12.8 ms (13.0 ms before).
+- Gradle on `6565874` (SDK licences accepted at the owner's request, `sdkmanager` 16111833, platform `android-37.0`, Build-Tools 36.0.0): `:app:testDebugUnitTest` 907 tests, 0 failed, 82 skipped (result XML); `:app:lintDebug` 0 errors, 96 warnings (none in the changed files); `:app:compileDebugAndroidTestKotlin` passed (includes the changed `ScanDetectionBenchmarkTest`); `:app:bundleRelease` passed, `app-release.aab` 49,769,387 bytes (47.5 MiB, +9.6 KB), unsigned as configured.
+- A first combined run with `--max-workers=2` had its Gradle daemon killed for lack of memory during R8 (a leftover benchmark daemon held memory); split into two runs with `--max-workers=1`, both passed.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device (R56).
+
+## Latest results (2026-11-17, merged branch at `dc9de26`: the owner's machine's F157-F164 plus F160-F166 from the cloud session, Linux cloud container)
+
+- Full `:app:testDebugUnitTest :app:lintDebug` on `199aa03`: 907 tests, 1 failed, 82 skipped (result XML); lint 0 errors, 95 warnings. The one failure, `IntroductionsScreenshotTest.cameraIdCardIntroductionStartsWithOneTapAndShowsOneSentence`, read the old ID-card text; fixed in `dc9de26` and `IntroductionsScreenshotTest` re-run on its own: 15 of 15 pass. The full suite was NOT re-run after that fix.
+- `:app:bundleRelease` on `dc9de26`: passed; `app-release.aab` 49,759,793 bytes (47.5 MiB), R8 on, unsigned as configured (no signing variables set, so it cannot be uploaded or installed until signed with the owner's key).
+- Before `199aa03` the merged branch did not compile (`ratingDue`, `completedScans`, `dontRemind`); fixed there.
+- NOT run: sideload `assembleRelease`, 16 KB alignment check, instrumented tests, any device or emulator. Smoothness is unmeasured (R55); the camera now has both the owner's fade-and-scale opening and the delayed first bind (F165), untested together on a phone.
+
+## Latest results (2026-11-17, New Tool Addition & Security Audit pass)
+
+- Full `:app:compileDebugKotlin :app:testDebugUnitTest`: exit 0; 803 passed, 0 failed, 117 skipped (opt-in screenshot and real-photo tests). Added new tool: Invert PDF Colors (`invert_pdf` / `toInvertedColors`) in `PdfCleanupTools.kt`, `ToolCatalogue.kt`, `PdfToolsViewModel.kt`, `PdfToolsScreen.kt`, and `PdfCleanupToolsTest.kt`.
+- `:app:lintDebug`: exit 0; passed with 0 errors.
+- `:app:bundleRelease`: exit 0; release build with R8 shrinking, obfuscation, and bytecode optimization passed cleanly.
+- Security & Code Review: Audited component protection, IPC intent security, native OpenCV C++ memory safety, ANR thread offloading (`Dispatchers.IO`), Material 3 accessibility, and Play Policy compliance. All 803 unit tests passed.
+- Fixed: Resolved compile errors in `CameraScannerScreen.kt` and `ScanProApp.kt`, fixed `PageAreaDecodeTest` destructuring and upright orientation assertions.
+- Leftover item 17: Added `onBeforeSave` failure hook in `DocumentStore` (delegated via `DocumentRepository`), added error cleanup in `PageOrganiser.makeHalf`, and added unit tests in `BookSplitTest` verifying both halves are deleted when either second-half OCR or document save fails (`ifSecondHalfFailsAnyHalvesWrittenAreCleanedUp` and `ifSaveFailsBothHalvesWrittenAreCleanedUp`).
+- Leftover item 18: `SignPdfViewModel.renderPage` touches `file.setLastModified(System.currentTimeMillis())` ensuring active signing sessions do not lose their working copy to `CacheCleaner` after 1 hour.
+
+## Latest results (2026-11-15, F156 on `d408169`, macOS, Android Studio Preview JDK)
+
+- Full `:app:testDebugUnitTest`: exit 0; 748 tests, 0 failed, 0 errors, 65 skipped (counted from the result XML).
+- Re-run after the last edit: `QuadMathTest` 12 passed (3 new for `translateEdge`), `LibraryRecoveryTest` 7 passed.
+- `:app:lintDebug`: 0 errors, 72 warnings, 14 hints. `:app:bundleRelease`: passed; AAB 49,017,062 bytes (46.7 MiB), unsigned as configured.
+- NOT run on this tree: sideload `assembleRelease`, instrumented tests. No device was connected (`adb devices` empty), so nothing was seen on a phone and no performance was measured.
+- Not pushed: `d408169` and the docs commit after it are local only.
+- Emulator check (2026-11-15, AVD `ScanProUX`, Android 17, 1080x2400, debug build of `d408169`; no phone was connected): `:app:installDebug` passed; Home, a document, the crop editor, Tools and tool search opened; dragging the crop editor's right edge handle past the picture moved the edge as one piece and stopped at the border; Done applied the crop and the page thumbnail refreshed; PDF to Word or text (plain text) on a test PDF gave the right five lines; logcat: 0 ScanPro crashes, 0 ANRs; cold start 3.9, 3.3, 3.9 s (debug build on an emulator, not comparable with a phone). R51 reproduced: Right in the crop editor changes nothing on screen but the page comes out turned. NOT checked: camera capture, other tools, dark theme, other languages, any real phone.
+
+## Latest results (2026-11-13, F156 (then written up as F155) App Performance, Stream I/O 64KB buffering & List Recomposition Optimizations, uncommitted tree)
+
+- Full `:app:testDebugUnitTest` (Gradle 9.9.0): BUILD SUCCESSFUL; 683 passed, 65 skipped, 0 failed.
+- `:app:compileDebugKotlin`: clean pass, 0 errors.
+- `:app:lintDebug`: clean pass, 0 errors.
+- Stream I/O & UI Optimizations: standardized 64 KB `COPY_BUFFER` across `UiUtils`, `ImageProcessor`, `ImageToolsEngine`, `PdfToolsEngine`, `ThumbnailStore`, `PdfExporter`, `SpecialExporters`, `CompressPdfEngine`, and `PdfOcrEngine` with `.buffered(COPY_BUFFER)`; optimized LazyList contentTypes and keys across all screens; fixed FileThumbnail custom renderHeight sizing; cached search regex patterns in `ToolsLanding`.
+
+## Latest results (2026-11-13, F156 (then written up as F154) bug fixes, resource leak prevention & lint cleanup, uncommitted tree)
+
+- Full `:app:testDebugUnitTest` (Gradle 9.9.0): BUILD SUCCESSFUL; 683 passed, 65 skipped, 0 failed.
+- `:app:compileDebugKotlin`: clean pass, 0 errors.
+- `:app:lintDebug`: clean pass, 0 errors.
+- Fixed: empty `super.onCleared()` in `SignPdfViewModel`, Compose parameter ordering for `SectionTitle` in `ToolsLanding`, and `PDDocument` resource leak prevention in `PdfToolsEngine.extractText`.
+
+## Latest results (2026-11-13, F153 UI motion polish, spring physics, and on-device Document Assistant intents, uncommitted tree)
+
+- Full `:app:testDebugUnitTest` (Gradle 9.9.0): BUILD SUCCESSFUL in 3m 1s; 67 actionable tasks (all passed, 0 failures, configuration cache reused).
+- `:app:compileDebugKotlin`: clean pass, 0 errors.
+- Document intelligence tests: `DocumentIntelligenceEngineTest` passed 100% (7/7 tests including new summary, total, and natural intent queries).
+- UI performance: `graphicsLayer` phase-deferral verified across bottom navigation, scan button spring scaling, and library hero button (0 recompositions during press/animation).
+
+## Latest results (2026-11-12, F152 page preview and camera hint, uncommitted tree on 6a7ee6b)
+
+- Full `:app:testDebugUnitTest :app:lintDebug :app:installDebug` (Gradle 9.9.0): 733 tests, 0 failed, 65 skipped; lint 0 errors, 75 warnings (the extra one is an existing hint on an unchanged line); installed on the OnePlus and both changes checked by screenshot. Not run: release build.
+
+## Latest results (2026-11-12, F151 ID card options, uncommitted tree on 741ab2e)
+
+- Full `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` (Gradle 9.9.0): 733 tests, 0 failed, 65 skipped; lint 0 errors, 74 warnings; installed on the OnePlus.
+- Device: the three ID options and "Back · 2 of 2" seen. The hint/label overlap fix was not seen on the phone (the owner was using it). Not run: release build.
+
+## Latest results (2026-11-12, F150 viewfinder above the control panel, uncommitted tree on 83e541e)
+
+- Full `:app:testDebugUnitTest :app:lintDebug` (Gradle 9.9.0): 731 tests, 0 failed, 65 skipped; lint 0 errors, 74 warnings. Debug build installed on the OnePlus and the camera screen checked (screenshot): bottom edge and corners of the outline visible, 0 crashes, 0 ANRs.
+- Not run: release build, camera with captured pages / landscape / other screen shapes.
+
+## Latest results (2026-11-12, F149 blank-page hint, uncommitted tree on 6de4604)
+
+- Full `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` (Gradle 9.9.0): 731 tests, 0 failed, 65 skipped (9 new in `BlankPageTest`); lint 0 errors, 74 warnings; debug APK built. Release bundle not rebuilt for this change.
+- **Known quirk:** `:app:testDebugUnitTest --tests 'com.example.scanpro.scanner.*'` on its own aborts the test JVM (SIGABRT, `Class not found: java/nio/FloatBuffer`, Robolectric native runtime, around `CapturedStripTest`). It does the same on the commit before F149; the full suite and the scanner + imaging filter pass. Not investigated further.
+- Not run: device check of the blank hint on real photos.
+
+## Latest results (2026-11-12/13, F155 (pushed as F148) protected PDFs in every page tool, commits 28539c5..d2dfded)
+
+- `:app:compileDebugKotlin`: passed.
+- `ToolOpenPasswordTest` 8, `MergePasswordTest` 6, `SplitLinksTest` 2: 16 tests, 0 failed.
+- Full `:app:testDebugUnitTest` on `7ef24ee`: 729 tests, 0 failed, 30 skipped. (The first full run, on `28539c5`, had 1 failure, `PdfToolsFeaturesTest.pdfToImagesRejectsPasswordProtectedPdf`, fixed in `7ef24ee`.)
+- `:app:lintDebug` on `7ef24ee`: 0 errors, 74 warnings, 15 hints; the one new warning (`EmptySuperCall`) is fixed in `d2dfded`, which was compiled again.
+- Running tests and lint in one Gradle call ran this container out of memory (daemon killed); run them one after the other.
+- `:app:bundleRelease` on `d2dfded`: passed; AAB 46.7 MB. Sideload `assembleRelease`: passed; arm64 34.2 MB, armeabi-v7a 26.2 MB, x86_64 40.1 MB, universal 83.4 MB (unsigned).
+- 16 KB page alignment (2026-11-13, on those sideload APKs): arm64-v8a and x86_64 have 8 `.so` each, every `LOAD` segment aligned to `0x4000` (`readelf -lW`); `zipalign -c -P 16 4` passes for the arm64, x86_64, armeabi-v7a and universal APKs. The AAB itself was not checked (no `bundletool` here).
+- These results are for `d2dfded`, before the merge of F149–F154 from the other session; that merged tree was not built here.
+- Not run: device, signed build.
+
+## Latest results (2026-11-12, merge of origin e29b727 + ff7d4c7 into F140/F141, `a60b413`)
+
+- `:app:testDebugUnitTest`: 698 tests, 0 failed, 64 skipped.
+- Conflicts resolved: `DocumentEdgeDetector.kt` (both sides fixed the same Mat leak; kept the shared `pageBox`), `PdfToolsEngine.kt` (remote `use {}` and `PageNumberGeometry` kept, F139 picture stamp for non-Latin watermark text re-added). The remote's F134-F137 bug-hunt IDs clashed and were renumbered F142-F145 in the docs.
+- Not run: device check of the merged tree, lint, release build. Not pushed: no GitHub credentials on this Mac.
+
+## Latest results (2026-11-12, F146 first-time introductions, worktree `ScanProTips` rebased on `a60b413`)
 
 | Check | Result |
 |---|---|
+| `:app:compileDebugKotlin` | 0 errors, 0 warnings |
+| `:app:testDebugUnitTest` (full) | 709 tests, 0 failed, 64 skipped; new `FirstRunHintsTest` (5) and `IntroductionsScreenshotTest` (6, images in `app/build/screenshots/intro_*`) pass |
+| `:app:lintDebug` | 0 errors, 73 warnings (none in F146 files) |
+| `python3 -I scripts/ci/scanpro-quality-audit.py` | PASS (1799 strings, 25 tool tiles) |
+| Note | `IntroductionsScreenshotTest` failed once with a Robolectric native-runtime load error (`FileSystemAlreadyExistsException` in `maybeCopyFonts`) when run filtered together with an SDK 34 test class; it passed alone and in the full suite. |
+| Not run | Device check, instrumented tests, release build |
+
+## Latest results (2026-11-12, Gradle wrapper 9.9.0 -> 9.9.1)
+
+- `./gradlew assembleDebug`: exit 0 on the working tree. Not run: unit tests, lint, release build.
+
+## Latest results (2026-11-12, F147 tools revamp, worktree on a60b413 + 4 commits, now 4e835ca..237d569)
+
+- `:app:compileDebugKotlin`: passed.
+- Targeted unit tests (ToolChoices, SplitLinks, CompressPdfEngine, PptxExporter, CacheCleaner, WatermarkUnicode): 20 tests, 0 failed, 0 skipped.
+- `ResultShareTest` (3 tests) was added after that run: compiled in the full run, result not recorded.
+- **Not run to completion:** the full `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` (started, still running when this was written), release build, any device check.
+
+## Latest results (2026-11-12, F140, uncommitted tree on 4e2b4bd)
+
+- `:app:compileDebugKotlin`: 0 errors. `:app:testDebugUnitTest`: 676 tests, 0 failed, 64 skipped (`ColourThemeScreenshotTest.settingsAppearance` now opens the Appearance page first). `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS.
+- `:app:installDebug` on the OnePlus CPH2569: Home Recent row and chips, See all to Tools, Settings pages, Tools cards, launch animation after `am kill` + launcher start, 0 crashes.
+- JDK: `/Applications/Android Studio.app` is gone; use `JAVA_HOME="/Applications/Android Studio Preview.app/Contents/jbr/Contents/Home"`.
+- Not run: lint, instrumented tests, release build.
+
+## Latest results (2026-11-12, F141 loading and processing animations, shared tree with another session's uncommitted F140)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin` | 0 errors, 0 warnings |
+| `:app:testDebugUnitTest` (full) | 676 tests, 0 failed, 64 skipped (my run was up to date from an identical run by the F140 session minutes earlier) |
+| Compose previews | `LoadingAnimationsPreview` and `LoadingAnimationsDarkPreview` rendered |
+| Not run | Device check of the animations, lint, release build |
+
+## Latest results (2026-11-11, bug hunt F142–F145 (pushed as F142–F145; renumbered on merge, those IDs were taken), on `c6f55dd` + that commit)
+
+| Check | Result |
+|---|---|
+| `:app:testDebugUnitTest` | 650 tests: 620 passed, 30 skipped (opt-in screenshot and real-photo tests), 0 failed. Includes the new `PdfPictureTest` case and the extended `EncryptedDocumentPackageTest` round trip |
+| `:app:lintDebug`, `:app:bundleRelease`, sideload `assembleRelease` | Running at commit time; see the next docs commit |
+| Not run | Device or emulator, instrumented tests, screenshot renders, baseline profile, `:opencv:lintDebug`, 16 KB alignment |
+
+## Earlier results (2026-11-11, F116 live-device pass, uncommitted tree)
+
+| Check | Result |
+|---|---|
+| `:app:installDebug` | Built and installed on OnePlus CPH2569 (Android 15). Failures during the session were stale half-written intermediates (`intermediary-bundle.aab`, `bundle.apks`) left by my own killed Gradle runs; deleting those folders and detaching Gradle (`nohup`) fixed it |
+| `:app:testDebugUnitTest` (full) | 502 tests, 0 failed, 63 skipped (skips not investigated) |
+| `:app:testDebugUnitTest` after F120 (Settings search, backup status/explainer) | Full suite: 518 tests, 0 failed, 63 skipped (includes 6 new `SettingsSearchTest` cases). Continuous logcat captured this round (89k lines): 0 crashes/ANRs, no StrictMode hits from the new Settings code. **A successful backup was not confirmed on the device** (see AUDIT_FINDINGS F120); Restore and Recover not exercised; tablet, large-font, TalkBack not checked. Dark theme checked for Settings (Appearance) and the Tools landing |
+| `:app:compileDebugKotlin` + `installDebug` after F121 | Passed; dialogs checked on device. The unit suite was NOT re-run after F121 (UI-only change). |
+| `:app:testDebugUnitTest --tests *ImageToolsEngineTest*` after F122/F123 | Passed (includes the new tiny-PNG test). Full suite NOT re-run after F122/F123. |
+| `:app:testDebugUnitTest` full suite at commit f94e79f (before push) | 519 tests, 0 failed, 63 skipped (skips not investigated). Release bundle/APK NOT built and CI not yet seen for this push. |
+| `:app:testDebugUnitTest` on the merge of origin/claude/awesome-clarke-ussjo3 (QR, Sign PDF, PDF to text, Insert pages) with F116-F123 | 635 tests, 0 failed, 63 skipped. Release build NOT run; CI not yet seen; the merged screens (camera toolbar with HD plus QR buttons, Tools landing with Sign) were NOT re-checked on the device. |
+| Device check of the merged build (OnePlus CPH2569, debug install) | Tools landing lists Sign PDF and PDF to Word or text; camera QR mode shows Create a QR code, Scan history and flash with no HD, Document mode shows HD; Organise (drag-reorder grid) menu offers "Insert pages from another PDF…" and inserting a 2-page PDF into a 4-page one reported 6 pages. Log capture: 21k lines, 0 crashes or ANRs. Owner confirmed by hand that the Document first-use dialog appears on the merged build. NOT checked: Sign PDF itself, QR scanning of a real code, PDF to Word output. |
+| Device check of the F124 build (OnePlus CPH2569, debug) | First run on cleared data: language picker, welcome, permission explainer, empty Home all show; Document first-use dialog shows; real shutter capture, review (blur warning and Retake banner shown), save, and the saved sheet all work; saved sheet now shows the Copy text caption. Cold start about 2.0 s (debug). 0 crashes or ANRs in the capture. Both test scans moved to the recycle bin (not permanently deleted). NOT checked: auto-capture, ID card and Book capture end to end, a release build. |
+| `:app:testDebugUnitTest` after F124 | 635 tests, 0 failed, 63 skipped. Release build NOT run. |
+| F125 device check (OnePlus, debug, dark theme) and `:app:testDebugUnitTest` | Camera shows one zoom pill that cycles 1x/2x/5x; review title no longer clipped, filter row shows a fifth filter peeking, "Magic Colour" label fits; first-use dialog waits for the camera permission; filter switching 10.8% janky; saved sheet fine in dark. Unit suite: 635 tests, 0 failed, 63 skipped. Release build NOT run; auto-capture, ID card and Book capture NOT checked. |
+| Edge-detection benchmark (F126) | Run on the phone WITHOUT Gradle's connectedAndroidTest (that uninstalls the app and wipes its data): `./gradlew :app:installDebug :app:installDebugAndroidTest`, then `adb shell am instrument -w -e class com.example.scanpro.scanner.ScanDetectionBenchmarkTest com.scanpro.app.debug.test/androidx.test.runner.AndroidJUnitRunner` and read `adb logcat -d -s SCANBENCH`. Result on the OnePlus after F126: 12 of 12 scenes found, mean IoU 0.920; hard_shadow_across_page still 10.8% error. Unit suite after F126: 635 tests, 0 failed, 63 skipped; the on-device test class also compiles. Release build NOT run. |
+| F127/F128 device check | Repair PDF: damaged 3-page PDF repaired to 3 pages; Share as Word: a valid .docx with the recognised words. Unit suite after F127/F128: 639 tests, 0 failed, 63 skipped. Release build NOT run. |
+| F129-F132 device check | PDF to Excel: table PDF to an identical 4x3 sheet; PDF to PowerPoint: 3-page PDF to 3 slides; PowerPoint to PDF: 2 slides to 2 pages with the slide text; Open shows an app chooser. Unit suite after F129-F132: 649 tests, 0 failed, 63 skipped. Release build NOT run. |
+| F133 device check | 40-page PDF to PowerPoint: ring at 37% with "15 / 40"; result shows the success burst over the thumbnail. Unit suite: 649 tests, 0 failed, 63 skipped. Release build NOT run. |
+| F133 (2026-11-11) | `:app:compileDebugKotlin` passed. Unit tests, device check and release build NOT run. |
+| F137 (2026-11-11) | `:app:compileDebugKotlin` passed, 0 warnings. `:app:testDebugUnitTest`: 653 tests, 0 failed, 63 skipped (4 new in `NextToolsTest`; its first run failed and exposed that the image tools were missing from the Continue row, fixed). Device check and release build NOT run. |
+| F138 (2026-11-12) | `:app:testDebugUnitTest`: 658 tests, 0 failed, 63 skipped. `installDebug` on the OnePlus and a device pass (see F138). After a killed background build KSP failed with "Storage corrupted ... kspCaches" and then "Storage ... is already registered": delete `app/build/kspCaches` and build once with `--no-daemon -Pksp.incremental=false`. Background `&`/`nohup` builds die when the agent's shell call ends: run Gradle in a tracked background session. Release build NOT run. |
+| F139 (2026-11-12, branch `feat/scanpro-premium-upgrade`) | `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`: compile 0 warnings; 673 tests, 0 failed, 64 skipped; lint 0 errors, 71 warnings (none from F139 files); debug APK 68.5 MB. `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS (1728 strings in six languages, 25 tools). Environment: `/Applications/Android Studio.app` was removed mid-run, leaving daemons on a deleted JDK ("Supplied javaHome must be a valid directory"); use the Preview app's JBR. Device check and release build NOT run. |
+| F139 device check (2026-11-12) | `:app:installDebug` from a separate worktree (`git worktree add --detach /tmp/scanpro-f139 0b4aa3b`, so another session's edits in the main checkout were not included; build cache made it a 2-minute build). QR history Keystore migration, decrypt after restart and Clear all verified on the OnePlus; camera quality chips seen; Latin watermark seen. `WatermarkUnicodeTest` (new): 3/3 in that worktree. adb `input text` cannot type Devanagari or Tamil, so Indian-script watermarks are covered by the test, not the device. |
+| `:app:testDebugUnitTest` after F119 (drag grid, Watermark editor, Images editor) | Full suite: 512 tests, 0 failed, 63 skipped (includes 7 new `WatermarkGeometryTest` cases). Device: drag, page sheet, Extract guard, Watermark preview vs output (incl. rotated page and tiling), Images to PDF drag/crop/order, discard dialog all exercised; no ScanPro crash or ANR in the crash/events buffers. **No continuous logcat was captured for this round** (the capture file was not written), so StrictMode findings for the new screens were not reviewed. Dark theme, tablet width, TalkBack not checked |
+| `:app:testDebugUnitTest` after F118 (result screen, Resize fit, compress note) | Full suite: 505 tests, 0 failed, 63 skipped (includes 3 new `ImageToolsEngineTest` fit cases). Result screen checked on device for PDF, image, text and locked-PDF outputs; the zip placeholder, Fit/Stretch results, tablet width and dark theme not seen |
+| `:app:testDebugUnitTest` after F117 (Tools landing) | Full suite re-run: 502 tests, 0 failed, 63 skipped; installed and exercised on device (search, pin, restart persistence, recents, category chip). Dark theme, tablet width and TalkBack **not checked** |
+| On-device, all 21 Tools tiles | Driven with synthetic files only: no crashes, ANRs or fatal log lines in the captured window. Details and the remaining findings are in `AUDIT_FINDINGS.md` F116 |
+| Not run | Lint, release build, `connectedDebugAndroidTest`, Settings, Files, Home and the document-edit screens on the device; a real scan capture from the camera (preview only) |
+
+## Latest results (2026-11-10, later, uncommitted tree with F109 to F112)
+
+| Check | Result |
+|---|---|
+| `:app:testDebugUnitTest` | 444 tests, 0 failures, 0 errors, 63 skipped (opt-in screenshot and real-photo tests) |
+| `:app:lintDebug` | Passed (no errors). It first failed on 2 errors: a `context.getString` in a Compose callback in `PdfToolsScreen.kt` (mine, fixed) and the Perfetto receiver `tools:node="remove"` in the manifest (from F104 to F106, now `tools:ignore="MissingClass"`) |
+| `:app:installDebug` | Not run on the final tree: the phone was no longer connected ("No connected devices"). The previous tree was installed and checked on the OnePlus. Not seen on a device since: the camera counter that shortens on narrow screens, the Settings dismiss button, the Watermark chips and the Latin-only message |
+
+## Earlier results (2026-11-10, working tree on branch claude/awesome-clarke-ussjo3)
+
+| Check | Result |
+|---|---|
+| `:app:analyzeReleaseR8Config` (F114 R8 keep rules, CameraX & Play Policy audit) | Optimization Score: 96.59%, Obfuscation Score: 97.13%, Shrinking Score: 96.83%; `play-policy-insights` reported 🟢 Compliant (0 critical, 0 important violations); CameraX architecture audited with clean `ResolutionSelector` and `ImageProxy` lifecycles; `:app:compileDebugKotlin` and `:app:compileReleaseKotlin` passed cleanly with 0 errors and 0 compiler warnings; unit tests passed 100%. |
+| `:app:testDebugUnitTest` (F113 Manifest inspections & policy warning resolution) | `studio_analyze_file` returned 0 errors and 0 warnings on `AndroidManifest.xml`; `:app:processDebugManifest` and `:app:compileDebugKotlin` passed; `:app:lintDebug` passed with 0 errors; `LaunchSmokeTest` (70 tests across API 24-37) passed 100% cleanly (0 failures, 0 errors). |
+| `:app:testDebugUnitTest` (F108 Post-compaction verification, TalkBack a11y, release compile & full unit test pass) | **432 of 432 unit tests passed (100% success rate, 0 failures)**; `:app:compileReleaseKotlin` passed cleanly in 2m 39s with 0 errors; `:app:assembleDebug` generated 66 MB APK; `PdfToolsScreenPreview` rendered successfully and verified via visual lint service (overflow button content description upgraded for TalkBack). |
+| `:app:testDebugUnitTest` (F107 Advanced PDF & Image tools, Crop integration, Watermark, Page numbers, and PDF to Text) | `ImageToolsEngineTest` (including `cropImage_cropsAccurately`) and `PdfToolsFeaturesTest` passed 100% cleanly; `:app:compileDebugKotlin` passed with 0 errors and 0 warnings; `:app:assembleDebug` built cleanly. |
+| `:app:testDebugUnitTest` (F106 Codebase cleanup & compiler warnings resolution) | Non-incremental `:app:compileDebugKotlin` passed with 0 errors and 0 warnings; `ImageToolsEngineTest` and `PdfToolsFeaturesTest` passed cleanly; resolved KSP cache corruption; migrated all deprecated icons to `Icons.AutoMirrored.Filled.*`. |
+| `:app:testDebugUnitTest` (F105 Adobe Scan review & Crop suite) | BUILD SUCCESSFUL in 4m 27s; 100% of unit tests passed (0 failures); `CropEditorDialogTest` passed; `ScanReviewCropControlsTest` passed; `:app:assembleDebug` built and installed on OnePlus CPH2569 (`dc6b0551`). |
+| `:app:testDebugUnitTest` (F104 Image Tools suite) | 8/8 `ImageToolsEngineTest` passed; 13/13 `PdfToolsFeaturesTest` passed; 85/85 passed in imaging suite; `:app:assembleDebug` passed cleanly. |
+| `:app:testDebugUnitTest` (F103 PDF Tools background notifications & export naming improvements) | 13/13 `PdfToolsFeaturesTest` passed; 90 passed, 0 failed in imaging & tools suite; clean compile. |
+| `:app:testDebugUnitTest` (F102 Camera scanner HUD and controls UI/UX overhaul) | 54 scanner unit tests passed (0 failed); `CapturedStripTest` 3/3 passed; `ScanReviewCropControlsTest` passed; clean compile. |
+| `:app:testDebugUnitTest` (F101 End-to-end security and crash hardening) | 483 unit tests passed (0 failed); `Activity` unwrapping for PrintManager; ClipData URI grants; safe divide-by-zero bounds. |
 | CI run 119 on `5c791de` (item 5, moved-aside library restore, GitHub Actions, 2026-11-10) | Green: one `build` job, about 31 min from push to finish (the run was slower than 117 and 118). Includes `MovedAsideLibraryTest` (7). Nothing on a device; the Library-screen dialog has no UI test. |
-| CI run 120 on `35bbe79` (QR scanner, Sign PDF, PDF to text, Insert pages: F102 to F104; started by hand with `workflow_dispatch` because the push ended in `[skip ci]`, GitHub Actions, 2026-11-10) | Green on the first compile: one `build` job, about 23 min 51 s (tests, lint and Play bundle 16 min 18 s; sideload APKs 5 min 44 s). The unit-test task passed, so the new tests passed: `ScannedCodeTest`, `QrOverlayMathTest`, `ScanHistoryStoreTest`, `QrPayloadsTest`, `QrEncoderTest`, `SignGeometryTest`, `SignPdfEngineTest`, `PdfToTextTest`, `InsertPagesTest`. Test counts not read from the log. Not run: anything on a device; no UI test covers the new screens. |
+| CI run 131 on `dfe132f` (the owner's F102 to F123 work merged with F134 to F136 and the Dependabot action bumps, GitHub Actions, 2026-11-11) | Green: one `build` job, about 38 min 40 s from push to finish (tests, lint and Play bundle 28 min 23 s; sideload APKs 9 min 30 s). This was a push-triggered run with no saved Gradle cache, so it ran much slower than runs 117 to 120 (19 to 24 min). First compile of both lines of work together. Not run: anything on a device. |
+| CI run 120 on `35bbe79` (QR scanner, Sign PDF, PDF to text, Insert pages: F134 to F136; started by hand with `workflow_dispatch` because the push ended in `[skip ci]`, GitHub Actions, 2026-11-10) | Green on the first compile: one `build` job, about 23 min 51 s (tests, lint and Play bundle 16 min 18 s; sideload APKs 5 min 44 s). The unit-test task passed, so the new tests passed: `ScannedCodeTest`, `QrOverlayMathTest`, `ScanHistoryStoreTest`, `QrPayloadsTest`, `QrEncoderTest`, `SignGeometryTest`, `SignPdfEngineTest`, `PdfToTextTest`, `InsertPagesTest`. Test counts not read from the log. Not run: anything on a device; no UI test covers the new screens. |
 | CI run 118 on `6a275c1` (shared `now()` in `ea8a67e`, plus docs, 2026-11-10) | Green: one `build` job, about 22 min 50 s from push to finish (tests, lint and Play bundle 14 min 21 s; sideload APKs 6 min 33 s). Nothing run on a device. |
 | CI run 117 on `698d7bc` (new repository tests, GitHub Actions, 2026-11-10) | Green, first complete run of the single-job workflow: one `build` job, about 19 min from push to finish (Gradle step with unit tests, `lintDebug` and Play bundle 10 min 33 s; sideload APKs 6 min 38 s; the rest is setup and cache saving), so about 19 runner minutes. Includes the new tests `SetAsideNewerDatabaseTest`, `RepositoryEditsTest` (`reOcrDocument`, `appendImages`), `BookSplitTest` and `ImportBackupTest`. Test counts not read from the log. Not run: anything on a device. |
 | CI run 116 on `00004f0` (same tests, first push) | Failed: 506 tests, 2 failed (`BookSplitTest`, `RepositoryEditsTest`), both because the test wrote to Room on the main thread; fixed in `698d7bc`, which also drops a split test that could not reach its clean-up path. Run 115 (`b27ca31`) was cancelled by the next push and never finished. |
 | CI run 114 on `466546e` (Compose UI tests moved to the `junit4.v2` rules, GitHub Actions, 2026-11-10) | Green: `test` job (unit tests, `lintDebug`, Room schema checks) 5 min 20 s, `package` job (Play bundle, sideload APKs, size report) 17 min; about 22 runner minutes. No UI test needed a timing change. Nothing run on a device. |
 | CI run 113 on `ce8f057` (F101, GitHub Actions, 2026-11-10) | Green: `test` job (unit tests, `lintDebug`, Room schema checks) 11 min 40 s; `package` job (Play bundle, sideload APKs, size report) 13 min 40 s; the two ran in parallel, about 14 min from push to finish and about 25 runner minutes in total. Not run: anything on a device; `--warning-mode=all` printed no Gradle deprecation notice in either job (Gradle 9.8.2; no "incompatible with Gradle 10" line), so there was nothing to fix there. The only warnings were Kotlin ones in tests (`createComposeRule` / `createAndroidComposeRule`); all 15 test files were then moved to the `junit4.v2` rules (not run yet). |
-| CI run 112 on `b4461ae` (F101, GitHub Actions, 2026-11-10) | `:app:testDebugUnitTest`: 477 tests, 30 skipped, 1 failed (`DocumentRepositoryTest.deletePageRemovesItsFilesAndClearsHistory`: the app keeps a deleted page's files until the undo window closes; the test is corrected in the next commit and has not been re-run). Room schema check passed. `lintDebug` did not run (the test task failed first). The `package` job (bundle, sideload APKs, size report) was not inspected. Nothing run locally: the cloud container has no Gradle dependencies. |
+| CI run 112 on `b4461ae` (F101 core logic review, GitHub Actions, 2026-11-10) | `:app:testDebugUnitTest`: 477 tests, 30 skipped, 1 failed (`DocumentRepositoryTest.deletePageRemovesItsFilesAndClearsHistory`: the app keeps a deleted page's files until the undo window closes; the test is corrected in the next commit and has not been re-run). Room schema check passed. `lintDebug` did not run (the test task failed first). The `package` job (bundle, sideload APKs, size report) was not inspected. Nothing run locally: the cloud container has no Gradle dependencies. |
 | `:app:testDebugUnitTest` (F100 Adobe Scan post-scan review experience overhaul) | 483 tests run, 0 failed; `ScanReviewCropControlsTest` passed; `ScanReviewSlidersTest`, `ScanReviewNamingTest`, `ScanReviewQualityTest`, `ScanReviewReorderTest` 100% passed; `:app:compileDebugKotlin` and `:app:assembleDebug` passed cleanly. |
 | `:app:testDebugUnitTest` (F99 Adaptive layout for small screens) | All UI and Library tests passed (`WelcomePermissionsTest`, `HomeScrollTest`, `ScanReviewCropControlsTest`). Verified `assertIsDisplayed()` for notifications permission and tip next action button; `:app:compileDebugKotlin` and tests clean. |
 | `:app:testDebugUnitTest` (F97 Convert tools overhaul) | 353 passed, 63 skipped, 0 failed; `PdfToolsFeaturesTest` 11 passed (empty image list rejection, password-protected PDF rejection, Office/HTML/Markdown MIME types detection); `:app:assembleDebug` passed. |
@@ -220,7 +735,7 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 | `ScreenScreenshotTest`: Files grid empty | Keep the v1 `createComposeRule` (deprecated, suppressed): under the v2 rule the grid never got Paging's first page. |
 | Test JVM aborts (exit 134, "Class not found: java/nio/LongBuffer") | Robolectric native graphics, when only some `ScreenScreenshotTest` cases run (e.g. `--tests '*files*'`); run the whole class. |
 | Compose UI test never goes idle (`AppNotIdleException`) once a dialog with a text field is open | Robolectric limitation here: even a plain Material `AlertDialog` + `OutlinedTextField` hangs, with or without focus and with a manual clock. Test the state around the dialog instead (as `ScanReviewNamingTest` does) and check typing on a device. |
-| `CONNECT tunnel failed, response 403` for `dl.google.com` (2026-11-05) | The cloud environment's network policy blocks it. Google's Maven (`maven.google.com`) redirects every artifact there, and the SDK zips live there, so nothing builds. Add `dl.google.com` under Allowed domains in the environment's Network access settings. |
+| `CONNECT tunnel failed, response 403` for `dl.google.com` (2026-11-05; reachable again on 2026-11-11, SDK installed with cmdline-tools 13114758) | The cloud environment's network policy blocks it. Google's Maven (`maven.google.com`) redirects every artifact there, and the SDK zips live there, so nothing builds. Add `dl.google.com` under Allowed domains in the environment's Network access settings. |
 | `SDK location not found` | Install platform 37 and write `local.properties`. |
 | `Could not resolve` / HTTP 429 from repo.maven.apache.org on a first build | Same Maven Central rate limit as above: create the local mirror init script, then rebuild (a first build with it took about 4 minutes). |
 | `Package platforms;android-37 not found` in `sdkmanager` | Newer SDK managers call it `platforms;android-37.0`. |
@@ -236,3 +751,9 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 
 Update the "Latest results" table (date, commit, each check), move anything newly verified out of the "Not run" rows, and note
 new failures in "Known errors". Mirror important outcomes in `AGENT_HANDOFF.md`.
+
+## Driving the app from an agent
+
+`.claude/skills/run-scanproultimate/` (SKILL.md and driver.sh): build and install in the background, launch, tap by label, pick test files, screenshots, logcat crashes, cold start, unit tests and the on-device edge benchmark, on a phone over adb. Every command in its SKILL.md was run on the OnePlus on 2026-11-12.
+
+2026-11-12: after merging the Dependabot Gradle wrapper 9.9.0 and zxing 3.5.4 bumps, `:app:compileDebugKotlin` passed (first run downloads Gradle 9.9.0, about 6 min). Unit tests, instrumented tests and the release build were not run after the merge.

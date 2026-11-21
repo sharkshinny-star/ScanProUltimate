@@ -6,6 +6,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,16 +16,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import com.example.scanpro.R
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Once after a crash: offers to share the saved report. Shown nowhere else, and never twice for the same crash. */
 @Composable
 fun CrashReportPrompt() {
     val context = LocalContext.current
     var report by remember { mutableStateOf<File?>(null) }
-    // Read once per process start; the prompt is dismissed by clearing the state.
-    val initial = remember { CrashReporter.pendingReport(context).also { report = it } }
+    // Read once per process start, off the main thread (a directory listing and a preferences file were seen
+    // blocking the first frame on a device); the prompt is dismissed by clearing the state.
+    LaunchedEffect(Unit) { report = withContext(Dispatchers.IO) { CrashReporter.pendingReport(context) } }
     val current = report ?: return
-    if (initial == null) return
 
     fun done() {
         CrashReporter.markOffered(context, current)
