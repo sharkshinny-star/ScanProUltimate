@@ -532,7 +532,10 @@ fun CameraScannerScreen(
     val guidanceHold = remember { GuidanceHold(GUIDANCE_HOLD_MS) }
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
-            onDetection = { result, isStable, progress ->
+            onDetection = detect@{ result, isStable, progress ->
+                // A frame that finished just before the camera stopped (review step, QR mode, detection off) arrives after
+                // the outline was cleared: drop it, or it is drawn again and nothing ever replaces it.
+                if (reviewing || barcodeMode || detectMode == DetectMode.NO_DETECT) return@detect
                 // The screen recomposes on this object; it is replaced only when something it shows changed, not every frame.
                 val previousResult = detection
                 if (previousResult == null || (previousResult.quad == null) != (result.quad == null) || previousResult.isDark != result.isDark ||
@@ -554,6 +557,16 @@ fun CameraScannerScreen(
             onAutoCapture = { autoCaptureSignal++ },
             onUnavailable = { cameraError = resources.getString(R.string.scan_error_detector_unavailable) }
         )
+    }
+    // The outline, the lock-on state and the ring belong to the page last seen. When the camera stops looking for one
+    // (the review step, QR mode, detection switched off) they are cleared, so a retake or a return to the camera does
+    // not start with the previous page's outline and tick until the first new frame arrives (or for good, with detection off).
+    LaunchedEffect(reviewing, barcodeMode, detectMode) {
+        outlineTracker.reset()
+        shownQuad = null
+        detection = null
+        stable = false
+        steadiness = 0f
     }
     // Taking a page by hand while the tips show means they have done their job.
 
