@@ -51,7 +51,8 @@ internal class LibraryRecovery(private val store: DocumentStore) {
     private fun rebuild(folder: File): ScanDocument? {
         val found = File(folder, "rendered").listFiles { file -> file.isFile }.orEmpty().mapNotNull { file ->
             val match = RENDERED_NAME.matchEntire(file.name) ?: return@mapNotNull null
-            Found(file, match.groupValues[1].toIntOrNull(), match.groupValues[2])
+            // The position is group 1 for "page_003_<id>", group 2 for "book_003_<id>"; older "book_<id>" files have none.
+            Found(file, match.groupValues[1].ifEmpty { match.groupValues[2] }.toIntOrNull(), match.groupValues[3])
         }.sortedWith(compareBy<Found>({ it.index ?: Int.MAX_VALUE }, { it.file.lastModified() }, { it.file.name }))
         if (found.isEmpty()) return null
 
@@ -89,7 +90,10 @@ internal class LibraryRecovery(private val store: DocumentStore) {
     }
 
     private companion object {
-        /** "page_003_<id>.jpg" (an imported or scanned page) or "book_<id>.jpg" (half of a split spread). */
-        val RENDERED_NAME = Regex("""(?:page_(\d+)_|book_)(.+)\.jpg""")
+        /**
+         * "page_003_<id>.jpg" (an imported or scanned page), "book_003_<id>.jpg" (half of a split spread) or the older
+         * "book_<id>.jpg" with no position. Ids are UUIDs, which hold no underscore, so a leading "digits_" is always a position.
+         */
+        val RENDERED_NAME = Regex("""(?:page_(\d+)_|book_(?:(\d+)_)?)(.+)\.jpg""")
     }
 }
