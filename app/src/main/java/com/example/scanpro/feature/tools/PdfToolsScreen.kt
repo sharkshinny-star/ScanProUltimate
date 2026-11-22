@@ -93,8 +93,11 @@ fun PdfToolsScreen(
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
+            // Only leftovers from earlier sessions: a recent folder may belong to an editor that survived a screen turn
+            // or tab switch (its photo list is restored) or to a conversion still running.
+            val cutoff = System.currentTimeMillis() - STALE_STAGING_MS
             context.cacheDir.listFiles { file ->
-                file.isDirectory && (file.name.startsWith("img2pdf_order_") || file.name.startsWith("img2pdf_"))
+                file.isDirectory && file.name.startsWith("img2pdf_") && file.lastModified() < cutoff
             }?.forEach { it.deleteRecursively() }
         }
     }
@@ -1207,3 +1210,6 @@ fun PdfToolsScreenDarkPreview() {
 private const val CROP_RETURN_COMPRESS = "compress"
 private const val CROP_RETURN_RESIZE = "resize"
 private const val CROP_RETURN_CONVERT = "convert:"
+
+/** Staged Images to PDF folders older than this (six hours) are swept; newer ones may still be in use. */
+private const val STALE_STAGING_MS = 6L * 60 * 60 * 1000

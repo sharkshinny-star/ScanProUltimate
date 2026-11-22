@@ -21,7 +21,7 @@ update the affected files in the same commit as the change. `CLAUDE.md` repeats 
 
 <!-- coderabbit-ai-generated-section:v1:093fd3c15d217e67f138472fb2443e3b03985140cda8424b98fd73d31cbdb770 -->
 
-Last updated: 2026-11-22 (F256: Organise pages asks before discarding edits after a screen turn, uncompiled; F255: Sign PDF stamp lands on the page it was requested for and is dropped if the tool closed; Edit text box clamped on the page at both edges; NOT compiled or tested, cloud Gradle offline). Earlier: 2026-11-20 (PR 18 repair: explicit canonical containment for shared ZIP entries; six standalone ResultShareTest tests pass; Gradle sharing tests (6/6) and app lint passed).
+Last updated: 2026-11-22 (F257: five tool fixes from a full tools review, uncompiled; unfixed review findings listed in AUDIT_FINDINGS F257; F256: Organise pages asks before discarding edits after a screen turn, uncompiled; F255: Sign PDF stamp lands on the page it was requested for and is dropped if the tool closed; Edit text box clamped on the page at both edges; NOT compiled or tested, cloud Gradle offline). Earlier: 2026-11-20 (PR 18 repair: explicit canonical containment for shared ZIP entries; six standalone ResultShareTest tests pass; Gradle sharing tests (6/6) and app lint passed).
 
 <!-- /coderabbit-ai-generated:v1 -->
 

@@ -69,6 +69,9 @@ internal fun PasswordDialog(
     ) {
         if (isProtect && fileUri != null) {
             value = runCatching { com.example.scanpro.imaging.PdfToolsEngine.needsOpenPassword(context, fileUri) }.getOrDefault(false)
+        } else {
+            // "Remove password first" turns this same dialog into Unlock: the old notice must not stay.
+            value = false
         }
     }
     val blocked = alreadyProtected == true

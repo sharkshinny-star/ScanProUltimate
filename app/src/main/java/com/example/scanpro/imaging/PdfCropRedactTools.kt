@@ -261,7 +261,7 @@ object PdfCropTools {
     ): PdfToolResult = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "crop_in_${UUID.randomUUID()}.pdf")
         try {
-            PdfToolsEngine.openPdf(temp).use { doc ->
+            PdfToolsEngine.loadPdf(temp).use { doc ->
                 val total = doc.numberOfPages
                 userRequire(total > 0, R.string.tools_err_no_pages)
                 onProgress(1, 2, AppStrings.get(R.string.tools_crop_pdf_progress))
@@ -296,7 +296,7 @@ object PdfCropTools {
     ): PdfToolResult = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "crop_in_${UUID.randomUUID()}.pdf")
         try {
-            PdfToolsEngine.openPdf(temp).use { doc ->
+            PdfToolsEngine.loadPdf(temp).use { doc ->
                 val total = doc.numberOfPages
                 userRequire(total > 0, R.string.tools_err_no_pages)
                 val shapes = List(total) { i -> doc.getPage(i).let { PageShape(it.cropBox, it.rotation) } }
@@ -421,7 +421,7 @@ object PdfRedactTools {
         val temp = PdfToolsEngine.copyUriToTemp(context, uri, "redact_find_${UUID.randomUUID()}.pdf")
         try {
             val job = coroutineContext[Job]
-            PdfToolsEngine.openPdf(temp).use { doc -> buildIndex(doc) { job?.ensureActive() } }
+            PdfToolsEngine.loadPdf(temp).use { doc -> buildIndex(doc) { job?.ensureActive() } }
         } finally {
             temp.delete()
         }
@@ -944,7 +944,7 @@ object PdfRedactTools {
     ): PdfToolResult = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "redactb_in_${UUID.randomUUID()}.pdf")
         try {
-            PdfToolsEngine.openPdf(temp).use { doc ->
+            PdfToolsEngine.loadPdf(temp).use { doc ->
                 val total = doc.numberOfPages
                 userRequire(total > 0, R.string.tools_err_no_pages)
                 val (matches, pages) = ParcelFileDescriptor.open(temp, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
@@ -992,7 +992,7 @@ object PdfRedactTools {
     ): PdfToolResult = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "redact_in_${UUID.randomUUID()}.pdf")
         try {
-            PdfToolsEngine.openPdf(temp).use { doc ->
+            PdfToolsEngine.loadPdf(temp).use { doc ->
                 val total = doc.numberOfPages
                 userRequire(total > 0, R.string.tools_err_no_pages)
                 onProgress(0, total, AppStrings.get(R.string.tools_redact_progress_searching))

@@ -121,7 +121,7 @@ internal fun FormFillDialog(
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                         }
-                        Button(onClick = { onSave(flatten) }, enabled = missing.isEmpty(), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        Button(onClick = { onSave(flatten) }, enabled = missing.isEmpty() && (changed > 0 || flatten), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                             Text(if (changed == 0) stringResource(R.string.common_save) else pluralStringResource(R.plurals.tools_form_save_changes, changed, changed))
                         }
                     }

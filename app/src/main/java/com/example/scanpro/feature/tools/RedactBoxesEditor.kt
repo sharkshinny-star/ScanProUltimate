@@ -144,7 +144,7 @@ internal fun RedactBoxesEditor(
                                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.tools_redact_box_remove))
                                 }
                             } else if (boxes.isNotEmpty()) {
-                                IconButton(onClick = { boxes.removeAt(boxes.size - 1); selected = null }) {
+                                IconButton(onClick = { val removed = boxes.removeAt(boxes.size - 1); selected = null; pageIndex = removed.page.coerceIn(0, pageCount - 1) }) {
                                     Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.tools_redact_box_undo))
                                 }
                             }
