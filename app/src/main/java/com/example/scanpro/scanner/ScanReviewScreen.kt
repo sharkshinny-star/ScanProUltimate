@@ -608,7 +608,12 @@ fun ScanReviewScreen(
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     onClick = {
                         val image = bitmap ?: return@OutlinedButton
-                        scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
+                        scope.launch {
+                            val turned = rotationTick
+                            val found = withContext(Dispatchers.Default) { detectQuad(image) }
+                            // Found on the photo as it was: if it was turned meanwhile, the outline no longer fits it.
+                            if (rotationTick == turned) quads[key] = found
+                        }
                     }
                 ) {
                     Icon(Icons.Default.AutoFixHigh, contentDescription = null, Modifier.size(16.dp))

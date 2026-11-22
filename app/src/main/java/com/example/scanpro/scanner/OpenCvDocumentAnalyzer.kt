@@ -45,6 +45,15 @@ class OpenCvDocumentAnalyzer(
     @Volatile
     private var closed = false
 
+    @Volatile
+    private var rearmRequested = false
+
+    /**
+     * Lets the same page trigger auto-capture again. Called when a shot failed: the analyzer had already marked the
+     * page as captured, so without this it read as "same page" and waited for the sheet to leave the frame.
+     */
+    fun rearm() { rearmRequested = true }
+
     /** Stops callbacks after the screen is gone; a frame finishing late must not touch disposed state. */
     fun close() { closed = true }
 
@@ -165,6 +174,12 @@ class OpenCvDocumentAnalyzer(
 
                 // Only frames with no page at all count as "the page left"; a blurry or dark frame of the same page doesn't.
                 lostFrames = if (result.quad != null) 0 else lostFrames + 1
+                if (rearmRequested) {
+                    rearmRequested = false
+                    armed = true
+                    capturedQuad = null
+                    capturedSignature = null
+                }
                 if (!armed) {
                     val captured = capturedQuad
                     val current = result.quad

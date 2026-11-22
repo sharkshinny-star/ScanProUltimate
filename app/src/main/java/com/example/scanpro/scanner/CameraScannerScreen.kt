@@ -817,8 +817,9 @@ fun CameraScannerScreen(
         val id = UUID.randomUUID().toString()
         val raw = File(sessionDir, "raw_$id.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(raw).build()
-        // The folder is made on the camera's own thread rather than here on main.
-        analysisExecutor.execute { sessionDir.mkdirs() }
+        // Made here, before the shutter: queued behind analysis frames it could come too late for CameraX to write the
+        // photo, or be refused outright once the screen's executor was shut down. An existing folder costs nothing.
+        sessionDir.mkdirs()
         capture.takePicture(
             options,
             mainExecutor,
@@ -839,10 +840,12 @@ fun CameraScannerScreen(
                     }
                     // Keep the raw photo: cropping happens in the review step, from the full-size original.
                     val captured = Uri.fromFile(raw)
-                    val replacing = retakeIndex in pages.indices
+                    // Read once: the checks below wait for the page inspector, and Back in that time clears retakeIndex.
+                    val retakeAt = retakeIndex.takeIf { it in pages.indices } ?: -1
+                    val replacing = retakeAt >= 0
                     if (replacing) {
-                        val old = pages[retakeIndex]
-                        pages[retakeIndex] = captured
+                        val old = pages[retakeAt]
+                        pages[retakeAt] = captured
                         quads.remove(old.toString())
                         filters.remove(old.toString())
                         adjustments.remove(old.toString())
@@ -901,14 +904,14 @@ fun CameraScannerScreen(
                         }
                     }
                     status = when {
-                        replacing -> resources.getString(R.string.scan_status_page_retaken, retakeIndex + 1)
+                        replacing -> resources.getString(R.string.scan_status_page_retaken, retakeAt + 1)
                         scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> resources.getString(R.string.scan_status_front_saved)
                         scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> resources.getString(R.string.scan_status_id_ready)
                         else -> resources.getString(R.string.scan_status_page_captured, pages.size)
                     }
                     if (replacing) {
                         // Straight back to the page that was retaken, so it can be checked at once.
-                        reviewIndex = retakeIndex
+                        reviewIndex = retakeAt
                         retakeIndex = -1
                         reviewing = true
                     } else if (retakeOfPage != null) finishScan() else flyIntoCounter(raw)
@@ -916,6 +919,8 @@ fun CameraScannerScreen(
 
                 override fun onError(exception: ImageCaptureException) {
                     capturing = false
+                    // The shot failed, so the page was not captured: let auto-capture try it again.
+                    analyzer.rearm()
                     // A half-written file must not be mistaken for a page later.
                     deleteInBackground(raw)
                     status = when (exception.imageCaptureError) {

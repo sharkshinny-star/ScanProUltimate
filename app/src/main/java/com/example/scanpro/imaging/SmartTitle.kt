@@ -50,7 +50,8 @@ object SmartTitle {
         // A kind alone ("Invoice") says too little; fall back to the first line, as before.
         val title = when {
             parts.size >= 2 -> parts.joinToString(SEPARATOR)
-            kind != null -> "$kind$SEPARATOR${tidy(lines.first())}"
+            // A first line that is only punctuation tidies to nothing: the kind alone, not "Invoice –".
+            kind != null -> tidy(lines.first()).let { first -> if (first.isBlank()) kind else "$kind$SEPARATOR$first" }
             else -> tidy(lines.first())
         }
         return shorten(title).ifBlank { fallback }

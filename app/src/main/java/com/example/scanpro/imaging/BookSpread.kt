@@ -14,7 +14,7 @@ object BookSpread {
     data class Halves(val leftStart: Int, val leftWidth: Int, val rightStart: Int, val rightWidth: Int)
 
     fun halves(width: Int, fraction: Float = 0.5f): Halves {
-        val split = (width * fraction.coerceIn(0.2f, 0.8f)).roundToInt().coerceIn(1, width - 1)
+        val split = (width * fraction.coerceIn(0.2f, 0.8f)).roundToInt().coerceIn(1, maxOf(1, width - 1))
         return Halves(0, split, split, width - split)
     }
 
