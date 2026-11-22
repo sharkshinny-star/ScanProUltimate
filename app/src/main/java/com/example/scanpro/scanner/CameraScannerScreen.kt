@@ -492,9 +492,24 @@ fun CameraScannerScreen(
             scope.launch {
                 // Copy picks into the session folder: the picker's read grant ends with the process,
                 // so pages restored after process death would otherwise be unreadable.
-                val picks = withContext(Dispatchers.IO) {
-                    sessionDir.mkdirs()
-                    uris.take(remaining).map { uri -> copyPick(context, uri, sessionDir) }
+                val made = java.util.Collections.synchronizedList(mutableListOf<PickResult>())
+                val picks = try {
+                    withContext(Dispatchers.IO) {
+                        sessionDir.mkdirs()
+                        uris.take(remaining).map { uri -> copyPick(context, uri, sessionDir).also { made += it } }
+                    }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    // The screen went while the copies were being made (the copying itself runs to the end). They would
+                    // be lost, files and all: a screen turn hands them to the new screen, as late camera photos are;
+                    // leaving the screen deletes them.
+                    val copiedFiles = made.filterIsInstance<PickResult.Copied>().map { it.uri }
+                    val rotating = (context as? android.app.Activity)?.isChangingConfigurations == true
+                    if (rotating) {
+                        lateCaptures.update { it + (sessionId to (it[sessionId].orEmpty() + copiedFiles.map(Uri::toString))) }
+                    } else {
+                        copiedFiles.forEach { uri -> uri.path?.let { File(it).delete() } }
+                    }
+                    throw cancelled
                 }
                 val allCopied = picks.filterIsInstance<PickResult.Copied>().map { it.uri }
                 // Camera shots taken while copying count too: re-check the limit now and drop the extra copies.
@@ -1198,7 +1213,14 @@ fun CameraScannerScreen(
         lateCaptures.collect { waiting ->
             val late = waiting[sessionId] ?: return@collect
             lateCaptures.update { it - sessionId }
-            late.map(Uri::parse).forEach { uri -> if (!pages.contains(uri) && pages.size < pageLimit) pages.add(uri) }
+            late.map(Uri::parse).forEach { uri ->
+                when {
+                    pages.contains(uri) -> Unit
+                    pages.size < pageLimit -> pages.add(uri)
+                    // No room for it any more: a photo nobody will see must not stay in the session folder.
+                    else -> uri.path?.let { deleteInBackground(File(it)) }
+                }
+            }
         }
     }
 
