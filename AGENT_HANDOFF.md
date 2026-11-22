@@ -52,6 +52,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 <!-- coderabbit-ai-generated-section:v1:82b475149fcb0f97bb594bc8515f8cfc354e7620ddf00579ea17499760915d7a -->
 
+- F281 (2026-11-22): scanned-code parsing: grouped vCard lines, geo:0,0?q=, TZID in events, quoted Wi-Fi values. Uncompiled and unrun (no SDK in the cloud container).
 - F280 (2026-11-22): starring no longer changes a document's modified time (the document screen's stamp now includes the favourite flag); a Files selection drops documents deleted elsewhere. Uncompiled and unrun (no SDK in the cloud container).
 - F277 (2026-11-22): Library screen: the selection clears when the tag filter changes, an empty tag filter no longer says "library is empty", closed locked folders no longer give away their tags or counts, and starring a selection no longer reads whole documents. Uncompiled and unrun (no SDK in the cloud container); two new Room queries need a real build.
 - F274 (2026-11-22): a full phone during backup or restore now says "Not enough free space" (new `err_backup_no_space`, 6 locales; the 5 Indian-language ones are machine-written, R19) instead of "check the password" or raw system text. Uncompiled and unrun (no SDK in the cloud container).
