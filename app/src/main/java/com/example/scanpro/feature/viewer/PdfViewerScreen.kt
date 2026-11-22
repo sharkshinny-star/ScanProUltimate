@@ -171,11 +171,13 @@ fun PdfViewerScreen(
     // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
     val renderLock = remember { Mutex() }
     val closeScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-    // Rendered pages, about 24 MB of them, kept so scrolling back doesn't render again. Evicted pages are not
-    // recycled: a page on screen can be evicted while it is still drawn, and the garbage collector frees it once
-    // nothing shows it.
+    // Rendered pages, kept so scrolling back doesn't render again. A page is drawn up to 2400 px wide, 13 to 33 MB, so
+    // a fixed 24 MB held only one of them; the budget is a share of the app's memory limit instead (24 to 96 MB, a few
+    // pages). Evicted pages are not recycled: a page on screen can be evicted while it is still drawn, and the garbage
+    // collector frees it once nothing shows it.
     val pageCache = remember {
-        object : android.util.LruCache<Int, Bitmap>(24 * 1024 * 1024) {
+        val budget = (Runtime.getRuntime().maxMemory() / 6).coerceIn(24L * 1024 * 1024, 96L * 1024 * 1024).toInt()
+        object : android.util.LruCache<Int, Bitmap>(budget) {
             override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
         }
     }
@@ -224,6 +226,11 @@ fun PdfViewerScreen(
         val descriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
         try {
             val renderer = PdfRenderer(descriptor)
+            // Nothing to show: say so as a failed load rather than leave a blank screen.
+            if (renderer.pageCount == 0) {
+                renderer.close()
+                throw IllegalStateException("The PDF has no pages")
+            }
             val stale = renderLock.withLock {
                 if (viewerClosed.get()) true else {
                     // Replace (and close) any renderer already open, e.g. after a second password attempt.
@@ -470,7 +477,7 @@ fun PdfViewerScreen(
                             IconButton(
                                 onClick = {
                                     if (matchingPageIndices.isNotEmpty()) {
-                                        currentMatchIdx = (currentMatchIdx - 1 + matchingPageIndices.size) % matchingPageIndices.size
+                                        currentMatchIdx = previousMatchIndex(matchingPageIndices, currentPage - 1)
                                         scope.launch { listState.scrollToItem(matchingPageIndices[currentMatchIdx]) }
                                     }
                                 }
@@ -480,7 +487,7 @@ fun PdfViewerScreen(
                             IconButton(
                                 onClick = {
                                     if (matchingPageIndices.isNotEmpty()) {
-                                        currentMatchIdx = (currentMatchIdx + 1) % matchingPageIndices.size
+                                        currentMatchIdx = nextMatchIndex(matchingPageIndices, currentPage - 1)
                                         scope.launch { listState.scrollToItem(matchingPageIndices[currentMatchIdx]) }
                                     }
                                 }
@@ -940,6 +947,18 @@ private fun PdfPageItem(
         }
     }
 }
+
+/**
+ * The match to go to for "next": the first page after the one on screen ([currentPage], 0-based), wrapping to the first
+ * match past the end. [matches] are page indices, ascending. Going by the page on screen (not by the last match visited)
+ * keeps Next sensible after the reader has scrolled away from the match.
+ */
+internal fun nextMatchIndex(matches: List<Int>, currentPage: Int): Int =
+    matches.indexOfFirst { it > currentPage }.takeIf { it >= 0 } ?: 0
+
+/** The match to go to for "previous": the last page before the one on screen, wrapping to the last match. */
+internal fun previousMatchIndex(matches: List<Int>, currentPage: Int): Int =
+    matches.indexOfLast { it < currentPage }.takeIf { it >= 0 } ?: matches.lastIndex
 
 /** Any run of white space (spaces, tabs, line breaks) in page text or in a search, compared as one space. */
 private val SEARCH_WHITESPACE = Regex("\\s+")
