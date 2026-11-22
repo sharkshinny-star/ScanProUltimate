@@ -30,6 +30,13 @@ internal class PdfTextEditSession private constructor(private val source: File, 
     private val spans = HashMap<Int, List<PdfTextEditor.Span>>()
     private var closed = false
 
+    /**
+     * Held while a preview is made. Each one reads the whole file again and draws a large bitmap, and blocking PDF work
+     * cannot be cancelled once started: without this, quick edits (the Move arrows) left many of them running at once.
+     * A caller waiting here can still be cancelled, so only the newest request goes on to run.
+     */
+    val renderLock = kotlinx.coroutines.sync.Mutex()
+
     /** The text runs on [page] (0-based), read once. */
     @Synchronized
     fun spans(page: Int): List<PdfTextEditor.Span> {

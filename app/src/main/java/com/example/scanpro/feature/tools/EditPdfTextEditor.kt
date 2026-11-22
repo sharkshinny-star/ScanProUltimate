@@ -97,6 +97,7 @@ import com.example.scanpro.imaging.PdfTextEditor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
@@ -191,6 +192,9 @@ private val EditsSaver = listSaver<List<PdfTextEditor.Edit>, Any>(
 /** Pages are drawn this wide for the editor, in pixels: enough to stay sharp when zoomed in on a phone. */
 private const val PAGE_WIDTH_PX = 1600
 
+/** How long the preview waits for further edits before it is made (milliseconds). */
+private const val PREVIEW_DEBOUNCE_MS = 150L
+
 /** How far the page can be zoomed in. */
 private const val MAX_ZOOM = 5f
 
@@ -264,7 +268,16 @@ internal fun EditPdfTextEditor(
     }
     val pageEdits = edits.filter { it.page == pageIndex }
     val rendered by produceState<PagePreview?>(null, current, pageIndex, pageEdits) {
-        value = current?.let { s -> withContext(Dispatchers.IO) { s.render(context, pageIndex, PAGE_WIDTH_PX, pageEdits) } } ?: value
+        // A short wait first: a new edit restarts this block, so a burst of taps makes one preview, not one per tap.
+        if (pageEdits.isNotEmpty()) kotlinx.coroutines.delay(PREVIEW_DEBOUNCE_MS)
+        value = current?.let { s ->
+            withContext(Dispatchers.IO) {
+                s.renderLock.withLock {
+                    // Replaced by a newer edit while waiting for the previous preview: skip the work.
+                    if (isActive) s.render(context, pageIndex, PAGE_WIDTH_PX, pageEdits) else null
+                }
+            }
+        } ?: value
     }
     val preview = rendered?.takeIf { it.page == pageIndex }
     val pageSpans = spans
