@@ -2876,7 +2876,11 @@ private fun copyPick(context: android.content.Context, uri: Uri, sessionDir: Fil
     }
     val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
     android.graphics.BitmapFactory.decodeFile(target.absolutePath, bounds)
-    if (bounds.outWidth > 0) return PickResult.Copied(Uri.fromFile(target))
+    if (bounds.outWidth > 0) {
+        // A mirrored photo (a selfie, some gallery apps) is stood upright here, once, before any page is made from it.
+        ImageProcessor.bakeMirroredOrientation(target)
+        return PickResult.Copied(Uri.fromFile(target))
+    }
     target.delete()
     // Picker URIs carry no extension and old decoders leave outMimeType null, so ask the provider for the type too.
     val type = runCatching { context.contentResolver.getType(uri) }.getOrNull()

@@ -421,6 +421,38 @@ object ImageProcessor {
         }
     }
 
+    /**
+     * A photo whose EXIF orientation is mirrored (2, 4, 5 or 7: front-camera pictures and some gallery apps) is rewritten
+     * upright, mirroring included. The rest of the pipeline reads only the turn of an orientation, so such a photo used
+     * to come out mirrored, with its text backwards. Done once where a picture enters the app; the pixels are turned
+     * as the orientation says: mirrored left to right first, then turned by [ExifInterface.getRotationDegrees].
+     * The file is kept as it was when it cannot be read or does not fit in memory. Returns true when it was rewritten.
+     */
+    fun bakeMirroredOrientation(file: File): Boolean {
+        val exif = runCatching { ExifInterface(file.absolutePath) }.getOrNull() ?: return false
+        if (!exif.isFlipped) return false
+        val degrees = exif.rotationDegrees
+        return try {
+            val decoded = decodeScaled(file.absolutePath, MIRRORED_FIX_MAX_SIDE) ?: return false
+            val matrix = Matrix().apply { setScale(-1f, 1f); postRotate(degrees.toFloat()) }
+            val upright = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+            if (upright !== decoded) decoded.recycle()
+            try {
+                val flat = PdfExporter.onWhite(upright)
+                try {
+                    saveJpeg(flat, file, 97)
+                } finally {
+                    if (flat !== upright) flat.recycle()
+                }
+            } finally {
+                upright.recycle()
+            }
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     private fun rotate(source: Bitmap, degrees: Int): Bitmap {
         val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
         return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
@@ -953,4 +985,6 @@ object ImageProcessor {
     }
 }
 
+/** Longest side kept when a mirrored photo is rewritten upright (the same ceiling as an HD page). */
+private const val MIRRORED_FIX_MAX_SIDE = 4600
 private const val MIN_TEXT_SIZE = 22f

@@ -275,6 +275,8 @@ internal class DocumentImporter(private val store: DocumentStore) {
                 val source = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 val rendered = File(renderedDir, "page_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 copyUri(uri, source)
+                // Mirrored orientations (2, 4, 5, 7) are baked into the pixels: the page pipeline only reads the turn.
+                ImageProcessor.bakeMirroredOrientation(source)
                 val crop = crops.getOrNull(index)
                     ?: if (detectCrops) runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
                     else CropQuad.DEFAULT
