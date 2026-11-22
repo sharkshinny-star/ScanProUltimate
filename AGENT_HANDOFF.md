@@ -52,6 +52,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 <!-- coderabbit-ai-generated-section:v1:82b475149fcb0f97bb594bc8515f8cfc354e7620ddf00579ea17499760915d7a -->
 
+- F252 (2026-11-22): viewer search finds phrases that wrap onto the next line; viewer temp-file list is thread-safe. Uncompiled and unrun (no SDK in the cloud container).
 - F251 (2026-11-22): PDF viewer: page shapes read up front so mixed-size PDFs stop jumping, and the password dialog separates a wrong password from other failures. Uncompiled and unrun (no SDK in the cloud container); scroll feel needs a phone.
 - PR 18 round 2 on `619d0ac4`: CodeQL now flags backup restore. Its existing canonical containment invariant is preserved; rejection uses an explicit conditional throw instead of `require` so analysis can follow the guard. Added a sibling-prefix directory traversal/cleanup test. 30 focused package/import/backup tests and app lint passed; provider CodeQL confirmation remains outstanding. No new unresolved product issue.
 

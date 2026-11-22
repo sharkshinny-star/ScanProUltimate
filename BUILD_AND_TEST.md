@@ -53,6 +53,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F252 viewer search and temp-file fixes, Linux cloud container)
+
+- Not run: no Android SDK in the cloud container, so F252 is uncompiled and untested.
+
 ## Latest results (2026-11-22, F251 viewer fixes, Linux cloud container)
 
 - Not run: `./gradlew --offline :app:compileDebugKotlin` fails at plugin resolution (no Android SDK, plugin `com.android.application` 9.5.1 not cached). F251 is uncompiled and untested; compile and run the viewer tests on a machine with the SDK.

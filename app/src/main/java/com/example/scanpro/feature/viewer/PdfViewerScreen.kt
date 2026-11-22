@@ -183,7 +183,9 @@ fun PdfViewerScreen(
     // The text of every page, read once per file; each search then scans these strings.
     var pageTexts by remember { mutableStateOf<List<String>?>(null) }
     // Copies made for viewing (including decrypted ones) are removed when the viewer closes.
-    val tempFiles = remember { mutableListOf<File>() }
+    // Added to from the loading and unlock coroutines and read on the main thread when the viewer closes, so it must
+    // tolerate both at once.
+    val tempFiles = remember { java.util.concurrent.CopyOnWriteArrayList<File>() }
     var needsPassword by remember { mutableStateOf(false) }
     // The file actually on screen: an unlocked or unrestricted copy when the original is protected.
     var openedFile by remember { mutableStateOf<File?>(null) }
@@ -376,7 +378,8 @@ fun PdfViewerScreen(
                             ensureActive()
                             stripper.startPage = i + 1
                             stripper.endPage = i + 1
-                            runCatching { stripper.getText(pdDoc) }.getOrDefault("")
+                            // A line break or a run of spaces is one space, so a phrase that wraps onto the next line is still found.
+                            runCatching { stripper.getText(pdDoc) }.getOrDefault("").replace(SEARCH_WHITESPACE, " ")
                         }
                     }
                 } finally {
@@ -384,7 +387,8 @@ fun PdfViewerScreen(
                     tempPdf.delete()
                 }
             }.also { pageTexts = it }
-            val matches = texts.withIndex().filter { (_, text) -> text.contains(query, ignoreCase = true) }.map { it.index }
+            val needle = query.trim().replace(SEARCH_WHITESPACE, " ")
+            val matches = texts.withIndex().filter { (_, text) -> text.contains(needle, ignoreCase = true) }.map { it.index }
             matchingPageIndices = matches
             if (searchRestoring) {
                 searchRestoring = false
@@ -936,6 +940,9 @@ private fun PdfPageItem(
         }
     }
 }
+
+/** Any run of white space (spaces, tabs, line breaks) in page text or in a search, compared as one space. */
+private val SEARCH_WHITESPACE = Regex("\\s+")
 
 /** Largest zoomed page bitmap, in pixels (about 40 MB as ARGB). */
 private const val ZOOM_PIXEL_BUDGET = 10_000_000f
