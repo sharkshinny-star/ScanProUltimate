@@ -121,9 +121,11 @@ internal fun RedactBoxesEditor(
     }
     val preview = opened
     val pageCount = preview?.pageCount ?: 0
-    val bitmap by produceState<Bitmap?>(null, preview, pageIndex) {
-        value = preview?.let { withContext(Dispatchers.IO) { runCatching { it.render(pageIndex, 1100) }.getOrNull() } }
+    // Kept with its page and used only while that page is shown, so boxes are never drawn or dragged on another page's image.
+    val rendered by produceState<Pair<Int, Bitmap?>?>(null, preview, pageIndex) {
+        value = preview?.let { pageIndex to withContext(Dispatchers.IO) { runCatching { it.render(pageIndex, 1100) }.getOrNull() } }
     }
+    val bitmap = rendered?.takeIf { it.first == pageIndex }?.second
 
     Dialog(
         onDismissRequest = onDismiss,
