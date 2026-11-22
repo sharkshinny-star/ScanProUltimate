@@ -243,6 +243,7 @@ fun LibraryRoute(
         onSetFavorite = viewModel::setFavorite,
         onDeleteFolder = viewModel::deleteFolder,
         folderExists = viewModel::folderExists,
+        existingIds = viewModel::existingIds,
         trashCount = trashCount,
         keptScanCount = keptScanCount,
         onKeptScans = onKeptScans,
@@ -364,6 +365,8 @@ internal fun LibraryScreen(
     onSetFavorite: (Set<String>, Boolean) -> Unit = { _, _ -> },
     onDeleteFolder: (String) -> Unit = {},
     folderExists: suspend (String) -> Boolean = { false },
+    /** The ids among those given that are still in the library; the default keeps every one (previews). */
+    existingIds: suspend (Set<String>) -> Set<String> = { it },
     onShareSelected: (Set<String>) -> Unit,
     /** Shares the selection as one combined PDF, in selection order. */
     onShareCombined: (List<String>) -> Unit = {},
@@ -442,6 +445,17 @@ internal fun LibraryScreen(
     val homeIds = remember(overview) { overview.recent.mapTo(HashSet()) { it.id } }
     LaunchedEffect(homeIds) {
         if (isHome) selected.removeAll { it !in homeIds }
+    }
+    // A selected document deleted elsewhere (the recycle bin emptied, a delete from its own screen) must not stay selected:
+    // the title would count it and the bulk actions would hit a document that is gone. Home is pruned above; here the
+    // library is asked, because the loaded pages can leave a far-off document out without it being gone. Only ids that
+    // were selected when asked are removed, so a document selected meanwhile is not.
+    LaunchedEffect(overview.revision) {
+        if (selected.isNotEmpty()) {
+            val asked = selected.toSet()
+            val alive = existingIds(asked)
+            selected.removeAll { it in asked && it !in alive }
+        }
     }
     // A new folder, favourites filter or search shows different documents, so a selection made before it would
     // act on items no longer on screen. The last filters are saved with the selection, so a rotation keeps it.

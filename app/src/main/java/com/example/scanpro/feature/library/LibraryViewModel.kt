@@ -232,6 +232,9 @@ class LibraryViewModel @Inject constructor(
 
     suspend fun folderExists(name: String): Boolean = repository.folderExists(name)
 
+    /** The ids among [ids] still in the library, so a selection can drop documents deleted elsewhere. */
+    suspend fun existingIds(ids: Set<String>): Set<String> = repository.existingIds(ids)
+
     /** False when nothing was selected, so the caller keeps its selection. */
     fun moveManyToTrash(ids: Set<String>): Boolean {
         if (ids.isEmpty()) return false

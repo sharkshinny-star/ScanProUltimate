@@ -78,6 +78,7 @@ class DocumentRepository @Inject constructor(
     suspend fun renameFolder(oldName: String, newName: String) = catalog.renameFolder(oldName, newName)
     suspend fun toggleFavorite(id: String) = catalog.toggleFavorite(id)
     suspend fun setFavorite(id: String, favorite: Boolean) = catalog.setFavorite(id, favorite)
+    suspend fun existingIds(ids: Set<String>): Set<String> = catalog.existingIds(ids)
     suspend fun setPdfQuality(id: String, quality: PdfQuality) = catalog.setPdfQuality(id, quality)
     suspend fun setPdfPageSize(id: String, size: PdfPageSize) = catalog.setPdfPageSize(id, size)
     suspend fun setSearchablePdf(id: String, enabled: Boolean) = catalog.setSearchablePdf(id, enabled)

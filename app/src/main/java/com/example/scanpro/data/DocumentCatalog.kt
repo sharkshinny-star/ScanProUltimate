@@ -95,11 +95,15 @@ internal class DocumentCatalog(private val store: DocumentStore) {
     }
 
     /** Stars or unstars [id] straight in the database: no pages are read, and a document that already has that value is untouched. */
-    suspend fun setFavorite(id: String, favorite: Boolean) = withContext(Dispatchers.IO) { db.setFavorite(id, favorite, now()) }
+    suspend fun setFavorite(id: String, favorite: Boolean) = withContext(Dispatchers.IO) { db.setFavorite(id, favorite) }
 
+    /** Starring is not an edit, so the modified time stays as it was (see [DocumentDatabase]'s favourite query). */
     suspend fun toggleFavorite(id: String) = mutateDocument(id) { doc ->
-        doc.copy(isFavorite = !doc.isFavorite, updatedAt = now())
+        doc.copy(isFavorite = !doc.isFavorite)
     }
+
+    /** The ids among [ids] that are still active documents, for a screen holding a selection. */
+    suspend fun existingIds(ids: Set<String>): Set<String> = withContext(Dispatchers.IO) { db.activeIds(ids) }
 
     // PDF settings mark the PDF stale and rebuild it on the next export, like page edits do, so changing
     // three settings in a row costs one rebuild rather than three blocking ones.

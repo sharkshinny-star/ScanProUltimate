@@ -76,5 +76,9 @@ data class LibraryOverview(
 /** What the library's filters and counts need to know about one active document. */
 data class DocumentFacet(val folder: String, val favorite: Boolean, val tags: List<String>)
 
-/** What changes when a document is edited, saved or rebuilt: enough to know whether to reload its pages. */
-data class DocumentStamp(val updatedAt: Long, val sizeBytes: Long)
+/**
+ * What changes when a document is edited, saved or rebuilt: enough to know whether to reload its pages.
+ * [isFavorite] is part of the stamp because starring no longer bumps [updatedAt] (it is not an edit), and the document
+ * screen reloads the document only when its stamp changes.
+ */
+data class DocumentStamp(val updatedAt: Long, val sizeBytes: Long, val isFavorite: Boolean = false)

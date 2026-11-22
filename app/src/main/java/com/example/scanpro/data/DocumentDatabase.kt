@@ -173,9 +173,17 @@ internal interface ScanDao {
     @Query("SELECT folder_name AS folder, tags_json AS tags_json, is_favorite AS favorite FROM documents WHERE trashed_at = 0")
     fun loadFacetRows(): List<DocumentFacetRow>
 
-    /** Sets the favourite flag of an active document; the number of rows changed (0 when it already had that value). */
-    @Query("UPDATE documents SET is_favorite = :favorite, updated_at = :updatedAt WHERE id = :id AND trashed_at = 0 AND is_favorite != :favorite")
-    fun updateFavorite(id: String, favorite: Boolean, updatedAt: Long): Int
+    /**
+     * Sets the favourite flag of an active document; the number of rows changed (0 when it already had that value).
+     * The modified time is left alone: starring is not an edit, and it would move the document to the top of a list
+     * sorted by modified time and make its thumbnail reload.
+     */
+    @Query("UPDATE documents SET is_favorite = :favorite WHERE id = :id AND trashed_at = 0 AND is_favorite != :favorite")
+    fun updateFavorite(id: String, favorite: Boolean): Int
+
+    /** Which of [ids] are active documents (in the library, not in the recycle bin). */
+    @Query("SELECT id FROM documents WHERE id IN (:ids) AND trashed_at = 0")
+    fun loadActiveIds(ids: List<String>): List<String>
 
     @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 ORDER BY d.updated_at DESC, d.id LIMIT :limit")
     fun loadRecentSummaries(limit: Int): List<DocumentSummaryRow>
@@ -183,7 +191,7 @@ internal interface ScanDao {
     @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 AND d.id != :excludeId ORDER BY d.updated_at DESC, d.id LIMIT :limit")
     fun loadOtherSummaries(excludeId: String, limit: Int): List<DocumentSummaryRow>
 
-    @Query("SELECT updated_at AS updatedAt, size_bytes AS sizeBytes FROM documents WHERE id = :id AND trashed_at = 0 LIMIT 1")
+    @Query("SELECT updated_at AS updatedAt, size_bytes AS sizeBytes, is_favorite AS isFavorite FROM documents WHERE id = :id AND trashed_at = 0 LIMIT 1")
     fun loadActiveStamp(id: String): DocumentStamp?
 
     @Query("SELECT * FROM documents WHERE trashed_at > 0 ORDER BY trashed_at DESC")
@@ -496,7 +504,11 @@ class DocumentDatabase internal constructor(
     fun updateSize(id: String, sizeBytes: Long) = dao.updateSize(id, sizeBytes)
 
     /** Stars or unstars a document without reading its pages; false when it already had that value (or is gone). */
-    fun setFavorite(id: String, favorite: Boolean, updatedAt: Long): Boolean = dao.updateFavorite(id, favorite, updatedAt) > 0
+    fun setFavorite(id: String, favorite: Boolean): Boolean = dao.updateFavorite(id, favorite) > 0
+
+    /** The ids among [ids] that are still active documents. */
+    fun activeIds(ids: Collection<String>): Set<String> =
+        ids.toList().chunked(SQL_VARIABLE_CHUNK).flatMap(dao::loadActiveIds).toSet()
 
     fun loadOcrScript(id: String): OcrScript? =
         dao.loadOcrScript(id)?.let { runCatching { OcrScript.valueOf(it) }.getOrNull() }

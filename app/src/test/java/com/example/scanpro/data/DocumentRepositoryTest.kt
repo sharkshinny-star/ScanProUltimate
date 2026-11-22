@@ -35,6 +35,25 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertEquals(doc.order(), saved.order())
     }
 
+    /** Starring is not an edit: the modified time stays, so the document does not jump to the top of a list sorted by it. */
+    @Test fun favouritingDoesNotChangeTheModifiedTime() = runBlocking {
+        val doc = newDocument(1)
+        val before = load(doc.id)!!.updatedAt
+        repository.setFavorite(doc.id, true)
+        assertTrue(load(doc.id)!!.isFavorite)
+        assertEquals(before, load(doc.id)!!.updatedAt)
+        repository.toggleFavorite(doc.id)
+        assertFalse(load(doc.id)!!.isFavorite)
+        assertEquals(before, load(doc.id)!!.updatedAt)
+    }
+
+    @Test fun existingIdsLeavesOutTrashedAndUnknownDocuments() = runBlocking {
+        val kept = newDocument(1)
+        val trashed = newDocument(1)
+        repository.moveToTrash(trashed.id)
+        assertEquals(setOf(kept.id), repository.existingIds(setOf(kept.id, trashed.id, "no-such-document")))
+    }
+
     @Test fun movePageReordersAndRenumbersAndMarksThePdfStale() = runBlocking {
         val doc = newDocument(3)
         val first = doc.order()
