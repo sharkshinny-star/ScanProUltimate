@@ -567,7 +567,11 @@ internal object PdfTextEditor {
             val text = StringBuilder()
             fun emit() {
                 if (run.isEmpty() || text.isBlank()) { run = ArrayList(); text.clear(); return }
-                spans += makeSpan(page, spans.size, run, text.toString().trim(), colours, shape)
+                // The text is trimmed, so the glyphs must be too: a space glyph left at either end of the run would move
+                // the new text's start by a space and make a right-aligned edit measure against the wrong length.
+                val glyphs = run.dropWhile { it.unicode.isNullOrBlank() }.dropLastWhile { it.unicode.isNullOrBlank() }
+                if (glyphs.isEmpty()) { run = ArrayList(); text.clear(); return }
+                spans += makeSpan(page, spans.size, glyphs, text.toString().trim(), colours, shape)
                 run = ArrayList()
                 text.clear()
             }

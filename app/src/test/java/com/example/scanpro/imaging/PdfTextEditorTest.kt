@@ -66,6 +66,23 @@ class PdfTextEditorTest {
         }
     }
 
+    @Test fun spaceGlyphsAtTheEdgesOfALineAreNotPartOfItsBox() {
+        val doc = PDDocument()
+        val page = PDPage(PDRectangle.A4)
+        doc.addPage(page)
+        PDPageContentStream(doc, page).use { cs ->
+            cs.beginText(); cs.setFont(PDType1Font.HELVETICA, 12f); cs.newLineAtOffset(72f, 700f); cs.showText("  Total  "); cs.endText()
+        }
+        reload(doc).use { reloaded ->
+            val span = PdfTextEditor.spans(reloaded, 0).single()
+            assertEquals("Total", span.text)
+            // Two Helvetica spaces at 12 pt are 6.7 pt wide, and "Total" is 26.7 pt: the box starts after the leading
+            // spaces and ends before the trailing ones.
+            assertTrue("box starts after the leading spaces: ${span.left}", span.left > 77f)
+            assertTrue("box ends before the trailing spaces: ${span.right}", span.right < 107.5f)
+        }
+    }
+
     @Test fun editReplacesTheWordsInTheSameFontAndRemovesTheOldOnes() {
         sample().use { doc0 ->
             val span = PdfTextEditor.spans(doc0, 0)[0]
