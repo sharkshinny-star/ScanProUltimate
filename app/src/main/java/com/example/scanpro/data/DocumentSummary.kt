@@ -65,8 +65,16 @@ data class LibraryOverview(
     /** Every tag in use on an active document, one entry per spelling ignoring case, sorted (R35). */
     val tags: List<String> = emptyList(),
     val recent: List<DocumentSummary> = emptyList(),
+    /**
+     * Folder, favourite flag and tags of every active document, so the screen can leave out what the closed locked
+     * folders hold: their tag names and their share of the counts must not show either.
+     */
+    val facets: List<DocumentFacet> = emptyList(),
     val revision: Long = 0L
 )
+
+/** What the library's filters and counts need to know about one active document. */
+data class DocumentFacet(val folder: String, val favorite: Boolean, val tags: List<String>)
 
 /** What changes when a document is edited, saved or rebuilt: enough to know whether to reload its pages. */
 data class DocumentStamp(val updatedAt: Long, val sizeBytes: Long)

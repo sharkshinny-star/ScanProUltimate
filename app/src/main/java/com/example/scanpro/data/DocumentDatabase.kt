@@ -98,6 +98,13 @@ internal data class DocumentSummaryRow(
     @ColumnInfo(name = "cover_path") val coverPath: String?
 )
 
+/** Folder, favourite flag and tags of one active document; see [DocumentFacet]. */
+internal data class DocumentFacetRow(
+    @ColumnInfo(name = "folder") val folder: String,
+    @ColumnInfo(name = "tags_json") val tagsJson: String,
+    @ColumnInfo(name = "favorite") val favorite: Boolean
+)
+
 private const val SUMMARY_COLUMNS = "d.*, " +
     "(SELECT COUNT(*) FROM pages p WHERE p.document_id = d.id) AS page_count, " +
     "(SELECT p.image_path FROM pages p WHERE p.document_id = d.id ORDER BY p.position ASC LIMIT 1) AS cover_path"
@@ -162,6 +169,13 @@ internal interface ScanDao {
 
     @Query("SELECT DISTINCT tags_json FROM documents WHERE trashed_at = 0 AND tags_json != '' AND tags_json != '[]'")
     fun loadTagsJson(): List<String>
+
+    @Query("SELECT folder_name AS folder, tags_json AS tags_json, is_favorite AS favorite FROM documents WHERE trashed_at = 0")
+    fun loadFacetRows(): List<DocumentFacetRow>
+
+    /** Sets the favourite flag of an active document; the number of rows changed (0 when it already had that value). */
+    @Query("UPDATE documents SET is_favorite = :favorite, updated_at = :updatedAt WHERE id = :id AND trashed_at = 0 AND is_favorite != :favorite")
+    fun updateFavorite(id: String, favorite: Boolean, updatedAt: Long): Int
 
     @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 ORDER BY d.updated_at DESC, d.id LIMIT :limit")
     fun loadRecentSummaries(limit: Int): List<DocumentSummaryRow>
@@ -431,14 +445,21 @@ class DocumentDatabase internal constructor(
         }.flow.map { data -> data.map { row -> row.toSummary() } }
 
     fun loadOverview(recentLimit: Int): LibraryOverview = room.runInTransaction<LibraryOverview> {
+        val facets = dao.loadFacetRows().map { row ->
+            DocumentFacet(
+                row.folder.trim(),
+                row.favorite,
+                JsonCodec.decodeStringList(row.tagsJson).map { it.trim() }.filter { it.isNotEmpty() }
+            )
+        }
         LibraryOverview(
             documentCount = dao.countActive(),
             favoriteCount = dao.countFavorites(),
             // One entry per folder whatever the case of its name, as the filter itself ignores case.
             folders = dao.loadFolderNames().distinctBy { it.lowercase() }.sortedBy { it.lowercase() },
-            tags = dao.loadTagsJson().flatMap { JsonCodec.decodeStringList(it) }.map { it.trim() }.filter { it.isNotEmpty() }
-                .distinctBy { it.lowercase() }.sortedBy { it.lowercase() },
-            recent = dao.loadRecentSummaries(recentLimit).map { it.toSummary() }
+            tags = facets.flatMap { it.tags }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() },
+            recent = dao.loadRecentSummaries(recentLimit).map { it.toSummary() },
+            facets = facets
         )
     }
 
@@ -473,6 +494,9 @@ class DocumentDatabase internal constructor(
     }
 
     fun updateSize(id: String, sizeBytes: Long) = dao.updateSize(id, sizeBytes)
+
+    /** Stars or unstars a document without reading its pages; false when it already had that value (or is gone). */
+    fun setFavorite(id: String, favorite: Boolean, updatedAt: Long): Boolean = dao.updateFavorite(id, favorite, updatedAt) > 0
 
     fun loadOcrScript(id: String): OcrScript? =
         dao.loadOcrScript(id)?.let { runCatching { OcrScript.valueOf(it) }.getOrNull() }

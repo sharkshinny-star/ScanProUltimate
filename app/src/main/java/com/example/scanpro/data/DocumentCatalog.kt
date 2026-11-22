@@ -94,6 +94,9 @@ internal class DocumentCatalog(private val store: DocumentStore) {
             .forEach { doc -> db.saveDocumentMetadata(doc.copy(folderName = target, updatedAt = now())) }
     }
 
+    /** Stars or unstars [id] straight in the database: no pages are read, and a document that already has that value is untouched. */
+    suspend fun setFavorite(id: String, favorite: Boolean) = withContext(Dispatchers.IO) { db.setFavorite(id, favorite, now()) }
+
     suspend fun toggleFavorite(id: String) = mutateDocument(id) { doc ->
         doc.copy(isFavorite = !doc.isFavorite, updatedAt = now())
     }

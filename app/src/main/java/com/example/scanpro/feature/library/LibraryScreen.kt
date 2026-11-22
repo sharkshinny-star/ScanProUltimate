@@ -446,7 +446,7 @@ internal fun LibraryScreen(
     // A new folder, favourites filter or search shows different documents, so a selection made before it would
     // act on items no longer on screen. The last filters are saved with the selection, so a rotation keeps it.
     // (A new sort only reorders the same documents, and the saved sort loads asynchronously.)
-    val filterKey = "$folder|$favoritesOnly|$query"
+    val filterKey = "$folder|$favoritesOnly|$tag|$query"
     var selectionFilterKey by rememberSaveable { mutableStateOf(filterKey) }
     LaunchedEffect(filterKey) {
         if (selectionFilterKey != filterKey) {
@@ -832,6 +832,7 @@ internal fun LibraryScreen(
                             query = query,
                             favoritesOnly = favoritesOnly,
                             folder = folder,
+                            tag = tag,
                             busy = busy,
                             onStartScan = onStartScan,
                             onImportImages = onImportImages,
@@ -1056,12 +1057,14 @@ private fun EmptyLibrary(
     query: String,
     favoritesOnly: Boolean,
     folder: String,
+    tag: String,
     busy: Boolean,
     onStartScan: () -> Unit,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit
 ) {
-    val fresh = query.isBlank() && !favoritesOnly && folder.isBlank()
+    // A tag is a filter like the others: with one chosen, "nothing here" means nothing matches, not an empty library.
+    val fresh = query.isBlank() && !favoritesOnly && folder.isBlank() && tag.isBlank()
     Box(Modifier.fillMaxSize().padding(horizontal = 32.dp), contentAlignment = Alignment.Center) {
         // Scrolls when it doesn't fit (a phone on its side, a 2x font): the buttons at the bottom were cut off.
         Column(
@@ -1073,6 +1076,7 @@ private fun EmptyLibrary(
                     query.isNotBlank() -> Icons.Rounded.Search
                     favoritesOnly -> Icons.Rounded.Star
                     folder.isNotBlank() -> Icons.Rounded.Folder
+                    tag.isNotBlank() -> Icons.Rounded.Tag
                     else -> Icons.Rounded.Description
                 },
                 tone = TileTone.Indigo,
@@ -1086,23 +1090,29 @@ private fun EmptyLibrary(
                     query.isNotBlank() -> stringResource(R.string.lib_empty_no_matching)
                     favoritesOnly -> stringResource(R.string.lib_empty_no_favorites_yet)
                     folder.isNotBlank() -> stringResource(R.string.lib_empty_folder_is_empty)
+                    tag.isNotBlank() -> stringResource(R.string.lib_empty_no_matching)
                     else -> stringResource(R.string.lib_empty_library_is_empty)
                 },
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                when {
-                    query.isNotBlank() -> stringResource(R.string.lib_search_hint)
-                    favoritesOnly -> stringResource(R.string.lib_empty_favorites_hint)
-                    folder.isNotBlank() -> stringResource(R.string.lib_empty_folder_hint)
-                    else -> stringResource(R.string.lib_empty_hint)
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            // A tag alone has no hint of its own; the library's "scan something" hint would be wrong for it.
+            val hint = when {
+                query.isNotBlank() -> stringResource(R.string.lib_search_hint)
+                favoritesOnly -> stringResource(R.string.lib_empty_favorites_hint)
+                folder.isNotBlank() -> stringResource(R.string.lib_empty_folder_hint)
+                tag.isNotBlank() -> null
+                else -> stringResource(R.string.lib_empty_hint)
+            }
+            if (hint != null) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    hint,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
             if (fresh) {
                 Spacer(Modifier.height(20.dp))
                 FlowRow(
