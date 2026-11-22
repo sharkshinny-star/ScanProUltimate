@@ -69,6 +69,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -109,6 +110,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,6 +190,29 @@ fun PdfViewerScreen(
     LaunchedEffect(openedFile) { pageTexts = null }
     var lockedFile by remember { mutableStateOf<File?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+
+    // Each page's width / height, read in the background once the file is open, so every page has its real height
+    // before it is drawn: with mixed page sizes the list no longer jumps as pages render, and "go to page" and search
+    // jumps land where they should. A page not read yet (or one that cannot be read) keeps the A4 default.
+    val pageAspects = remember { mutableStateMapOf<Int, Float>() }
+    LaunchedEffect(pdfRenderer) {
+        pageAspects.clear()
+        val renderer = pdfRenderer ?: return@LaunchedEffect
+        val batch = HashMap<Int, Float>()
+        for (index in 0 until renderer.pageCount) {
+            ensureActive()
+            val aspect = withContext(Dispatchers.IO) {
+                // The lock is taken per page, so page renders on screen are never kept waiting for the whole document.
+                runCatching { renderLock.withLock { renderer.openPage(index).use { it.width.toFloat() / it.height } } }.getOrNull()
+            }
+            // A renderer that has been closed throws for every page: stop instead of trying them all.
+            if (aspect == null) break
+            if (aspect.isFinite() && aspect > 0f) batch[index] = aspect
+            // Published in batches: each publish redraws the pages on screen.
+            if (batch.size >= 25) { pageAspects.putAll(batch); batch.clear() }
+        }
+        pageAspects.putAll(batch)
+    }
 
     // Set when the viewer closes; a renderer that finishes opening after that is closed at once instead of leaking.
     val viewerClosed = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
@@ -656,7 +681,8 @@ fun PdfViewerScreen(
                                     renderLock = renderLock,
                                     pageCache = pageCache,
                                     pageIndex = index,
-                                    pageCount = pageCount
+                                    pageCount = pageCount,
+                                    knownAspect = pageAspects[index]
                                 )
                             }
                         }
@@ -719,8 +745,13 @@ fun PdfViewerScreen(
                             openRenderer(unlocked)
                             passwordError = null
                             needsPassword = false
-                        } catch (_: Exception) {
-                            passwordError = resources.getString(R.string.viewer_wrong_password)
+                        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            // Only a refused password is "wrong password"; a full disk or a damaged file is not.
+                            passwordError = resources.getString(
+                                if (error is InvalidPasswordException) R.string.viewer_wrong_password else R.string.viewer_load_failed
+                            )
                         } finally {
                             unlocking = false
                         }
@@ -819,12 +850,14 @@ private fun PdfPageItem(
     renderLock: Mutex,
     pageCache: android.util.LruCache<Int, Bitmap>,
     pageIndex: Int,
-    pageCount: Int
+    pageCount: Int,
+    knownAspect: Float? = null
 ) {
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var sharp by remember { mutableStateOf<Bitmap?>(null) }
     var isPageLoading by remember { mutableStateOf(true) }
-    var aspectRatio by remember { mutableFloatStateOf(0.707f) }
+    var aspectRatio by remember { mutableFloatStateOf(knownAspect ?: 0.707f) }
+    LaunchedEffect(knownAspect) { if (knownAspect != null) aspectRatio = knownAspect }
     var widthPx by remember { mutableIntStateOf(0) }
 
     // Keyed on the renderer too: after a password unlock the same page index belongs to a different file.
