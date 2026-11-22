@@ -542,20 +542,27 @@ class DocumentDatabase internal constructor(
             .groupBy({ it.documentId }, { it.toModel() })
         return entities.map { it.toModel(pages = pagesByDocument[it.id].orEmpty()) }
     }
-
-    private fun buildFtsQuery(raw: String): String? {
-        val tokens = raw.lowercase()
-            .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
-            .trim()
-            .split(Regex("\\s+"))
-            .filter { it.length >= 2 }
-            .take(8)
-        // FTS4 prefix queries are `term*` without quotes ("term"* never matches), and limiting each term to
-        // the content column keeps short prefixes from matching document/page id fragments. Tokens are
-        // letters and digits only, so they need no further escaping. Space-separated terms are ANDed.
-        return tokens.takeIf { it.isNotEmpty() }?.joinToString(" ") { "content:$it*" }
-    }
 }
+
+/**
+ * The FTS4 query for one typed word, or null when nothing searchable is left. Letters, digits and combining marks
+ * (the vowel signs of Devanagari, Tamil, Telugu, Kannada and Malayalam are marks, not letters) make up a word: cutting
+ * at marks split "हिंदी" into one-character pieces that were then dropped, so almost no word in those
+ * scripts could be found in page text.
+ */
+internal fun buildFtsQuery(raw: String): String? {
+    val tokens = raw.lowercase()
+        .replace(Regex("[^\\p{L}\\p{N}\\p{M}]+"), " ")
+        .trim()
+        .split(Regex("\\s+"))
+        .filter { it.length >= 2 }
+        .take(8)
+    // FTS4 prefix queries are `term*` without quotes ("term"* never matches), and limiting each term to
+    // the content column keeps short prefixes from matching document/page id fragments. Tokens are
+    // letters, digits and marks only, so they need no further escaping. Space-separated terms are ANDed.
+    return tokens.takeIf { it.isNotEmpty() }?.joinToString(" ") { "content:$it*" }
+}
+
 
 private fun ScanDocument.toEntity() = DocumentEntity(
     id = id,
