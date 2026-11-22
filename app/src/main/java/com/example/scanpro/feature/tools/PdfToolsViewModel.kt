@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.tools
 
+import com.example.scanpro.core.text.outOfSpaceMessageRes
 import com.example.scanpro.core.concurrent.BackgroundWork
 import kotlinx.coroutines.withContext
 import com.example.scanpro.core.text.userError
@@ -293,7 +294,7 @@ class PdfToolsViewModel @Inject constructor(
             } catch (error: Exception) {
                 // The engines stop with an InterruptedException when cancelled mid-way; report that as a cancel.
                 val cancelledMidWay = error is InterruptedException
-                val text = if (cancelledMidWay) context.getString(R.string.msg_tools_operation_cancelled) else error.localizedMessage ?: failure
+                val text = if (cancelledMidWay) context.getString(R.string.msg_tools_operation_cancelled) else outOfSpaceMessageRes(error)?.let { context.getString(it) } ?: error.localizedMessage ?: failure
                 if (cancelledMidWay) _message.value = text
                 else {
                     _failure.value = text
@@ -742,7 +743,7 @@ class PdfToolsViewModel @Inject constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                _failure.value = error.localizedMessage ?: context.getString(R.string.msg_tools_unlock_failed)
+                _failure.value = outOfSpaceMessageRes(error)?.let { context.getString(it) } ?: error.localizedMessage ?: context.getString(R.string.msg_tools_unlock_failed)
             } finally {
                 _progress.value = null
             }

@@ -1,5 +1,6 @@
 package com.example.scanpro.work
 
+import com.example.scanpro.core.text.outOfSpaceMessageRes
 import com.example.scanpro.core.text.AppStrings
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -92,7 +93,7 @@ class ImportScanWorker @AssistedInject constructor(
             notifications.taskFailed(context.getString(R.string.notify_scan_failed), MainActivity.ACTION_OPEN_KEPT_SCANS)
             operations.showMessage(
                 UiMessage(
-                    context.getString(R.string.msg_could_not_save_scan, error.message ?: context.getString(R.string.msg_unknown_error)),
+                    context.getString(R.string.msg_could_not_save_scan, outOfSpaceMessageRes(error)?.let { context.getString(it) } ?: error.message ?: context.getString(R.string.msg_unknown_error)),
                     actionLabel = context.getString(R.string.common_retry),
                     onAction = { enqueue(context, input) }
                 )

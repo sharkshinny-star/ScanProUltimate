@@ -36,6 +36,7 @@
     <string name="err_backup_wrong_password">इस पासवर्ड से बैकअप नहीं खुला। दोबारा कोशिश करें, या फ़ाइल खराब हो सकती है।</string>
     <string name="err_backup_too_large">यह बैकअप रीस्टोर करने के लिए बहुत बड़ा है</string>
     <string name="err_backup_no_space">बैकअप के लिए इस फ़ोन में पर्याप्त खाली जगह नहीं है। कुछ जगह खाली करें और दोबारा कोशिश करें।</string>
+    <string name="err_no_space">इस फ़ोन में पर्याप्त खाली जगह नहीं है। कुछ जगह खाली करें और दोबारा कोशिश करें।</string>
     <string name="err_could_not_decode_image">इमेज %1$s पढ़ी नहीं जा सकी</string>
     <string name="err_could_not_decode_source">पेज की ओरिजिनल इमेज पढ़ी नहीं जा सकी</string>
     <string name="err_could_not_open_input_pdf">PDF खुल नहीं सकी</string>

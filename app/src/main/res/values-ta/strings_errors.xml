@@ -36,6 +36,7 @@
     <string name="err_backup_wrong_password">இந்த பாஸ்வேர்டால் பேக்கப்பைத் திறக்க முடியவில்லை. மீண்டும் முயலுங்கள், அல்லது ஃபைல் சேதமடைந்திருக்கலாம்.</string>
     <string name="err_backup_too_large">இந்த பேக்கப் மீட்டெடுக்க மிகப் பெரியது</string>
     <string name="err_backup_no_space">பேக்கப்புக்கு இந்த ஃபோனில் போதுமான காலி இடம் இல்லை. சிறிது இடத்தை விடுவித்து மீண்டும் முயலவும்.</string>
+    <string name="err_no_space">இந்த ஃபோனில் போதுமான காலி இடம் இல்லை. சிறிது இடத்தை விடுவித்து மீண்டும் முயலவும்.</string>
     <string name="err_could_not_decode_image">%1$s படத்தைப் படிக்க முடியவில்லை</string>
     <string name="err_could_not_decode_source">பக்கத்தின் அசல் படத்தைப் படிக்க முடியவில்லை</string>
     <string name="err_could_not_open_input_pdf">PDF-ஐத் திறக்க முடியவில்லை</string>

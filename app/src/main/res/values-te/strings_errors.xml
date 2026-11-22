@@ -36,6 +36,7 @@
     <string name="err_backup_wrong_password">ఈ పాస్‌వర్డ్‌తో బ్యాకప్ తెరవలేదు. మళ్లీ ప్రయత్నించండి, లేదా ఫైల్ పాడై ఉండవచ్చు.</string>
     <string name="err_backup_too_large">ఈ బ్యాకప్ రీస్టోర్ చేయడానికి చాలా పెద్దది</string>
     <string name="err_backup_no_space">బ్యాకప్ కోసం ఈ ఫోన్‌లో తగినంత ఖాళీ స్థలం లేదు. కొంత స్థలం ఖాళీ చేసి మళ్లీ ప్రయత్నించండి.</string>
+    <string name="err_no_space">ఈ ఫోన్‌లో తగినంత ఖాళీ స్థలం లేదు. కొంత స్థలం ఖాళీ చేసి మళ్లీ ప్రయత్నించండి.</string>
     <string name="err_could_not_decode_image">%1$s చిత్రాన్ని చదవలేకపోయాం</string>
     <string name="err_could_not_decode_source">పేజీ అసలు చిత్రాన్ని చదవలేకపోయాం</string>
     <string name="err_could_not_open_input_pdf">PDFని తెరవలేకపోయాం</string>

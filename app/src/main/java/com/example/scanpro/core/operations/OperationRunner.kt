@@ -1,5 +1,6 @@
 package com.example.scanpro.core.operations
 
+import com.example.scanpro.core.text.outOfSpaceMessageRes
 import android.content.Context
 import com.example.scanpro.R
 import com.example.scanpro.core.notifications.AppNotifications
@@ -235,7 +236,7 @@ class OperationRunner @Inject constructor(
                     } catch (cancelled: kotlinx.coroutines.CancellationException) {
                         _message.value = UiMessage(context.getString(R.string.common_stopped))
                     } catch (error: Throwable) {
-                        val text = error.message ?: context.getString(R.string.common_something_went_wrong)
+                        val text = outOfSpaceMessageRes(error)?.let { context.getString(it) } ?: error.message ?: context.getString(R.string.common_something_went_wrong)
                         _message.value = UiMessage(text)
                         if (label != null) runCatching { notifications.taskFailed(text) }
                     } finally {

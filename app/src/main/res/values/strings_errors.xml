@@ -41,6 +41,7 @@
     <string name="err_backup_wrong_password">That password didn\'t open the backup. Try again, or the file may be damaged.</string>
     <string name="err_backup_too_large">This backup is too large to restore</string>
     <string name="err_backup_no_space">Not enough free space on this phone for the backup. Free up some space and try again.</string>
+    <string name="err_no_space">Not enough free space on this phone. Free up some space and try again.</string>
 
     <!-- Images and PDFs -->
     <string name="err_could_not_decode_image">The image %1$s couldn\'t be read</string>

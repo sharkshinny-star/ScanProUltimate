@@ -391,16 +391,8 @@ class EncryptedDocumentPackage(private val context: Context) {
 
         private class BackupTooLargeException : UserFacingException(R.string.err_backup_too_large)
 
-        /**
-         * True when [error], or anything it was caused by, is the file system reporting that the device is full. The
-         * system's text is the only portable signal: Android words it "write failed: ENOSPC (No space left on device)".
-         */
-        internal fun isOutOfSpace(error: Throwable): Boolean = generateSequence(error) { it.cause }.any {
-            // A message the app wrote itself is never the file system's, and reading it needs the app's strings.
-            it !is UserFacingException && it.message.orEmpty().let { text ->
-                text.contains("ENOSPC") || text.contains("No space left on device", ignoreCase = true)
-            }
-        }
+        /** Whether [error] is the phone being full; the one rule shared with the tools and background jobs. */
+        internal fun isOutOfSpace(error: Throwable): Boolean = com.example.scanpro.core.text.isOutOfSpace(error)
 
         /** [error] as it is, or a plain "not enough free space" message when that is what it was. */
         internal fun asUserFacing(error: Throwable): Throwable =
