@@ -53,6 +53,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F280 favourite modified time and stale selection, Linux cloud container)
+
+- Not run: no Android SDK in the cloud container. F280 and its two new `DocumentRepositoryTest` cases are uncompiled and unrun; the Room queries are checked when the app is built.
+
 ## Latest results (2026-11-22, F277 Library screen fixes, Linux cloud container)
 
 - Not run: no Android SDK in the cloud container. F277 and its new `LibraryOverviewHiddenTest` are uncompiled and unrun; the new Room queries are only checked when the app is built.
