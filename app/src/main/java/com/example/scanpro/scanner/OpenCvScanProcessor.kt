@@ -16,7 +16,7 @@ object OpenCvScanProcessor {
      * Detects the document again on a much larger image after capture. This avoids using
      * low-resolution preview coordinates for the final PDF.
      */
-    fun correctCapturedPage(source: File, destination: File): Result {
+    fun correctCapturedPage(source: File, destination: File, minArea: Float = DocumentDetection.MIN_PAGE_AREA): Result {
         destination.parentFile?.mkdirs()
         // Detection runs on a ~900px working copy, so a full-resolution decode here only costs memory.
         val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600)
@@ -27,7 +27,7 @@ object OpenCvScanProcessor {
         }
         val crop = detection?.quad
 
-        val corrected = crop != null && detection.confidence >= 0.34f && runCatching {
+        val corrected = crop != null && detection.isUsableOutline(minArea) && runCatching {
             ImageProcessor.cropSourceToNewFile(source, destination, crop)
             true
         }.getOrDefault(false)
@@ -52,12 +52,12 @@ object OpenCvScanProcessor {
     }
 
     /** [detectCrop] and [assessQuality] from one decode and one detection, for when both are still missing. */
-    fun inspect(source: File): Pair<CropQuad, Set<PageIssue>> {
+    fun inspect(source: File, minArea: Float = DocumentDetection.MIN_PAGE_AREA): Pair<CropQuad, Set<PageIssue>> {
         val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT to emptySet()
         return try {
             val detection = DocumentEdgeDetector.detect(bitmap)
             // The same gate for the crop and the blank check: a rejected outline must not decide whether the page is blank.
-            val quad = detection.quad?.takeIf { detection.confidence >= 0.34f }
+            val quad = detection.quad?.takeIf { detection.isUsableOutline(minArea) }
             (quad ?: CropQuad.DEFAULT) to (PageQuality.issues(detection) + blankIssue(bitmap, quad))
         } finally {
             if (!bitmap.isRecycled) bitmap.recycle()
@@ -103,12 +103,17 @@ object OpenCvScanProcessor {
 
     private const val SAMPLE_LONG_SIDE = 640
 
-    fun detectCrop(source: File): CropQuad {
+    /** The smallest outline used as a crop in [mode]: an ID card is small by nature, every other subject is a page. */
+    fun minAreaFor(mode: com.example.scanpro.data.ScanMode): Float =
+        if (mode == com.example.scanpro.data.ScanMode.ID_CARD) 0f else DocumentDetection.MIN_PAGE_AREA
+
+    /** The page outline of a photo, or the whole frame when none is usable (see [DocumentDetection.isUsableOutline]). */
+    fun detectCrop(source: File, minArea: Float = DocumentDetection.MIN_PAGE_AREA): CropQuad {
         val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT
         return try {
             val detection = DocumentEdgeDetector.detect(bitmap)
             val quad = detection.quad
-            if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
+            if (quad != null && detection.isUsableOutline(minArea)) quad else CropQuad.DEFAULT
         } finally {
             if (!bitmap.isRecycled) bitmap.recycle()
         }

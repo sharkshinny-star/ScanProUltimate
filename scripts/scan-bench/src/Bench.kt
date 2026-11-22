@@ -10,6 +10,7 @@
  */
 import com.example.scanpro.imaging.OpenCvRuntime
 import com.example.scanpro.scanner.DocumentEdgeDetector
+import com.example.scanpro.scanner.DocumentDetection
 import org.opencv.core.*
 import org.opencv.core.Point
 import org.opencv.imgcodecs.Imgcodecs
@@ -335,6 +336,8 @@ fun main(args: Array<String>) {
     val dump = args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")
     val only = args.firstOrNull { it.startsWith("only=") }?.removePrefix("only=")
     println("scene | found | err% | IoU | ms | conf")
+    class Gate { var total = 0; var kept = 0; var keptBefore = 0 }
+    val gatePages = Gate(); val gateCards = Gate(); val gateNegatives = Gate()
     val rows = mutableListOf<Triple<String, Double, Double>>()
     val colourRows = mutableListOf<Triple<String, Double, Double>>()
     scenes(extra).filter { only == null || only in it.name }.forEach { s ->
@@ -342,6 +345,15 @@ fun main(args: Array<String>) {
         var det = DocumentEdgeDetector.detect(s.gray)
         val times = List(7) { val t = System.nanoTime(); det = DocumentEdgeDetector.detect(s.gray); (System.nanoTime() - t) / 1e6 }.sorted()
         val q = det.quad
+        // The post-capture gate (OpenCvScanProcessor): is this scene's outline used as the crop of a photo?
+        val gate = when {
+            s.name.startsWith("n_") -> gateNegatives
+            s.name.startsWith("k_") -> gateCards
+            else -> gatePages
+        }
+        gate.total++
+        if (det.isUsableOutline(if (s.name.startsWith("k_")) 0f else DocumentDetection.MIN_PAGE_AREA)) gate.kept++
+        if (det.quad != null && det.confidence >= DocumentDetection.MIN_OUTLINE_CONFIDENCE) gate.keptBefore++
         if (q == null) { println("${s.name} | false | - | 0 | ${"%.1f".format(times[3])} | 0"); rows += Triple(s.name, 100.0, 0.0); return@forEach }
         val found = listOf(q.topLeft, q.topRight, q.bottomRight, q.bottomLeft).map { P(it.x * W.toDouble(), it.y * H.toDouble()) }
         val err = s.truth.indices.map { hypot(found[it].x - s.truth[it].x, found[it].y - s.truth[it].y) }.average() / hypot(W.toDouble(), H.toDouble()) * 100
@@ -386,6 +398,7 @@ fun main(args: Array<String>) {
     if (colour) { val kc = colourRows.filter { it.first.startsWith("k_") }; if (kc.isNotEmpty()) println("card cases (colour): mean IoU ${"%.3f".format(kc.map { it.third }.average())}, under 2% err: ${kc.count { it.second < 2.0 }}/${kc.size}") }
     val bench = rows.filter { it.first.take(2) !in listOf("x_", "n_", "c_", "k_") }
     if (bench.isEmpty()) return
+    println("post-capture gate (area >= ${DocumentDetection.MIN_PAGE_AREA}, cards 0): pages cropped ${gatePages.kept}/${gatePages.total} (confidence only: ${gatePages.keptBefore}), cards cropped ${gateCards.kept}/${gateCards.total} (${gateCards.keptBefore}), no-page scenes cropped ${gateNegatives.kept}/${gateNegatives.total} (${gateNegatives.keptBefore})")
     println("bench: mean IoU ${"%.3f".format(bench.map { it.third }.average())}, worst err ${"%.2f".format(bench.maxOf { it.second })}")
     val cRows = rows.filter { it.first.startsWith("c_") }
     if (cRows.isNotEmpty()) println("colour cases (grey-only): mean IoU ${"%.3f".format(cRows.map { it.third }.average())}, under 2% err: ${cRows.count { it.second < 2.0 }}/${cRows.size}")

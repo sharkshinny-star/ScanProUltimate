@@ -180,7 +180,7 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
                 copyUri(uri, source)
                 // The outline confirmed on the camera's review screen, or one found here, so a photo of a page on a
                 // desk comes in cropped and straight.
-                val crop = crops.getOrNull(offset) ?: runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
+                val crop = crops.getOrNull(offset) ?: runCatching { OpenCvScanProcessor.detectCrop(source, OpenCvScanProcessor.minAreaFor(doc.scanMode)) }.getOrDefault(CropQuad.DEFAULT)
                 newPages[newPages.lastIndex] = renderAndOcr(
                     page.copy(
                         crop = crop,
