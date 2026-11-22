@@ -12,6 +12,18 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 /**
+ * A hidden file in a new document's folder from the moment an import starts until its record is saved. A folder that
+ * still has it and no record is an import that was cut short (the process was killed, the phone died): library
+ * recovery brings it back, since its pages are the user's, but says in the title that it is incomplete.
+ */
+internal object ImportMarker {
+    const val NAME = ".importing"
+    fun start(folder: File) { runCatching { File(folder, NAME).createNewFile() } }
+    fun finish(folder: File) { File(folder, NAME).delete() }
+    fun isUnfinished(folder: File) = File(folder, NAME).exists()
+}
+
+/**
  * Brings back documents whose files are still on the device but whose records are gone, for example after the
  * database was moved aside because an older build opened a newer one (see [setAsideNewerDatabase]) or was cleared.
  *
@@ -78,9 +90,11 @@ internal class LibraryRecovery(private val store: DocumentStore) {
         val created = found.minOf { it.file.lastModified() }.takeIf { it > 0 } ?: System.currentTimeMillis()
         val pdf = File(folder, "document.pdf")
         val stamp = SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+        val title = store.context.getString(R.string.doc_title_scan, stamp)
         return ScanDocument(
             id = folder.name,
-            title = store.context.getString(R.string.doc_title_scan, stamp),
+            // An import that was cut short may have only some of its pages: say so instead of passing it off as whole.
+            title = if (ImportMarker.isUnfinished(folder)) store.context.getString(R.string.doc_title_import_incomplete, title) else title,
             createdAt = created,
             updatedAt = created,
             pdfPath = pdf.absolutePath,
