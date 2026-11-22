@@ -16,8 +16,9 @@ object PdfSecurity {
     const val MIN_PASSWORD_LENGTH = 8
 
     /** Writes [destination] encrypted with [password] and returns its page count, so callers need not reopen it. */
-    fun protect(source: File, destination: File, password: String): Int {
-        if (password.length < MIN_PASSWORD_LENGTH) throw UserFacingPluralException(R.plurals.err_pdf_password_too_short, MIN_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH)
+    fun protect(source: File, destination: File, password: String, enforceMinimum: Boolean = true): Int {
+        // Re-protecting a result with the password the user already typed to open the file must not refuse a short one.
+        if (enforceMinimum && password.length < MIN_PASSWORD_LENGTH) throw UserFacingPluralException(R.plurals.err_pdf_password_too_short, MIN_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH)
         destination.parentFile?.mkdirs()
         // AES-256 first; a device whose crypto provider rejects it still gets AES-128 rather than a failure.
         var failure: Exception? = null

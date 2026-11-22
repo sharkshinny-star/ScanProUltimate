@@ -244,6 +244,31 @@ class PdfToolsFeaturesTest {
     }
 
     @Test
+    fun reprotectingAcceptsTheUsersShortPasswordButProtectStillRefusesIt() {
+        val dir = File(app.cacheDir, "test_reprotect_${System.currentTimeMillis()}").apply { mkdirs() }
+        val source = File(dir, "plain.pdf")
+        com.tom_roush.pdfbox.pdmodel.PDDocument().use { doc ->
+            doc.addPage(com.tom_roush.pdfbox.pdmodel.PDPage())
+            doc.save(source)
+        }
+        // The Protect tool still insists on a long password.
+        var refused = false
+        try {
+            com.example.scanpro.imaging.PdfSecurity.protect(source, File(dir, "short.pdf"), "1234")
+        } catch (e: Exception) {
+            refused = true
+        }
+        assertTrue("Protect must refuse a short password", refused)
+        // Re-protecting a result with the password the user already typed to open the file must not.
+        val locked = File(dir, "locked.pdf")
+        com.example.scanpro.imaging.PdfSecurity.protect(source, locked, "1234", enforceMinimum = false)
+        assertEquals(
+            com.example.scanpro.imaging.PdfProtection.PASSWORD_REQUIRED,
+            com.example.scanpro.imaging.PdfSecurity.protection(locked)
+        )
+    }
+
+    @Test
     fun officeToPdfDetectsSupportedMimeTypes() {
         assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.DOCX, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "test.docx"))
         assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.DOCX, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/vnd.ms-word.document.macroenabled.12", "test.docm"))

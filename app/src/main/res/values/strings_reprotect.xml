@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="msg_tools_reprotected">The result is protected with the same password.</string>
+    <string name="msg_tools_reprotect_failed">The result could not be protected again, so it was not saved without protection.</string>
+</resources>

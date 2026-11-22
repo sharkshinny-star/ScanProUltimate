@@ -326,6 +326,8 @@ fun PdfToolsScreen(
             selectedTool = tool
             viewModel.prepareTool(tool, uri)
         } else {
+            // A tool that does not read an unlocked copy must not inherit its password.
+            viewModel.forgetUnlockedSource()
             openTool(tool, uri)
         }
     }
