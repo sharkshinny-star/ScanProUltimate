@@ -172,7 +172,7 @@ internal class DocumentExporter(
                 } catch (error: Throwable) {
                     // Don't leave an empty or partial package in the user's folder.
                     runCatching { DocumentsContract.deleteDocument(context.contentResolver, target) }
-                    throw error
+                    throw EncryptedDocumentPackage.asUserFacing(error)
                 }
                 written++
             } finally {

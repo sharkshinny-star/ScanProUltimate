@@ -323,6 +323,23 @@ class EncryptedDocumentPackageTest {
     }
 
     @Test
+    fun `a full phone is reported as not enough space, not as a bad password or file`() {
+        val full = java.io.IOException("write failed: ENOSPC (No space left on device)")
+        assertTrue(EncryptedDocumentPackage.isOutOfSpace(full))
+        // Found anywhere in the chain of causes, whichever wrapper the unzip or the copy put around it.
+        assertTrue(EncryptedDocumentPackage.isOutOfSpace(java.io.IOException("copy failed", RuntimeException("x", full))))
+        val mapped = EncryptedDocumentPackage.asUserFacing(full)
+        assertTrue(mapped is UserFacingException)
+        assertEquals(R.string.err_backup_no_space, (mapped as UserFacingException).messageRes)
+        assertTrue("the original error stays as the cause", mapped.cause === full)
+
+        // Anything else is passed on untouched.
+        val damaged = java.io.IOException("Backup is damaged")
+        assertFalse(EncryptedDocumentPackage.isOutOfSpace(damaged))
+        assertTrue(EncryptedDocumentPackage.asUserFacing(damaged) === damaged)
+    }
+
+    @Test
     fun `copying a picked backup stops at the size limit`() {
         val out = ByteArrayOutputStream()
         EncryptedDocumentPackage.copyCapped(ByteArray(100).inputStream(), out, limit = 100)

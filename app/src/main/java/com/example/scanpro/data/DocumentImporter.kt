@@ -236,7 +236,7 @@ internal class DocumentImporter(private val store: DocumentStore) {
             regenerateAndSave(doc)
         } catch (error: Throwable) {
             folder.deleteRecursively()
-            throw error
+            throw EncryptedDocumentPackage.asUserFacing(error)
         } finally {
             restored.tempDir.deleteRecursively()
         }

@@ -81,6 +81,9 @@ class EncryptedDocumentPackage(private val context: Context) {
     fun export(document: ScanDocument, password: CharArray, destination: File) {
         try {
             write(document, password, destination)
+        } catch (error: Throwable) {
+            destination.delete()
+            throw asUserFacing(error)
         } finally {
             password.fill('\u0000')
         }
@@ -98,7 +101,7 @@ class EncryptedDocumentPackage(private val context: Context) {
             encrypted.delete()
             // read() wipes the password on every path of its own; this one never reaches it.
             password.fill('\u0000')
-            throw error
+            throw asUserFacing(error)
         }
         val outDir = File(context.cacheDir, "restore_${UUID.randomUUID()}")
         return read(encrypted, outDir, password)
@@ -366,6 +369,8 @@ class EncryptedDocumentPackage(private val context: Context) {
                 throw error
             } catch (error: Throwable) {
                 outDir.deleteRecursively()
+                // A full phone is not a bad password or a bad file, and the user cannot fix it by retyping.
+                if (isOutOfSpace(error)) throw asUserFacing(error)
                 // A version 2 package names a wrong key itself (its first chunk fails). A version 1 package is one GCM
                 // stream whose tag is checked before any plaintext is released, so a wrong password (or a damaged
                 // file, which the message also allows for) surfaces as the authentication error. In version 2 that
@@ -385,6 +390,21 @@ class EncryptedDocumentPackage(private val context: Context) {
         }
 
         private class BackupTooLargeException : UserFacingException(R.string.err_backup_too_large)
+
+        /**
+         * True when [error], or anything it was caused by, is the file system reporting that the device is full. The
+         * system's text is the only portable signal: Android words it "write failed: ENOSPC (No space left on device)".
+         */
+        internal fun isOutOfSpace(error: Throwable): Boolean = generateSequence(error) { it.cause }.any {
+            // A message the app wrote itself is never the file system's, and reading it needs the app's strings.
+            it !is UserFacingException && it.message.orEmpty().let { text ->
+                text.contains("ENOSPC") || text.contains("No space left on device", ignoreCase = true)
+            }
+        }
+
+        /** [error] as it is, or a plain "not enough free space" message when that is what it was. */
+        internal fun asUserFacing(error: Throwable): Throwable =
+            if (error !is UserFacingException && isOutOfSpace(error)) UserFacingException(R.string.err_backup_no_space, cause = error) else error
 
         /** Copies at most [limit] bytes, so a huge or endless file picked by mistake can't fill the device. */
         internal fun copyCapped(input: InputStream, output: OutputStream, limit: Long) {
