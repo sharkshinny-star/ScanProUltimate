@@ -25,6 +25,7 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import com.tom_roush.pdfbox.text.TextPosition
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.text.Normalizer
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
 import kotlin.math.max
@@ -258,6 +259,33 @@ object PdfRedactTools {
     /** Boxes grow by this much (points) on every side, so the glyphs' anti-aliased fringe goes too. */
     private const val BOX_PADDING_PT = 1.5f
 
+    /**
+     * For each character of [string] (a word as the text stripper gives it), the range of indices into [unicodes] (the
+     * text of each glyph position of that word) that draw it. One glyph can stand for several characters (a ligature
+     * such as "ffi" is one position and three characters), so characters and positions are not 1:1. Lengths are first
+     * tried as the stripper normalises them (NFKC, "\uFB03" becomes "ffi"), then as stored; when neither adds up to the
+     * word's length, every character maps to the whole word, so a match inside it blacks out all of it rather than a
+     * wrong glyph.
+     */
+    internal fun charSpans(string: String, unicodes: List<String>): List<IntRange> {
+        if (string.isEmpty()) return emptyList()
+        val whole = if (unicodes.isEmpty()) IntRange.EMPTY else 0 until unicodes.size
+        for (lengths in listOf(
+            unicodes.map { Normalizer.normalize(it, Normalizer.Form.NFKC).length },
+            unicodes.map { it.length }
+        )) {
+            if (lengths.sum() == string.length) {
+                val spans = ArrayList<IntRange>(string.length)
+                lengths.forEachIndexed { position, length -> repeat(length) { spans += position..position } }
+                return spans
+            }
+        }
+        return List(string.length) { whole }
+    }
+
+    /** Lower-case that keeps the length (a plain `lowercase()` turns "\u0130" into two characters and shifts every index after it). */
+    internal fun foldCase(text: String): String = String(CharArray(text.length) { text[it].lowercaseChar() })
+
     /** Every occurrence of every term, page by page. Terms are trimmed; empty ones are ignored. */
     internal fun findMatches(doc: PDDocument, terms: List<String>, matchCase: Boolean): List<Match> {
         val wanted = terms.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
@@ -265,27 +293,28 @@ object PdfRedactTools {
         val matches = ArrayList<Match>()
         for (index in 0 until doc.numberOfPages) {
             val text = StringBuilder()
-            val positions = ArrayList<TextPosition?>()
+            // The glyph positions behind each character of [text]; empty for separators.
+            val positions = ArrayList<List<TextPosition>>()
             val stripper = object : PDFTextStripper() {
                 override fun writeString(string: String, textPositions: List<TextPosition>) {
-                    // One position per character where the stripper gives them; a ligature or a missing one is padded.
+                    val spans = charSpans(string, textPositions.map { it.unicode ?: "" })
                     for (k in string.indices) {
                         text.append(string[k])
-                        positions.add(textPositions.getOrNull(k))
+                        positions.add(spans[k].map { textPositions[it] })
                     }
                 }
 
-                override fun writeLineSeparator() { text.append('\n'); positions.add(null) }
-                override fun writeWordSeparator() { text.append(' '); positions.add(null) }
-                override fun writeParagraphSeparator() { text.append('\n'); positions.add(null) }
+                override fun writeLineSeparator() { text.append('\n'); positions.add(emptyList()) }
+                override fun writeWordSeparator() { text.append(' '); positions.add(emptyList()) }
+                override fun writeParagraphSeparator() { text.append('\n'); positions.add(emptyList()) }
             }
             stripper.sortByPosition = true
             stripper.startPage = index + 1
             stripper.endPage = index + 1
             stripper.getText(doc)
-            val haystack = if (matchCase) text.toString() else text.toString().lowercase()
+            val haystack = if (matchCase) text.toString() else foldCase(text.toString())
             for (term in wanted) {
-                val needle = if (matchCase) term else term.lowercase()
+                val needle = if (matchCase) term else foldCase(term)
                 var from = haystack.indexOf(needle)
                 while (from >= 0) {
                     val rect = unionOf(positions, from, from + needle.length)
@@ -297,12 +326,13 @@ object PdfRedactTools {
         return matches
     }
 
-    private fun unionOf(positions: List<TextPosition?>, from: Int, to: Int): RectF? {
+    private fun unionOf(positions: List<List<TextPosition>>, from: Int, to: Int): RectF? {
         var rect: RectF? = null
         for (k in from until min(to, positions.size)) {
-            val p = positions[k] ?: continue
-            val glyph = RectF(p.xDirAdj, p.yDirAdj - p.heightDir, p.xDirAdj + p.widthDirAdj, p.yDirAdj)
-            rect = rect?.apply { union(glyph) } ?: glyph
+            for (p in positions[k]) {
+                val glyph = RectF(p.xDirAdj, p.yDirAdj - p.heightDir, p.xDirAdj + p.widthDirAdj, p.yDirAdj)
+                rect = rect?.apply { union(glyph) } ?: glyph
+            }
         }
         return rect?.apply { inset(-BOX_PADDING_PT, -BOX_PADDING_PT) }
     }

@@ -172,6 +172,35 @@ class PdfCropRedactToolsTest {
         }
     }
 
+    // ---- Ligatures: one glyph, several characters ----
+
+    @Test
+    fun aLigatureGlyphCoversAllTheCharactersItStandsFor() {
+        // "office" is drawn as o, ffi, c, e: four glyphs, six characters. "ice" (characters 3 to 5) must land on the
+        // ffi, c and e glyphs, not on the last glyph plus two empty slots.
+        val spans = PdfRedactTools.charSpans("office", listOf("o", "\uFB03", "c", "e"))
+        assertEquals(listOf(0, 1, 1, 1, 2, 3), spans.map { it.first })
+        assertTrue(spans.all { it.first == it.last })
+        // The same word stored already expanded (one glyph per character) maps one to one.
+        assertEquals(listOf(0, 1, 2, 3, 4, 5), PdfRedactTools.charSpans("office", listOf("o", "f", "f", "i", "c", "e")).map { it.first })
+    }
+
+    @Test
+    fun anUnreconcilableWordIsBlackedOutWhole() {
+        // Lengths that cannot add up to the word: every character maps to all glyphs, so a match covers the lot.
+        val spans = PdfRedactTools.charSpans("abcd", listOf("a", "b"))
+        assertEquals(4, spans.size)
+        assertTrue(spans.all { it == 0..1 })
+        assertTrue(PdfRedactTools.charSpans("", listOf("a")).isEmpty())
+    }
+
+    @Test
+    fun foldingCaseNeverChangesTheLength() {
+        val text = "\u0130stanbul ABC"
+        assertEquals(text.length, PdfRedactTools.foldCase(text).length)
+        assertEquals("abc", PdfRedactTools.foldCase("ABC"))
+    }
+
     // ---- Redact by drawn boxes (F174) ----
 
     @Test
