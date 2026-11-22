@@ -53,6 +53,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F273 out-of-space message, Linux cloud container)
+
+- `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS (all six string sets complete, placeholders match). Not run: no Android SDK in the cloud container, so F273 and its new `EncryptedDocumentPackageTest` case are uncompiled and unrun.
+
 ## Latest results (2026-11-22, F268 backup and restore fixes, Linux cloud container)
 
 - Not run: no Android SDK in the cloud container. F268 and its new `EncryptedDocumentPackageTest` case are uncompiled and unrun.
