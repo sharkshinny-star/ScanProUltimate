@@ -53,6 +53,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F265 library search for Indic scripts, Linux cloud container)
+
+- Not run: no Android SDK in the cloud container. F265 and the new `FtsQueryTest` are uncompiled and unrun.
+
 ## Latest results (2026-11-22, F255, Linux cloud container)
 
 Not run: `./gradlew --offline :app:compileDebugKotlin` failed because the cloud container cannot resolve the Android Gradle plugin offline. The F255 changes (Sign PDF stamp target, Edit text box clamp, F256 Organise pages close confirmation, F257 tools sweep, F258 Edit PDF text, F259 partial-output cleanup, F265 Edit text preview lock, F264 resize memory cap, F263 crop return, F261 Crop/Redact page image, F260 re-protect (one new unit test written, not run), a wide change across eight engine files that most needs a local compile) are uncompiled and untested; build and run unit tests locally.

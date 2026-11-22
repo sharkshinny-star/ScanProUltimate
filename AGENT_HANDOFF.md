@@ -52,6 +52,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 <!-- coderabbit-ai-generated-section:v1:82b475149fcb0f97bb594bc8515f8cfc354e7620ddf00579ea17499760915d7a -->
 
+- F265 (2026-11-22): library search keeps combining marks inside a word, so Hindi/Tamil/Telugu/Kannada/Malayalam words can be found in page text. Uncompiled and unrun (no SDK in the cloud container). Open: case-insensitive search for capitalised non-ASCII text and Chinese/Japanese search need a different FTS tokenizer (migration).
 - F262 (2026-11-22): "Run OCR again" honours Stop; the per-page text count no longer fails for every page after a bad one. Uncompiled and unrun (no SDK in the cloud container). Open: non-Latin scans saved before the model downloads have no text and no message.
 - F254 (2026-11-22): Make searchable keeps Devanagari, Chinese, Japanese and Korean words (`UnicodeTextFont`, ToUnicode map, no font file). Uncompiled and unrun (no SDK in the cloud container); needs a Hindi and a Chinese page on a phone.
 - F253 (2026-11-22): viewer page cache sized from the memory limit (unmeasured, device check), Next/Previous match by page on screen, zero-page PDF shows an error. Uncompiled and unrun (no SDK in the cloud container).
