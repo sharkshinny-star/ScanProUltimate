@@ -79,6 +79,33 @@ class LibraryRecoveryTest : RepositoryTestBase() {
         assertEquals(setOf(left, right), load(id)!!.pages.map { it.id }.toSet())
     }
 
+    @Test fun splitHalvesKeepTheirPlaceAmongTheOtherPages() = runBlocking {
+        val a = pageId(); val left = pageId(); val right = pageId(); val c = pageId()
+        // Written out of order on purpose; the halves carry their position in the name like every other page.
+        val id = orphan(
+            listOf(
+                "page_003_$c.jpg" to "source_003_$c.jpg",
+                "book_002_$right.jpg" to "book_002_$right.jpg",
+                "page_000_$a.jpg" to "source_000_$a.jpg",
+                "book_001_$left.jpg" to "book_001_$left.jpg"
+            )
+        )
+        repository.recoverOrphanedDocuments()
+        assertEquals(listOf(a, left, right, c), load(id)!!.order())
+    }
+
+    @Test fun aFolderFromAnImportThatWasCutShortIsRecoveredButSaysSo() = runBlocking {
+        val cutShort = orphan(listOf("page_000_${pageId()}.jpg" to "s"))
+        File(root, "$cutShort/.importing").createNewFile()
+        val whole = orphan(listOf("page_000_${pageId()}.jpg" to "s"))
+
+        assertEquals(2, repository.recoverOrphanedDocuments())
+
+        // Its pages are the user's, so it comes back, but not passed off as a complete document.
+        assertTrue(load(cutShort)!!.title.contains("import incomplete"))
+        assertFalse(load(whole)!!.title.contains("import incomplete"))
+    }
+
     @Test fun documentsThatAlreadyHaveARecordAreLeftAlone() = runBlocking {
         val known = newDocument(2, title = "Mine")
         orphan(listOf("page_000_${pageId()}.jpg" to "s"))

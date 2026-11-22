@@ -350,8 +350,9 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val width = if (left) halfWidth else bitmap.width - halfWidth
         val half = Bitmap.createBitmap(bitmap, x, 0, width, bitmap.height)
         val id = UUID.randomUUID().toString()
-        val source = File(sourceDir, "book_$id.jpg")
-        val rendered = File(renderedDir, "book_$id.jpg")
+        // The position is in the name, as for every other page, so a document rebuilt from its folder keeps the halves in place.
+        val source = File(sourceDir, "book_${index.toString().padStart(3, '0')}_$id.jpg")
+        val rendered = File(renderedDir, "book_${index.toString().padStart(3, '0')}_$id.jpg")
         try {
             try {
                 ImageProcessor.saveBitmapJpeg(half, source, 98)

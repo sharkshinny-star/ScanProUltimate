@@ -78,6 +78,7 @@ internal class DocumentImporter(private val store: DocumentStore) {
         val created = now()
         val id = UUID.randomUUID().toString()
         val folder = File(rootDir, id).apply { mkdirs() }
+        ImportMarker.start(folder)
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
         val tempPdf = File(context.cacheDir, "pdf_import_${UUID.randomUUID()}.pdf")
@@ -157,7 +158,8 @@ internal class DocumentImporter(private val store: DocumentStore) {
                 searchablePdf = true,
                 ocrScript = defaultScript
             )
-            regenerateAndSave(doc)
+            // The value of the try block: the saved document. The marker goes only once the record is saved.
+            regenerateAndSave(doc).also { ImportMarker.finish(folder) }
         } catch (error: Throwable) {
             folder.deleteRecursively()
             throw error
@@ -176,6 +178,7 @@ internal class DocumentImporter(private val store: DocumentStore) {
         val created = now()
         val id = UUID.randomUUID().toString()
         val folder = File(rootDir, id).apply { mkdirs() }
+        ImportMarker.start(folder)
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
         try {
@@ -233,7 +236,8 @@ internal class DocumentImporter(private val store: DocumentStore) {
                 scanMode = restored.scanMode,
                 ocrScript = restored.ocrScript
             )
-            regenerateAndSave(doc)
+            // The value of the try block: the saved document. The marker goes only once the record is saved.
+            regenerateAndSave(doc).also { ImportMarker.finish(folder) }
         } catch (error: Throwable) {
             folder.deleteRecursively()
             throw EncryptedDocumentPackage.asUserFacing(error)
@@ -264,6 +268,7 @@ internal class DocumentImporter(private val store: DocumentStore) {
         val created = now()
         val id = UUID.randomUUID().toString()
         val folder = File(rootDir, id).apply { mkdirs() }
+        ImportMarker.start(folder)
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
         val pdf = File(folder, "document.pdf")
@@ -333,6 +338,7 @@ internal class DocumentImporter(private val store: DocumentStore) {
                 folderName = userFolder?.trim().orEmpty().take(80)
             )
             db.saveDocument(doc)
+            ImportMarker.finish(folder)
             return doc
         } catch (error: Throwable) {
             folder.deleteRecursively()
