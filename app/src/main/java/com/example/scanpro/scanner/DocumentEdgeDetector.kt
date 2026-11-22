@@ -421,34 +421,17 @@ object DocumentEdgeDetector {
             }
             // A dark desk surrounding a correctly exposed page should not show "More light" or block capture.
             val pageBrightness = pageBox?.let { box ->
-                val x = box.x.coerceIn(0, working.cols() - 1)
-                val y = box.y.coerceIn(0, working.rows() - 1)
-                val region = working.submat(org.opencv.core.Rect(
-                    x, y, box.width.coerceIn(1, working.cols() - x), box.height.coerceIn(1, working.rows() - y)
-                ))
+                val region = working.submat(withinFrame(box, working.cols(), working.rows()))
                 try { Core.mean(region).`val`[0] } finally { region.release() }
             } ?: brightness
             // Sharpness is judged on the page itself: a blurry background around a sharp page, or the other
             // way round, must not decide whether the capture is taken.
             val blur = pageBox?.let { box ->
-                runCatching {
-                    val x = box.x.coerceIn(0, working.cols() - 1)
-                    val y = box.y.coerceIn(0, working.rows() - 1)
-                    varianceOfLaplacian(processed, org.opencv.core.Rect(
-                        x, y, box.width.coerceIn(1, working.cols() - x), box.height.coerceIn(1, working.rows() - y)
-                    ))
-                }.getOrNull()
+                runCatching { varianceOfLaplacian(processed, withinFrame(box, working.cols(), working.rows())) }.getOrNull()
             } ?: varianceOfLaplacian(processed)
             // Mask the page polygon, not its bounding box: a white table outside a skewed page is not glare.
             val glare = if (candidate == null || pageBox == null) 0.0 else runCatching {
-                val box = pageBox
-                val x = box.x.coerceIn(0, working.cols() - 1)
-                val y = box.y.coerceIn(0, working.rows() - 1)
-                PageQuality.glareShare(
-                    working,
-                    org.opencv.core.Rect(x, y, box.width.coerceIn(1, working.cols() - x), box.height.coerceIn(1, working.rows() - y)),
-                    candidate.points.toList()
-                )
+                PageQuality.glareShare(working, withinFrame(pageBox, working.cols(), working.rows()), candidate.points.toList())
             }.getOrDefault(0.0)
             val framed = if (candidate == null) 0 else runCatching { PageFraming.framedSides(candidate.points, processed) }.getOrDefault(0)
             val guidance = when {
@@ -660,11 +643,23 @@ object DocumentEdgeDetector {
     }
 
     private fun toNormalizedQuad(points: List<Point>, width: Int, height: Int): CropQuad {
-        fun norm(point: Point) = NormalizedPoint(
-            (point.x / width.toDouble()).toFloat().coerceIn(0f, 1f),
-            (point.y / height.toDouble()).toFloat().coerceIn(0f, 1f)
+        // A corner past the frame edge slides along its side to where the side enters the frame; clamping x and y
+        // separately moved it off both of its sides (see CornerClamp).
+        val inFrame = CornerClamp.intoFrame(points.take(4).map { it.x to it.y }, width.toDouble(), height.toDouble())
+        fun norm(corner: Pair<Double, Double>) = NormalizedPoint(
+            (corner.first / width.toDouble()).toFloat().coerceIn(0f, 1f),
+            (corner.second / height.toDouble()).toFloat().coerceIn(0f, 1f)
         )
-        return CropQuad(norm(points[0]), norm(points[1]), norm(points[2]), norm(points[3]))
+        return CropQuad(norm(inFrame[0]), norm(inFrame[1]), norm(inFrame[2]), norm(inFrame[3]))
+    }
+
+    /** [box] cut to the frame: a page box that sticks out of the picture must not be shifted into it with its full size. */
+    private fun withinFrame(box: org.opencv.core.Rect, cols: Int, rows: Int): org.opencv.core.Rect {
+        val x0 = box.x.coerceIn(0, cols - 1)
+        val y0 = box.y.coerceIn(0, rows - 1)
+        val x1 = (box.x + box.width).coerceIn(x0 + 1, cols)
+        val y1 = (box.y + box.height).coerceIn(y0 + 1, rows)
+        return org.opencv.core.Rect(x0, y0, x1 - x0, y1 - y0)
     }
 
     private data class Source(val map: Mat, val weight: Double, val retrieval: Int, val precise: Boolean)
