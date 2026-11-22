@@ -53,6 +53,11 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F282 detector geometry, Linux cloud container)
+
+- `cd scripts/scan-bench && gradle -q run --args="extra colour live"` (works in the cloud container online, not with `--offline`): output identical to before the change on all 151 lines apart from timings. Grey-only bench mean IoU 0.986, worst corner error 0.58%; colour 0.982, worst 0.74%; extra 0.985, 21/21; card cases grey-only 0.902 (6/9), colour 0.965 (9/9).
+- `CornerClamp` (pure Kotlin) checked on the JVM through that project: 7 checks passed. `CornerClampTest` (the same cases) and `BookSplitOverlay` were not compiled or run as Android code (cloud Gradle cannot resolve the Android plugin).
+
 ## Latest results (2026-11-22, F281 scanned-code parsing fixes, Linux cloud container)
 
 - Not run: no Android SDK in the cloud container. F281 and its four new `ScannedCodeTest` cases are uncompiled and unrun.
