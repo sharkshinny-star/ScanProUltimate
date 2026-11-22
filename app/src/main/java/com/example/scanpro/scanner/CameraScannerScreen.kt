@@ -231,7 +231,13 @@ fun CameraScannerScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     // One decode and one detection per photo, shared by the crop outline and the quality notes.
-    val inspector = remember(scope) { PageInspector(scope) }
+    // Read when a photo is inspected: an ID card is small by nature, so in that mode a small outline is still the crop.
+    val inspectingCards = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+    val inspector = remember(scope) {
+        PageInspector(scope, inspect = { file ->
+            OpenCvScanProcessor.inspect(file, if (inspectingCards.get()) 0f else DocumentDetection.MIN_PAGE_AREA)
+        })
+    }
     val haptic = LocalHapticFeedback.current
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
@@ -325,6 +331,7 @@ fun CameraScannerScreen(
     // Saveable, so captured pages survive rotation and process death instead of being lost (and
     // their files orphaned) when the activity is recreated.
     var scanMode by rememberSaveable { mutableStateOf(ScanMode.entries.firstOrNull { it.name == initialMode } ?: ScanMode.DOCUMENT) }
+    androidx.compose.runtime.SideEffect { inspectingCards.set(scanMode == ScanMode.ID_CARD) }
     // Both sides by default: the owner's ID cards are two-sided and both belong on one page (front above back). The
     // last choice (one side, both sides or passport) is remembered, and picking the ID card mode no longer resets it.
     var idKind by rememberSaveable {

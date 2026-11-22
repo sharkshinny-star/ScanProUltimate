@@ -59,8 +59,19 @@ data class DocumentDetection(
      */
     val isConvincingPage: Boolean get() = quad != null && confidence >= 0.48f && areaRatio >= MIN_READY_AREA && !fillsFrame && !isFramedObject
 
+    /**
+     * Whether the outline found in a photo that is already taken is used as its crop: found with some confidence and
+     * big enough to be the page. The live camera needs [MIN_READY_AREA] before it will shoot; a photo is judged more
+     * kindly, but a small thing in the frame (a sticker, a phone, a card of another kind) is not the page and must not
+     * cut it down. [minArea] 0 keeps even small outlines, for modes whose subject is small (an ID card).
+     */
+    fun isUsableOutline(minArea: Float = MIN_PAGE_AREA): Boolean = quad != null && confidence >= MIN_OUTLINE_CONFIDENCE && areaRatio >= minArea
+
     companion object {
         const val MIN_READY_AREA = 0.2f
+        /** The smallest share of a photo's frame its outline may cover to be used as the crop (the smallest page in the benchmark is 0.17). */
+        const val MIN_PAGE_AREA = 0.12f
+        const val MIN_OUTLINE_CONFIDENCE = 0.34f
         /** Three, not four: an object at the frame edge has a side with no surface outside it to compare. */
         const val FRAMED_OBJECT_SIDES = 3
     }
