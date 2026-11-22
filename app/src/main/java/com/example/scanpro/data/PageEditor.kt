@@ -176,15 +176,20 @@ internal class PageEditor(private val store: DocumentStore) {
         val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         val colours = withContext(Dispatchers.IO) { sampleColours(File(page.imagePath), left, top, right, bottom) }
         val padX = (bottom - top) * 0.15f
+        // Keep the padded box on the page: clamping only the left edge used to push the right edge past the page.
+        val boxLeft = (left - padX).coerceAtLeast(0f)
+        val boxRight = (right + padX).coerceAtMost(1f)
+        val boxTop = top.coerceIn(0f, 1f)
+        val boxBottom = bottom.coerceIn(boxTop, 1f)
         addAnnotation(
             documentId,
             pageId,
             PageAnnotation(
                 type = AnnotationType.TEXT,
-                x = (left - padX).coerceIn(0f, 1f),
-                y = top.coerceIn(0f, 1f),
-                width = (right - left + 2 * padX).coerceIn(0.01f, 1f),
-                height = (bottom - top).coerceIn(0.005f, 1f),
+                x = boxLeft.coerceAtMost(0.99f),
+                y = boxTop,
+                width = (boxRight - boxLeft).coerceAtLeast(0.01f).coerceAtMost(1f - boxLeft.coerceAtMost(0.99f)),
+                height = (boxBottom - boxTop).coerceAtLeast(0.005f).coerceAtMost((1f - boxTop).coerceAtLeast(0.005f)),
                 text = text.trim().take(400),
                 color = colours.ink,
                 background = colours.paper

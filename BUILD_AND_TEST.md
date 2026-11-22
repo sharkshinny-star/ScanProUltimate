@@ -41,6 +41,10 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-22, F175, Linux cloud container)
+
+Not run: `./gradlew --offline :app:compileDebugKotlin` failed because the cloud container cannot resolve the Android Gradle plugin offline. The F175 changes are uncompiled and untested; build and run unit tests locally before relying on them.
+
 ## Latest results (2026-11-18, F174 Redact areas, Linux cloud container)
 
 - `:app:testDebugUnitTest` 930 tests (5 new: `RedactBoxesEditorTest`, two more in `PdfCropRedactToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,886,534 bytes (47.6 MiB, +35 KB).
