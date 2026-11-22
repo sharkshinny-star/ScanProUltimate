@@ -909,7 +909,7 @@ class PdfToolsViewModel @Inject constructor(
 
     /** Crop image: a straight cut with turn and mirror, kept in the picture's own format (a PNG keeps its transparency). */
     /** A picture cropped for the dialog that asked for it ([target], see the screen's crop return); [uri] is null if the crop failed. */
-    data class PrecropOutcome(val target: String, val uri: Uri?)
+    data class PrecropOutcome(val target: String, val uri: Uri?, val noSpace: Boolean = false)
 
     private val _precrop = MutableStateFlow<PrecropOutcome?>(null)
     val precrop: StateFlow<PrecropOutcome?> = _precrop.asStateFlow()
@@ -926,18 +926,20 @@ class PdfToolsViewModel @Inject constructor(
             val format = ImageToolsEngine.formatOf(stagedPath) ?: ImageExportFormat.JPEG
             val dest = java.io.File(context.cacheDir, "precrop_${java.util.UUID.randomUUID()}.${format.extension}")
             var done = false
+            var phoneFull = false
             try {
                 ImageToolsEngine.cropToFile(staged, dest, spec, format)
                 done = dest.exists() && dest.length() > 0
             } catch (cancelled: CancellationException) {
                 throw cancelled
-            } catch (_: Exception) {
-                // reported below as a failed crop
+            } catch (error: Exception) {
+                // reported below as a failed crop, or as a full phone
+                phoneFull = outOfSpaceMessageRes(error) != null
             } finally {
                 staged.delete()
                 if (!done) dest.delete()
             }
-            _precrop.value = PrecropOutcome(target, if (done) Uri.fromFile(dest) else null)
+            _precrop.value = PrecropOutcome(target, if (done) Uri.fromFile(dest) else null, noSpace = phoneFull)
         }
     }
 

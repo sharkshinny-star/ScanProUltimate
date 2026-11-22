@@ -228,6 +228,8 @@ internal fun EditPdfTextEditor(
     val scope = rememberCoroutineScope()
     var session by remember { mutableStateOf<PdfTextEditSession?>(null) }
     var openFailed by remember { mutableStateOf(false) }
+    // Opening copies the PDF into the app: on a full phone that is the reason, and the notice should say so.
+    var openNoSpace by remember { mutableStateOf(false) }
     var pageIndex by rememberSaveable { mutableIntStateOf(0) }
     var edits by rememberSaveable(stateSaver = EditsSaver) { mutableStateOf(emptyList<PdfTextEditor.Edit>()) }
     // The sets of changes before each step, and those stepped back from, newest last (not kept over a rotation; the
@@ -254,7 +256,11 @@ internal fun EditPdfTextEditor(
     DisposableEffect(uri) { onDispose { session?.close(); session = null } }
     val opened by produceState<PdfTextEditSession?>(null, uri) {
         // Not cancellable: an editor closed while the PDF opens still gets the session back, to close it.
-        val opened = withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) { runCatching { PdfTextEditSession.open(context, uri) }.getOrNull() }
+        val opened = withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) {
+            runCatching { PdfTextEditSession.open(context, uri) }
+                .onFailure { openNoSpace = com.example.scanpro.core.text.isOutOfSpace(it) }
+                .getOrNull()
+        }
         if (!isActive) { opened?.close(); return@produceState }
         value = opened
         session = value
@@ -337,7 +343,7 @@ internal fun EditPdfTextEditor(
         originalColour = selected?.let(::spanOf)?.colour ?: 0,
         adding = adding,
         notice = when {
-            openFailed -> R.string.tools_edit_err_open
+            openFailed -> if (openNoSpace) R.string.err_no_space else R.string.tools_edit_err_open
             pageSpans != null && pageSpans.isEmpty() && pageEdits.isEmpty() -> R.string.tools_edit_no_text
             else -> 0
         },

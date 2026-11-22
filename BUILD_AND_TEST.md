@@ -53,6 +53,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F288 out-of-space message, Linux cloud container)
+
+- Not run: the Android build and unit tests (cloud Gradle cannot resolve the Android plugin); the F288 edits to the Sign PDF, Edit PDF text and crop screens are uncompiled.
+
 ## Latest results (2026-11-22, F287 annotation remap, Linux cloud container)
 
 - Not run: the Android build and unit tests (cloud Gradle cannot resolve the Android plugin). `CropMapping.kt` and four new `AnnotationRemapTest` tests are uncompiled; run `./gradlew testDebugUnitTest --tests '*AnnotationRemapTest*'` locally.

@@ -127,7 +127,7 @@ fun SignPdfScreen(
                     FileLoadingState(stringResource(R.string.tools_organizer_opening))
                 }
                 state.failed -> Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.sign_open_failed), style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(if (state.noSpace) R.string.err_no_space else R.string.sign_open_failed), style = MaterialTheme.typography.bodyLarge)
                 }
                 file != null -> {
                     if (state.wasProtected) {

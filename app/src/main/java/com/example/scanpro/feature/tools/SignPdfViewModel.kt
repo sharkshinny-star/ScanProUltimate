@@ -41,6 +41,8 @@ data class SignUiState(
     val passwordFor: Uri? = null,
     val wrongPassword: Boolean = false,
     val failed: Boolean = false,
+    /** With [failed]: the phone is full, which is what the screen should say instead of a general failure. */
+    val noSpace: Boolean = false,
     val file: File? = null,
     val sourceName: String = "",
     val pageCount: Int = 0,
@@ -107,8 +109,8 @@ class SignPdfViewModel @Inject constructor(
                 throw cancelled
             } catch (_: InvalidPasswordException) {
                 _state.value = SignUiState(visible = true, passwordFor = uri, wrongPassword = true)
-            } catch (_: Exception) {
-                _state.value = SignUiState(visible = true, failed = true)
+            } catch (error: Exception) {
+                _state.value = SignUiState(visible = true, failed = true, noSpace = com.example.scanpro.core.text.isOutOfSpace(error))
             }
         }
     }

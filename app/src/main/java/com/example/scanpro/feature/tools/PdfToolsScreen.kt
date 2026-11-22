@@ -180,16 +180,19 @@ fun PdfToolsScreen(
 
     // Read here, where it follows a language change, not with context.getString inside the launcher.
     val cropFailedMessage = stringResource(R.string.tools_err_crop_img)
+    val noSpaceMessage = stringResource(R.string.err_no_space)
     fun launchCropForUri(targetUri: Uri, returnTo: String? = null) {
         cropScope.launch {
             // An unreadable, cloud-only or revoked picture must say so, not crash the app or do nothing.
+            var phoneFull = false
             val stagedFile = try {
                 withContext(Dispatchers.IO) {
                     PdfToolsEngine.copyUriToTemp(context, targetUri, "crop_staged_${UUID.randomUUID()}.jpg")
                 }
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                phoneFull = com.example.scanpro.core.text.isOutOfSpace(error)
                 null
             }
             if (stagedFile != null && stagedFile.length() > 0) {
@@ -198,7 +201,7 @@ fun PdfToolsScreen(
                 activeCropSourcePath = stagedFile.absolutePath
             } else {
                 stagedFile?.delete()
-                snackbarHostState.showSnackbar(cropFailedMessage)
+                snackbarHostState.showSnackbar(if (phoneFull) noSpaceMessage else cropFailedMessage)
             }
         }
     }
@@ -207,7 +210,8 @@ fun PdfToolsScreen(
     LaunchedEffect(precrop) {
         val outcome = precrop ?: return@LaunchedEffect
         val cropped = outcome.uri
-        if (cropped != null) deliverCrop(cropped, outcome.target) else snackbarHostState.showSnackbar(cropFailedMessage)
+        if (cropped != null) deliverCrop(cropped, outcome.target)
+        else snackbarHostState.showSnackbar(if (outcome.noSpace) noSpaceMessage else cropFailedMessage)
         viewModel.consumePrecrop()
     }
     var showPdfToTextDialog by rememberSaveable { mutableStateOf(false) }
