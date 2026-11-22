@@ -52,6 +52,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 <!-- coderabbit-ai-generated-section:v1:82b475149fcb0f97bb594bc8515f8cfc354e7620ddf00579ea17499760915d7a -->
 
+- F254 (2026-11-22): Make searchable keeps Devanagari, Chinese, Japanese and Korean words (`UnicodeTextFont`, ToUnicode map, no font file). Uncompiled and unrun (no SDK in the cloud container); needs a Hindi and a Chinese page on a phone.
 - F253 (2026-11-22): viewer page cache sized from the memory limit (unmeasured, device check), Next/Previous match by page on screen, zero-page PDF shows an error. Uncompiled and unrun (no SDK in the cloud container).
 - F252 (2026-11-22): viewer search finds phrases that wrap onto the next line; viewer temp-file list is thread-safe. Uncompiled and unrun (no SDK in the cloud container).
 - F251 (2026-11-22): PDF viewer: page shapes read up front so mixed-size PDFs stop jumping, and the password dialog separates a wrong password from other failures. Uncompiled and unrun (no SDK in the cloud container); scroll feel needs a phone.

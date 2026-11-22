@@ -53,6 +53,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F254 Make searchable non-Latin text layer, Linux cloud container)
+
+- Not run: no Android SDK in the cloud container. F254 and the new `PdfTextLayerUnicodeTest` are uncompiled and unrun; run that class first (its save-and-extract test is the real proof).
+
 ## Latest results (2026-11-22, F253 viewer cache, match navigation, empty PDF, Linux cloud container)
 
 - Not run: no Android SDK in the cloud container. F253 and its new `ViewerSearchNavigationTest` are uncompiled and unrun.
