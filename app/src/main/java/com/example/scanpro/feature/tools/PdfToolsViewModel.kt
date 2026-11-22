@@ -907,6 +907,39 @@ class PdfToolsViewModel @Inject constructor(
         }
 
     /** Crop image: a straight cut with turn and mirror, kept in the picture's own format (a PNG keeps its transparency). */
+    /** A picture cropped for the dialog that asked for it ([target], see the screen's crop return); [uri] is null if the crop failed. */
+    data class PrecropOutcome(val target: String, val uri: Uri?)
+
+    private val _precrop = MutableStateFlow<PrecropOutcome?>(null)
+    val precrop: StateFlow<PrecropOutcome?> = _precrop.asStateFlow()
+    fun consumePrecrop() { _precrop.value = null }
+
+    /**
+     * Crops the staged picture at [stagedPath] for a dialog to carry on with. Run here, not in the screen's own scope:
+     * turning the phone cancels that scope, which dropped the crop, never reopened the dialog and left both files behind.
+     * The staged copy is always removed; the result waits in [precrop] until the screen has taken it.
+     */
+    fun precropImage(stagedPath: String, spec: com.example.scanpro.imaging.ImageCropSpec, target: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val staged = java.io.File(stagedPath)
+            val format = ImageToolsEngine.formatOf(stagedPath) ?: ImageExportFormat.JPEG
+            val dest = java.io.File(context.cacheDir, "precrop_${java.util.UUID.randomUUID()}.${format.extension}")
+            var done = false
+            try {
+                ImageToolsEngine.cropToFile(staged, dest, spec, format)
+                done = dest.exists() && dest.length() > 0
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // reported below as a failed crop
+            } finally {
+                staged.delete()
+                if (!done) dest.delete()
+            }
+            _precrop.value = PrecropOutcome(target, if (done) Uri.fromFile(dest) else null)
+        }
+    }
+
     fun cropImageRect(uri: Uri, spec: com.example.scanpro.imaging.ImageCropSpec) =
         launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
             ImageToolsEngine.cropImageRect(context, uri, spec, java.io.File(context.cacheDir, "exports"), null, ::report)

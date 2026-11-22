@@ -202,6 +202,14 @@ fun PdfToolsScreen(
             }
         }
     }
+    // A crop made by the view model for a dialog: hand it over (or report the failure) once, then clear it.
+    val precrop by viewModel.precrop.collectAsStateWithLifecycle()
+    LaunchedEffect(precrop) {
+        val outcome = precrop ?: return@LaunchedEffect
+        val cropped = outcome.uri
+        if (cropped != null) deliverCrop(cropped, outcome.target) else snackbarHostState.showSnackbar(cropFailedMessage)
+        viewModel.consumePrecrop()
+    }
     var showPdfToTextDialog by rememberSaveable { mutableStateOf(false) }
     // The PDF to Excel tile opens the same dialog with Excel already chosen.
     var pdfTextFormat by rememberSaveable { mutableStateOf(TextExportFormat.WORD) }
@@ -538,25 +546,9 @@ fun PdfToolsScreen(
                         cropReturn = null
                         if (originalUri != null) {
                             if (target != null) {
-                                cropScope.launch {
-                                    // Checked on the IO thread too; a crop that fails says so instead of ending the app.
-                                    val croppedFile = withContext(Dispatchers.IO) {
-                                        val staged = File(stagedPath)
-                                        val format = ImageToolsEngine.formatOf(stagedPath) ?: ImageExportFormat.JPEG
-                                        val dest = File(context.cacheDir, "precrop_${UUID.randomUUID()}.${format.extension}")
-                                        try {
-                                            ImageToolsEngine.cropToFile(staged, dest, spec, format)
-                                        } catch (failed: Exception) {
-                                            if (failed is kotlinx.coroutines.CancellationException) throw failed
-                                            dest.delete()
-                                        } finally {
-                                            staged.delete()
-                                        }
-                                        dest.takeIf { it.exists() && it.length() > 0 }
-                                    }
-                                    if (croppedFile != null) deliverCrop(Uri.fromFile(croppedFile), target)
-                                    else snackbarHostState.showSnackbar(cropFailedMessage)
-                                }
+                                // In the view model, which survives a screen turn; the result comes back through
+                                // [precrop] below. A crop that fails says so instead of ending the app.
+                                viewModel.precropImage(stagedPath, spec, target)
                             } else {
                                 File(stagedPath).delete()
                                 viewModel.cropImageRect(originalUri, spec)

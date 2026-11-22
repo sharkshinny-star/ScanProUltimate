@@ -81,6 +81,12 @@ object ImageToolsEngine {
      */
     const val MAX_IMAGE_SIDE = 8000
 
+    /**
+     * The most pixels Resize will make. 8000 x 8000 is 256 MB as a bitmap, and a JPEG of a transparent picture needs a
+     * second copy beside it; 24 megapixels (6000 x 4000, 96 MB) leaves room on phones with a small memory limit.
+     */
+    const val MAX_RESIZE_PIXELS = 24_000_000L
+
     /** The lowest JPEG/WebP quality Compress uses before it gives up resolution instead: below it text and faces smear. */
     private const val MIN_KEEP_QUALITY = 40
 
@@ -507,6 +513,7 @@ object ImageToolsEngine {
         val targetWidth = config.targetWidth
         val targetHeight = config.targetHeight
         userRequire(targetWidth in 10..8000 && targetHeight in 10..8000, R.string.tools_err_invalid_dimensions)
+        userRequire(targetWidth.toLong() * targetHeight <= MAX_RESIZE_PIXELS, R.string.tools_err_resize_too_large)
         outputFile.parentFile?.mkdirs()
         val tempFile = PdfToolsEngine.copyUriToTemp(context, inputUri, "resize_in_${UUID.randomUUID()}.tmp")
 
@@ -626,6 +633,12 @@ object ImageToolsEngine {
 
     private fun prepareForFormat(source: Bitmap, format: ImageExportFormat): Bitmap {
         if (format == ImageExportFormat.JPEG && source.hasAlpha()) {
+            // A bitmap we may draw on is flattened where it is: a second copy beside a very large one is what ran out of memory.
+            if (source.isMutable) {
+                Canvas(source).drawColor(Color.WHITE, android.graphics.PorterDuff.Mode.DST_OVER)
+                source.setHasAlpha(false)
+                return source
+            }
             val flattened = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(flattened)
             canvas.drawColor(Color.WHITE)

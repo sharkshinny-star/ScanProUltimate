@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_err_resize_too_large">ఈ పరిమాణం ఈ ఫోన్‌కు చాలా పెద్దది. చిత్రాన్ని 24 మెగాపిక్సెల్స్ లోపల ఉంచండి, ఉదాహరణకు 6000 × 4000.</string>
+</resources>

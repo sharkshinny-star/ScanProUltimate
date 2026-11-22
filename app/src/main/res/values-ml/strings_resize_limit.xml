@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_err_resize_too_large">ഈ വലുപ്പം ഈ ഫോണിന് വളരെ വലുതാണ്. ചിത്രം 24 മെഗാപിക്സലിൽ താഴെ നിലനിർത്തുക, ഉദാഹരണത്തിന് 6000 × 4000.</string>
+</resources>

@@ -497,7 +497,10 @@ internal fun ResizeImageDialog(
     }
 
     val format = pickedFormat ?: img?.format ?: ImageExportFormat.JPEG
-    val valid = boxW in 10..8000 && boxH in 10..8000
+    val inRange = boxW in 10..8000 && boxH in 10..8000
+    // Beyond this many pixels the bitmap alone could use up the phone's memory.
+    val tooLarge = inRange && boxW.toLong() * boxH > ImageToolsEngine.MAX_RESIZE_PIXELS
+    val valid = inRange && !tooLarge
     val unchanged = img != null && outW == origW && outH == origH && format == img.format
     val enlarging = img != null && (outW > origW || outH > origH)
 
@@ -515,6 +518,7 @@ internal fun ResizeImageDialog(
         actionEnabled = img != null && valid && !unchanged,
         actionSupport = when {
             unreadable -> stringResource(R.string.img_tool_unreadable_short)
+            img != null && tooLarge -> stringResource(R.string.tools_err_resize_too_large)
             img != null && !valid -> stringResource(R.string.tools_err_invalid_dimensions)
             unchanged -> stringResource(R.string.tools_resize_img_unchanged)
             else -> null
