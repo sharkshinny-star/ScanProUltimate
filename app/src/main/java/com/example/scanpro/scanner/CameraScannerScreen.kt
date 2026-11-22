@@ -990,9 +990,16 @@ fun CameraScannerScreen(
     // Saved, so a rotation (no transition) does not wait again.
     var enterSettled by rememberSaveable { mutableStateOf(false) }
     val motionEnabled = com.example.scanpro.core.designsystem.rememberMotionEnabled()
+    // Counts binding requests. CameraX answers each one later on the main thread, and an answer to an out-of-date request
+    // (the review step opened, HD toggled, a retry) must not bind the camera behind the screen that replaced it.
+    val bindGeneration = remember { java.util.concurrent.atomic.AtomicInteger() }
+    // The one observer of the camera's state, so a rebind replaces it instead of piling up another.
+    val cameraStateWatch = remember { CameraStateWatch() }
     LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, retryTrigger, hdCapture) {
+        val generation = bindGeneration.incrementAndGet()
         if (!permissionGranted) return@LaunchedEffect
         if (reviewing) {
+            cameraStateWatch.stop()
             cameraProvider?.unbindAll()
             imageCapture = null
             boundCamera = null
@@ -1007,14 +1014,15 @@ fun CameraScannerScreen(
             enterSettled = true
         }
         future.addListener({
-            // The screen may have been left before the camera provider became ready.
-            if (disposed.get()) return@addListener
+            // The screen may have been left, or this request replaced by a newer one, before the provider became ready.
+            if (disposed.get() || generation != bindGeneration.get()) return@addListener
             runCatching {
                 val provider = future.get()
                 if (disposed.get()) {
                     provider.unbindAll()
                     return@addListener
                 }
+                if (generation != bindGeneration.get()) return@addListener
                 cameraProvider = provider
                 // The same 4:3 field of view for preview, capture and analysis, so what the overlay outlines is what is saved.
                 val selector = ResolutionSelector.Builder()
@@ -1065,7 +1073,7 @@ fun CameraScannerScreen(
                     .also { it.setAnalyzer(analysisExecutor, frameAnalyzer) }
 
                 provider.unbindAll()
-                if (disposed.get()) return@addListener
+                if (disposed.get() || generation != bindGeneration.get()) return@addListener
 
                 // Tablets and Chromebooks may only have a front or external camera; any camera beats none.
                 val cameraSelector = when {
@@ -1083,7 +1091,7 @@ fun CameraScannerScreen(
                 boundUseCases = listOf(preview, capture, analysis)
                 cameraError = null
                 // Errors after binding (another app took the camera, device policy, a fold closing) arrive here.
-                camera.cameraInfo.cameraState.observe(lifecycleOwner) { state ->
+                cameraStateWatch.watch(camera.cameraInfo.cameraState, lifecycleOwner) { state ->
                     val error = state.error
                     cameraError = if (error == null) null else when (error.code) {
                         androidx.camera.core.CameraState.ERROR_CAMERA_IN_USE,
@@ -1158,6 +1166,8 @@ fun CameraScannerScreen(
     DisposableEffect(Unit) {
         onDispose {
             disposed.set(true)
+            bindGeneration.incrementAndGet()
+            cameraStateWatch.stop()
             cameraProvider?.unbindAll()
             analysisExecutor.shutdownNow()
             barcodeAnalyzer.close()
@@ -2873,3 +2883,31 @@ internal fun scannerSessionRoot(context: android.content.Context) = File(context
 
 /** Raw photos whose shutter finished during a rotation, by scanner session id; the recreated screen adopts them. */
 private val lateCaptures = kotlinx.coroutines.flow.MutableStateFlow<Map<String, List<String>>>(emptyMap())
+
+/**
+ * Holds the single observer of a camera's state. Each bind of the camera used to add another observer to its own
+ * LiveData and none was ever removed, so stale observers of earlier bindings kept writing the screen's error text.
+ */
+private class CameraStateWatch {
+    private var data: androidx.lifecycle.LiveData<androidx.camera.core.CameraState>? = null
+    private var observer: androidx.lifecycle.Observer<androidx.camera.core.CameraState>? = null
+
+    fun watch(
+        source: androidx.lifecycle.LiveData<androidx.camera.core.CameraState>,
+        owner: androidx.lifecycle.LifecycleOwner,
+        onState: (androidx.camera.core.CameraState) -> Unit
+    ) {
+        stop()
+        val next = androidx.lifecycle.Observer<androidx.camera.core.CameraState> { onState(it) }
+        data = source
+        observer = next
+        source.observe(owner, next)
+    }
+
+    fun stop() {
+        val old = observer
+        if (old != null) data?.removeObserver(old)
+        data = null
+        observer = null
+    }
+}
