@@ -67,6 +67,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - `cd scripts/scan-bench && gradle -q run --args="extra colour live"` (works in the cloud container online, not with `--offline`): output identical to before the change on all 151 lines apart from timings. Grey-only bench mean IoU 0.986, worst corner error 0.58%; colour 0.982, worst 0.74%; extra 0.985, 21/21; card cases grey-only 0.902 (6/9), colour 0.965 (9/9).
 - `CornerClamp` (pure Kotlin) checked on the JVM through that project: 7 checks passed. `CornerClampTest` (the same cases) and `BookSplitOverlay` were not compiled or run as Android code (cloud Gradle cannot resolve the Android plugin).
 
+## Latest results (2026-11-22, F286 out-of-space message for tools, Linux cloud container)
+
+- `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS (six string sets complete). Not run: no Android SDK in the cloud container, so F286 and its new `OutOfSpaceTest` are uncompiled and unrun.
+
 ## Latest results (2026-11-22, F283 Settings fixes, Linux cloud container)
 
 - Not run: no Android SDK in the cloud container. F283 and its new `SettingsCorruptionTest` and `SafeTruncateTest` are uncompiled and unrun.

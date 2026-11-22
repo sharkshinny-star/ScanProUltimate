@@ -52,6 +52,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 <!-- coderabbit-ai-generated-section:v1:82b475149fcb0f97bb594bc8515f8cfc354e7620ddf00579ea17499760915d7a -->
 
+- F286 (2026-11-22): a full phone now says "Not enough free space" in tools, background jobs and the scan import failure message (new `err_no_space`, 6 locales; the 5 Indian-language ones machine-written, R19). Uncompiled and unrun (no SDK in the cloud container).
 - F283 (2026-11-22): a damaged settings file now keeps app lock on; settings search lists only rows that are shown; title cuts no longer split an emoji. Uncompiled and unrun (no SDK in the cloud container). Open: the locked-folder list is lost with a damaged file.
 - F281 (2026-11-22): scanned-code parsing: grouped vCard lines, geo:0,0?q=, TZID in events, quoted Wi-Fi values. Uncompiled and unrun (no SDK in the cloud container).
 - F280 (2026-11-22): starring no longer changes a document's modified time (the document screen's stamp now includes the favourite flag); a Files selection drops documents deleted elsewhere. Uncompiled and unrun (no SDK in the cloud container).
