@@ -36,14 +36,24 @@
     <string name="settings_notify_backup_title">Backup reminder</string>
     <string name="settings_notify_backup_body">When you haven\'t made a backup for a month</string>
     <string name="settings_notify_water_title">Drink water reminders</string>
-    <string name="settings_notify_water_body">Three gentle nudges a day to have a glass of water</string>
+    <string name="settings_notify_water_body">Gentle nudges through the day to have a glass of water</string>
     <string name="notify_channel_water">Drink water</string>
-    <string name="notify_channel_water_description">Three reminders a day to have a glass of water, if you keep them on</string>
+    <string name="notify_channel_water_description">Reminders through the day to have a glass of water, if you keep them on</string>
     <string name="notify_water_title">Time for a glass of water</string>
     <string name="notify_water_body_morning">A sip now keeps the morning sharp. 💧</string>
     <string name="notify_water_body_midday">Midday already — have a glass of water with your break.</string>
-    <string name="notify_water_body_afternoon">Last call of the day: one more glass keeps you going.</string>
-    <string name="notify_water_turn_off">Turn off</string>
+    <string name="notify_water_body_later">Time flies — a glass of water now keeps you fresh.</string>
+    <string name="notify_water_body_last">Last call of the day: one more glass keeps you going.</string>
+    <string name="notify_water_drank">I drank</string>
+    <string name="notify_water_skip">Skip</string>
+    <string name="settings_group_water_times">Drink water reminder times</string>
+    <string name="settings_notify_water_first_title">First reminder</string>
+    <string name="settings_notify_water_last_title">No reminders after</string>
+    <string name="settings_notify_water_every_title">Remind every</string>
+    <plurals name="settings_notify_water_every_value">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
     <string name="settings_notifications_system_title">System notification settings</string>
     <string name="settings_notifications_system_body">Sounds, lock screen and more, per kind of notice</string>
 </resources>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- File info and metadata (F243). Field names come from the file formats themselves and are not translated. -->
+<resources>
+    <string name="meta_progress_reading">Reading the file\'s details…</string>
+    <string name="meta_progress_saving">Saving a copy…</string>
+    <string name="meta_progress_exporting">Exporting the details…</string>
+    <string name="meta_err_read">Couldn\'t read this file\'s details.</string>
+    <string name="meta_err_save">Couldn\'t save a copy with these details.</string>
+    <string name="meta_err_export">Couldn\'t export the details.</string>
+    <string name="meta_err_nothing_to_save">Nothing has been changed.</string>
+    <string name="meta_done_saved">Saved a copy with your changes. The original is unchanged.</string>
+    <string name="meta_done_removed_all">Saved a copy without its metadata. The picture, text or sound is unchanged.</string>
+    <string name="meta_done_removed_location">Saved a copy without its location.</string>
+    <string name="meta_done_removed_personal">Saved a copy without personal details.</string>
+    <string name="meta_done_exported">Exported %1$d details.</string>
+
+    <string name="meta_action_save">Save a copy</string>
+    <plurals name="meta_action_save_changes">
+        <item quantity="one">Save a copy with %1$d change</item>
+        <item quantity="other">Save a copy with %1$d changes</item>
+    </plurals>
+    <string name="meta_action_hint">Tap a detail with a pencil to change it</string>
+
+    <string name="meta_section_privacy">Privacy</string>
+    <string name="meta_remove_location">Remove location</string>
+    <string name="meta_remove_personal">Remove personal details</string>
+    <string name="meta_remove_all">Remove all metadata</string>
+    <string name="meta_privacy_hint">Each makes a copy at once; the original stays as it is. The picture, text or sound itself is not changed.</string>
+
+    <string name="meta_search_hint">Search the details</string>
+    <string name="meta_clear_search">Clear the search</string>
+    <string name="meta_search_none">No detail matches.</string>
+    <string name="meta_section_export">Export</string>
+    <string name="meta_export_hint">All %1$d details, for a spreadsheet or another program.</string>
+    <string name="meta_formats_note">Recognises %1$d file types by their contents, not only their name.</string>
+
+    <string name="meta_group_file">File</string>
+    <string name="meta_group_document">Document</string>
+    <string name="meta_group_image">Picture</string>
+    <string name="meta_group_camera">Camera</string>
+    <string name="meta_group_location">Location</string>
+    <string name="meta_group_audio">Sound</string>
+    <string name="meta_group_video">Video</string>
+    <string name="meta_group_contents">Contents</string>
+    <string name="meta_group_tags">All tags</string>
+    <plurals name="meta_show_all">
+        <item quantity="one">Show all %1$d</item>
+        <item quantity="other">Show all %1$d</item>
+    </plurals>
+    <string name="meta_show_fewer">Show fewer</string>
+
+    <string name="meta_read_only">Read only</string>
+    <string name="meta_edit_field">Change %1$s</string>
+    <string name="meta_edit_hint">Leave it empty to remove it.</string>
+    <string name="meta_empty">Not set</string>
+    <string name="meta_will_be_removed">Will be removed</string>
+    <string name="meta_is_location">Location</string>
+    <string name="meta_is_personal">Personal detail</string>
+
+    <string name="meta_readonly_format">Details of this kind of file can be read, but not changed here.</string>
+    <string name="meta_readonly_video">Video details are read only: rewriting a video\'s tags safely is not supported yet.</string>
+    <string name="meta_readonly_no_properties">This document has no properties part to write into, so its details are read only.</string>
+    <string name="meta_readonly_legacy_office">Word, Excel and PowerPoint 97-2003 files: only the file\'s own details can be read. Save it as DOCX, XLSX or PPTX to see and change its document properties.</string>
+    <string name="meta_readonly_archive">The contents of this archive type are not listed; its own details are shown.</string>
+    <string name="meta_readonly_pdf_locked">This PDF needs a password to open, so only the file\'s own details can be read. Unlock it first to see and change the rest.</string>
+    <string name="meta_readonly_unreadable">This file looks damaged, so only some of its details could be read and none can be changed.</string>
+    <string name="meta_readonly_raw">Camera RAW files are read only: changing them could damage the picture data.</string>
+    <string name="meta_readonly_image_format">Only JPEG, PNG and WebP pictures can be changed; this one\'s details are read only.</string>
+    <string name="meta_readonly_audio_old_android">Changing music tags needs Android 8 or later. The tags can be read.</string>
+    <string name="meta_readonly_audio_format">The tags of this sound format can be read, but not changed.</string>
+</resources>

@@ -33,12 +33,22 @@
     <string name="settings_notifications_system_title">சிஸ்டம் அறிவிப்பு அமைப்புகள்</string>
     <string name="settings_notifications_system_body">ஒவ்வொரு வகை அறிவிப்புக்கும் ஒலிகள், லாக் ஸ்கிரீன் மற்றும் பல</string>
     <string name="settings_notify_water_title">தண்ணீர் குடிக்க நினைவூட்டல்கள்</string>
-    <string name="settings_notify_water_body">ஒரு டம்ளர் தண்ணீர் குடிக்க நாளில் மூன்று முறை மெல்லிய நினைவூட்டல்</string>
+    <string name="settings_notify_water_body">ஒரு டம்ளர் தண்ணீர் குடிக்க நாள் முழுவதும் மெல்லிய நினைவூட்டல்</string>
     <string name="notify_channel_water">தண்ணீர் குடியுங்கள்</string>
-    <string name="notify_channel_water_description">நீங்கள் இயக்கி வைத்தால், நாளில் மூன்று முறை தண்ணீர் குடிக்க நினைவூட்டல்</string>
+    <string name="notify_channel_water_description">நீங்கள் இயக்கி வைத்தால், நாள் முழுவதும் தண்ணீர் குடிக்க நினைவூட்டல்</string>
     <string name="notify_water_title">ஒரு டம்ளர் தண்ணீருக்கான நேரம்</string>
     <string name="notify_water_body_morning">இப்போது ஒரு மிடறு காலையை சுறுசுறுப்பாக வைக்கும். 💧</string>
     <string name="notify_water_body_midday">மதியம் ஆகிவிட்டது — இடைவேளையுடன் ஒரு டம்ளர் தண்ணீர் குடியுங்கள்.</string>
-    <string name="notify_water_body_afternoon">இன்றின் கடைசி நினைவூட்டல்: இன்னொரு டம்ளர் உங்களை உற்சாகமாக வைக்கும்.</string>
-    <string name="notify_water_turn_off">அணைக்கவும்</string>
+    <string name="notify_water_body_later">நேரம் ஓடுகிறது — இப்போது ஒரு டம்ளர் தண்ணீர் உங்களை புத்துணர்வாக வைக்கும்.</string>
+    <string name="notify_water_body_last">இன்றின் கடைசி நினைவூட்டல்: இன்னொரு டம்ளர் உங்களை உற்சாகமாக வைக்கும்.</string>
+    <string name="notify_water_drank">குடித்துவிட்டேன்</string>
+    <string name="notify_water_skip">தவிர்</string>
+    <string name="settings_group_water_times">தண்ணீர் நினைவூட்டல் நேரங்கள்</string>
+    <string name="settings_notify_water_first_title">முதல் நினைவூட்டல்</string>
+    <string name="settings_notify_water_last_title">இதற்குப் பிறகு நினைவூட்டல் வேண்டாம்</string>
+    <string name="settings_notify_water_every_title">நினைவூட்டல்களுக்கு இடையிலான இடைவெளி</string>
+    <plurals name="settings_notify_water_every_value">
+        <item quantity="one">%d மணி நேரம்</item>
+        <item quantity="other">%d மணி நேரம்</item>
+    </plurals>
 </resources>

@@ -20,6 +20,12 @@ import com.example.scanpro.core.text.userRequire
 @Suppress("unused")
 class MlKitTranslator : Translator {
 
+    /**
+     * Translates [text] into the language of [targetTag] on the phone. The source language is detected from the
+     * text itself; when it already is the target language, [text] comes back unchanged. The language pack is
+     * downloaded once if it is missing (the only use of the network); the text itself is never uploaded. Long
+     * texts are translated in chunks cut at natural boundaries, so nothing is silently truncated.
+     */
     override suspend fun translate(text: String, targetTag: String): String {
         userRequire(text.isNotBlank(), R.string.err_translation_no_text)
         val detected = LanguageIdentification.getClient().use { identifier ->

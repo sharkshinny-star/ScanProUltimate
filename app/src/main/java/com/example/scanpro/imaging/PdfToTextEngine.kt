@@ -81,13 +81,32 @@ object PdfToTextEngine {
             stripper.startPage = index + 1
             stripper.endPage = index + 1
             val layer = runCatching { stripper.getText(document) }.getOrDefault("").trim()
-            if (layer.isNotEmpty()) {
+            val visible = PageTextRules.countVisible(layer)
+            // A stray line of text over a picture (a scanning app's stamp) is not the page's text: read the picture too.
+            val sparse = visible in 1 until PageTextRules.SPARSE_TEXT_CHARS && PageTextRules.pageHasImage(document.getPage(index))
+            fun layerPage(): PdfTextPage {
                 val words = if (withWords) runCatching { WordPositionStripper.words(document, index) }.getOrDefault(emptyList()) else emptyList()
-                pages += PdfTextPage(layer, PageTextSource.TEXT_LAYER, words)
-            } else {
+                return PdfTextPage(layer, PageTextSource.TEXT_LAYER, words)
+            }
+            if (visible > 0 && !sparse) {
+                pages += layerPage()
+            } else if (visible == 0) {
                 val read = ocrPage(index)
                 val text = read.text.trim()
                 pages += PdfTextPage(text, if (text.isEmpty()) PageTextSource.NONE else PageTextSource.OCR, if (withWords) read.words else emptyList())
+            } else {
+                // The OCR result is used only when it reads more than the layer holds; if OCR fails, the layer stays.
+                val read = try {
+                    ocrPage(index)
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    null
+                }
+                val text = read?.text?.trim().orEmpty()
+                pages += if (read != null && PageTextRules.countVisible(text) > visible) {
+                    PdfTextPage(text, PageTextSource.OCR, if (withWords) read.words else emptyList())
+                } else layerPage()
             }
         }
         return pages

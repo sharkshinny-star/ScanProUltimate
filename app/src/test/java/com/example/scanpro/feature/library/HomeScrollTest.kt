@@ -10,6 +10,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.onFirst
 import androidx.test.core.app.ApplicationProvider
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.ScanProTheme
@@ -73,8 +75,13 @@ class HomeScrollTest {
         // Search launcher must still be displayed at the top and not pushed off-screen
         compose.onNodeWithText(searchHint).assertIsDisplayed()
 
-        // Scrolling to the bottom reveals the tips card
-        compose.onNodeWithText(app.getString(R.string.tip_eyebrow).uppercase()).performScrollTo().assertIsDisplayed()
+        // Scrolling to the bottom reveals the tips card. The list is scrolled to it (performScrollToNode): a lazy list
+        // composes only what is near the screen, and the card may sit below that (F179 gave Recent cards a fixed two-line
+        // title, so they are taller), where performScrollTo() on the text found no node to scroll to.
+        val tipEyebrow = app.getString(R.string.tip_eyebrow).uppercase()
+        compose.onAllNodes(androidx.compose.ui.test.hasScrollToNodeAction()).onFirst()
+            .performScrollToNode(androidx.compose.ui.test.hasText(tipEyebrow))
+        compose.onNodeWithText(tipEyebrow).assertIsDisplayed()
     }
 
     @Test

@@ -18,6 +18,7 @@ class DocumentRepositoryRedrawTest : RepositoryTestBase() {
 
     private val tilted = CropQuad(topLeft = NormalizedPoint(0.1f, 0.1f), topRight = NormalizedPoint(0.9f, 0.05f))
 
+    /** Applying a filter to one page redraws only that page, reads its text again, leaves the other pages as they were, and marks the saved PDF out of date. */
     @Test fun applyFilterRedrawsOnlyThatPageAndReadsItsTextAgain() = runBlocking {
         val doc = newDocument(3)
         val target = doc.page(1)
@@ -65,6 +66,7 @@ class DocumentRepositoryRedrawTest : RepositoryTestBase() {
         assertEquals(wild.normalized(), renders.single().adjustments)
     }
 
+    /** Applying one page's adjustments to all pages copies only the shadow and finger clean-up switches; brightness and the other settings stay each page's own. */
     @Test fun adjustmentsForAllPagesShareOnlyTheCleanUpSwitches() = runBlocking {
         val doc = newDocument(3)
         val chosen = PageAdjustments(brightness = 0.3f, removeShadows = true, removeFingers = true)
@@ -120,6 +122,7 @@ class DocumentRepositoryRedrawTest : RepositoryTestBase() {
         assertEquals("text 0", load(doc.id)!!.pages.single().ocrText)
     }
 
+    /** Text corrected by hand is kept when a filter redraws the page, but adding a redaction reads the page again and drops the correction, so redacted words cannot survive in it. */
     @Test fun handCorrectedTextSurvivesFiltersButNotRedactions() = runBlocking {
         val doc = newDocument(1)
         val id = doc.pages.single().id
@@ -138,6 +141,7 @@ class DocumentRepositoryRedrawTest : RepositoryTestBase() {
         }
     }
 
+    /** Removing the last annotation reads the page's text again only when it was a redaction; removing a highlight does not change the text. */
     @Test fun removingARedactionReadsThePageAgainButRemovingAHighlightDoesNot() = runBlocking {
         val doc = newDocument(1)
         val id = doc.pages.single().id
@@ -152,6 +156,7 @@ class DocumentRepositoryRedrawTest : RepositoryTestBase() {
         assertTrue(load(doc.id)!!.pages.single().annotations.isEmpty())
     }
 
+    /** A watermark adds one trimmed text mark to every page, redraws each page, and keeps the pages' text without reading it again. */
     @Test fun watermarkStampsEveryPageAndKeepsItsText() = runBlocking {
         val doc = newDocument(3)
         repository.addWatermark(doc.id, WatermarkStyle(text = "  DRAFT  "))

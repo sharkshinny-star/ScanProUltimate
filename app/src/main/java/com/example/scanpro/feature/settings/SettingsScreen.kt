@@ -105,6 +105,7 @@ fun SettingsRoute(
     val notifyTrash by viewModel.notifyTrash.collectAsStateWithLifecycle()
     val notifyBackup by viewModel.notifyBackup.collectAsStateWithLifecycle()
     val notifyWater by viewModel.notifyWater.collectAsStateWithLifecycle()
+    val waterTiming by viewModel.waterTiming.collectAsStateWithLifecycle()
     // Re-read on every return to the screen: the permission or the system switch may have changed meanwhile.
     var canNotify by remember { mutableStateOf(viewModel.canPostNotifications()) }
     LifecycleResumeEffect(Unit) {
@@ -120,11 +121,13 @@ fun SettingsRoute(
             trash = notifyTrash,
             backup = notifyBackup,
             water = notifyWater,
+            waterTiming = waterTiming,
             onFinishedChange = viewModel::setNotifyFinished,
             onFailuresChange = viewModel::setNotifyFailures,
             onTrashChange = viewModel::setNotifyTrash,
             onBackupChange = viewModel::setNotifyBackup,
             onWaterChange = viewModel::setNotifyWater,
+            onWaterTimingChange = viewModel::setWaterTiming,
             onPermissionResult = { canNotify = viewModel.canPostNotifications() },
             systemSettingsIntent = viewModel::notificationSettingsIntent
         ),
@@ -230,6 +233,10 @@ fun SettingsScreen(
     val resources = LocalResources.current
     val pageBySection = remember(resources) { SettingsPage.entries.associateBy { resources.getString(it.title) } }
     val motion = rememberMotionEnabled()
+    // The main page's scroll lives out here (2026-11-18): AnimatedContent drops its content's state, so coming back from a
+    // page returned to the top of Settings. A page opens at its top, with the bar in its unscrolled colour.
+    val mainScrollState = rememberScrollState()
+    LaunchedEffect(page) { if (page != null) scrollBehavior.state.contentOffset = 0f }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -270,7 +277,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             label = "settingsPage"
         ) { target ->
-            val scrollState = rememberScrollState()
+            val scrollState = if (target == null) mainScrollState else rememberScrollState()
             val locator = remember(scrollState) { SettingsLocator(scrollState) }
             LaunchedEffect(pendingJump, query, target) {
                 val title = pendingJump ?: return@LaunchedEffect
@@ -369,6 +376,7 @@ fun SettingsScreen(
                             SettingsPage.PRIVACY -> PrivacyPage(appLock = appLock, onAppLockChange = onAppLockChange)
                             SettingsPage.SHORTCUTS -> ShortcutsPage()
                             SettingsPage.SUPPORT -> SupportPage(snackbarHostState)
+                            SettingsPage.ABOUT -> AboutPage(onOpenPrivacy = { page = SettingsPage.PRIVACY })
                         }
                     }
                 }

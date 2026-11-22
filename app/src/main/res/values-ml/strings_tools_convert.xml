@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Convert and info tools (F211). Machine translation into Malayalam, not yet reviewed by a speaker. -->
+    <string name="cvt_reading_pdf">PDF വായിക്കുന്നു…</string>
+    <string name="cvt_pdf_unreadable">ഈ PDF തുറക്കാനാവുന്നില്ല. ആദ്യം PDF നന്നാക്കുക പരീക്ഷിക്കൂ.</string>
+    <string name="cvt_pdf_locked">ഈ PDF-ന് പാസ്‌വേഡ് വേണം. ആദ്യം അൺലോക്ക് ചെയ്യൂ.</string>
+    <string name="cvt_checking_pages">ഏതു പേജുകളിൽ ടെക്സ്റ്റുണ്ടെന്ന് നോക്കുന്നു…</string>
+    <string name="cvt_up_to">%1$s വരെ</string>
+    <string name="cvt_portrait">നിവർന്ന്</string>
+    <string name="cvt_landscape">കിടന്ന്</string>
+    <plurals name="cvt_pictures">
+        <item quantity="one">%1$d ചിത്രം</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ</item>
+    </plurals>
+    <string name="cvt_dpi_screen">സ്ക്രീൻ: സന്ദേശങ്ങൾക്ക് ചെറിയ ഫയലുകൾ</string>
+    <string name="cvt_dpi_standard">സാധാരണ: ഏതു ഫോണിലും കമ്പ്യൂട്ടറിലും വ്യക്തം</string>
+    <string name="cvt_dpi_sharp">മൂർച്ചയുള്ളത്: ചെറിയ അക്ഷരങ്ങൾ സൂം ചെയ്ത് വായിക്കാം</string>
+    <string name="cvt_dpi_print">പ്രിന്റ്: വലിയ ഫയലുകൾ, അച്ചടിക്ക് അനുയോജ്യം</string>
+    <string name="cvt_dpi_pixels">%1$d dpi-ൽ ഓരോ ചിത്രവും %2$s ആയിരിക്കും.</string>
+    <string name="cvt_format_jpg">JPG: സ്കാനുകൾക്കും ഫോട്ടോകൾക്കും ഏറ്റവും ചെറിയ ഫയലുകൾ.</string>
+    <string name="cvt_format_png">PNG: നഷ്ടമില്ല, ടെക്സ്റ്റും വരകളും വ്യക്തമായി നിൽക്കും; ഫയലുകൾ വലുത്.</string>
+    <string name="cvt_format_webp">WebP: JPG-യെക്കാൾ ചെറുത്, പക്ഷേ ചില പഴയ ആപ്പുകൾ ഇത് തുറക്കില്ല.</string>
+    <string name="cvt_pages_type">എക്സ്പോർട്ട് ചെയ്യേണ്ട പേജുകൾ എഴുതൂ, ഉദാ. 1–3, 7</string>
+    <string name="cvt_pdf2img_mixed">പേജുകളുടെ വലുപ്പം വ്യത്യസ്തമാണ്; ഏറ്റവും വലിയ ചിത്രം കാണിക്കുന്നു.</string>
+    <string name="cvt_pdf2img_single">ഒരു %1$s ചിത്രം, പങ്കിടാൻ തയ്യാർ</string>
+    <plurals name="cvt_pdf2img_zip">
+        <item quantity="one">%1$d %2$s ചിത്രം, ഒരു zip ഫയലിൽ</item>
+        <item quantity="other">%1$d %2$s ചിത്രങ്ങൾ, ഒന്നിച്ച് ഒരു zip ഫയലിൽ</item>
+    </plurals>
+    <plurals name="cvt_pdf2img_action">
+        <item quantity="one">%1$d ചിത്രം എക്സ്പോർട്ട് ചെയ്യൂ</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ എക്സ്പോർട്ട് ചെയ്യൂ</item>
+    </plurals>
+    <plurals name="cvt_pdf2img_capped">
+        <item quantity="one">%1$d പേജ് ഈ റെസല്യൂഷനു വളരെ വലുതാണ്, അതിനാൽ അതിന്റെ ചിത്രം നീളമുള്ള വശത്ത് %2$d px ആകും.</item>
+        <item quantity="other">%1$d പേജുകൾ ഈ റെസല്യൂഷനു വളരെ വലുതാണ്, അതിനാൽ അവയുടെ ചിത്രങ്ങൾ നീളമുള്ള വശത്ത് %2$d px ആകും.</item>
+    </plurals>
+    <plurals name="cvt_pages_chosen">
+        <item quantity="one">%1$d പേജ് തിരഞ്ഞെടുത്തു</item>
+        <item quantity="other">%1$d പേജുകൾ തിരഞ്ഞെടുത്തു</item>
+    </plurals>
+    <string name="cvt_reading_images">ചിത്രങ്ങൾ വായിക്കുന്നു…</string>
+    <string name="cvt_img2pdf_orientation">ഓരോ പേജും അതിന്റെ ചിത്രത്തിനനുസരിച്ച് നിവർന്നോ കിടന്നോ ആകും.</string>
+    <string name="cvt_img2pdf_quality_hint">ചിത്രങ്ങൾ നീളമുള്ള വശത്ത് %1$d px വരെ സൂക്ഷിക്കും; അതിലും വലുതുള്ളവ ചെറുതാക്കും.</string>
+    <string name="cvt_margin">മാർജിൻ</string>
+    <string name="cvt_margin_none">ഇല്ല</string>
+    <string name="cvt_margin_small">ചെറുത്</string>
+    <string name="cvt_margin_large">വലുത്</string>
+    <string name="cvt_margin_hint">ഓരോ ചിത്രത്തിനും ചുറ്റും %1$d mm വെള്ള ഇടം.</string>
+    <plurals name="cvt_img2pdf_support">
+        <item quantity="one">ചിത്രത്തോടു കൂടി %1$d പേജ്</item>
+        <item quantity="other">%1$d പേജുകൾ, ഓരോന്നിലും ഒരു ചിത്രം, നിങ്ങൾ ക്രമീകരിച്ച ക്രമത്തിൽ</item>
+    </plurals>
+    <plurals name="cvt_img2pdf_unreadable">
+        <item quantity="one">%1$d ചിത്രം വായിക്കാനായില്ല, അത് ഒഴിവാക്കി.</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ വായിക്കാനായില്ല, അവ ഒഴിവാക്കി.</item>
+    </plurals>
+    <plurals name="cvt_img2pdf_soft">
+        <item quantity="one">%1$d ചിത്രത്തിന് അതിന്റെ പേജിൽ ഇഞ്ചിൽ %2$d-ൽ കുറവ് ഡോട്ടുകളേ ഉള്ളൂ; അച്ചടിക്കുമ്പോൾ മങ്ങിയേക്കാം.</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾക്ക് അവയുടെ പേജുകളിൽ ഇഞ്ചിൽ %2$d-ൽ കുറവ് ഡോട്ടുകളേ ഉള്ളൂ; അച്ചടിക്കുമ്പോൾ മങ്ങിയേക്കാം.</item>
+    </plurals>
+    <string name="cvt_office_reading">ഫയൽ വായിക്കുന്നു…</string>
+    <string name="cvt_office_action">PDF ആക്കുക</string>
+    <string name="cvt_office_support">ഈ ഫോണിൽത്തന്നെ മാറ്റുന്നു; ഒന്നും അപ്‌ലോഡ് ചെയ്യുന്നില്ല.</string>
+    <string name="cvt_office_after_pdf">PDF</string>
+    <string name="cvt_office_pages_later">മാറ്റുമ്പോൾ പേജുകൾ എണ്ണും</string>
+    <string name="cvt_office_legacy">ഇത് പഴയ Office ഫയലാണ് (.doc, .xls അല്ലെങ്കിൽ .ppt), അല്ലെങ്കിൽ പാസ്‌വേഡ് കൊണ്ട് പൂട്ടിയതാണ്. Office-ലോ Google Docs-ലോ തുറന്ന് .docx, .xlsx അല്ലെങ്കിൽ .pptx ആയി സേവ് ചെയ്ത്, ആ പകർപ്പ് മാറ്റുക.</string>
+    <string name="cvt_office_kind_docx">Word ഡോക്യുമെന്റ്</string>
+    <string name="cvt_office_kind_xlsx">Excel വർക്ക്ബുക്ക്</string>
+    <string name="cvt_office_kind_pptx">PowerPoint പ്രസന്റേഷൻ</string>
+    <string name="cvt_office_kind_text">ടെക്സ്റ്റ് ഫയൽ</string>
+    <string name="cvt_office_kind_csv">CSV പട്ടിക</string>
+    <string name="cvt_office_kind_html">വെബ് പേജ്</string>
+    <string name="cvt_office_kind_unknown">ഫയൽ</string>
+    <string name="cvt_office_fact_slides">സ്ലൈഡുകൾ</string>
+    <string name="cvt_office_fact_sheets">ഷീറ്റുകൾ</string>
+    <string name="cvt_office_fact_lines">വരികൾ</string>
+    <string name="cvt_office_fact_pictures">ചിത്രങ്ങൾ</string>
+    <string name="cvt_office_fact_paper">കടലാസ്</string>
+    <string name="cvt_office_paper_value">A4, 16 mm മാർജിൻ</string>
+    <string name="cvt_office_kept_docx">ടെക്സ്റ്റ്, തലക്കെട്ടുകൾ, പട്ടികകൾ, ലിസ്റ്റുകൾ, ചിത്രങ്ങൾ എന്നിവ നിലനിൽക്കും. പേജുകൾ A4 പ്രകാരമായതിനാൽ Word-ൽ നിന്ന് വേറെ സ്ഥലങ്ങളിൽ മുറിഞ്ഞേക്കാം; ടെക്സ്റ്റ് ബോക്സുകൾ, രൂപങ്ങൾ, ചാർട്ടുകൾ വരില്ല.</string>
+    <string name="cvt_office_kept_xlsx">കാണാവുന്ന ഓരോ ഷീറ്റും മൂല്യങ്ങളോടെ ഒരു പട്ടികയാകും. ചാർട്ടുകൾ, സെല്ലുകളിലെ ചിത്രങ്ങൾ, നിറങ്ങൾ എന്നിവ വരില്ല.</string>
+    <string name="cvt_office_kept_pptx">ഓരോ സ്ലൈഡും അതിന്റെ ടെക്സ്റ്റും ചിത്രങ്ങളുമായി ഒരു പേജാകും, സ്ലൈഡ് ക്രമത്തിൽ. ഡിസൈൻ, പശ്ചാത്തലം, ചാർട്ടുകൾ, ആനിമേഷനുകൾ എന്നിവ വരില്ല.</string>
+    <string name="cvt_office_kept_text">ടെക്സ്റ്റ് ഉള്ളതുപോലെ, വരിവരിയായി നിലനിൽക്കും; CSV ഫയലുകൾ പട്ടികയാകും.</string>
+    <string name="cvt_office_kept_html">പേജിലെ ടെക്സ്റ്റ്, പട്ടികകൾ, ഉള്ളിലുള്ള ചിത്രങ്ങൾ എന്നിവ നിലനിൽക്കും. ഇന്റർനെറ്റിൽ നിന്ന് ഒന്നും ലോഡ് ചെയ്യില്ല.</string>
+    <string name="office_note_slides_truncated">ആദ്യത്തെ %1$s സ്ലൈഡുകൾ മാത്രമേ മാറ്റിയിട്ടുള്ളൂ; ബാക്കി ഒഴിവാക്കി.</string>
+    <string name="office_err_empty_result">മാറ്റിയപ്പോൾ ഒരു പേജും ഉണ്ടായില്ല. ഫയൽ ശൂന്യമോ കേടായതോ ആകാം.</string>
+    <plurals name="cvt_office_slides">
+        <item quantity="one">കുറഞ്ഞത് %1$d പേജ്, ഓരോ സ്ലൈഡിനും ഒന്ന്</item>
+        <item quantity="other">കുറഞ്ഞത് %1$d പേജുകൾ, ഓരോ സ്ലൈഡിനും ഒന്ന്</item>
+    </plurals>
+    <plurals name="cvt_office_sheets">
+        <item quantity="one">പട്ടികയായി %1$d ഷീറ്റ്</item>
+        <item quantity="other">%1$d ഷീറ്റുകൾ, ഓരോന്നും പട്ടികയായി</item>
+    </plurals>
+    <plurals name="cvt_office_lines">
+        <item quantity="one">ടെക്സ്റ്റിന്റെ %1$d വരി</item>
+        <item quantity="other">ടെക്സ്റ്റിന്റെ %1$d വരികൾ</item>
+    </plurals>
+    <plurals name="cvt_office_hidden_sheets">
+        <item quantity="one">%1$d മറച്ച ഷീറ്റ് ഒഴിവാക്കി, Excel അച്ചടിക്കുമ്പോൾ ഒഴിവാക്കുന്നതുപോലെ.</item>
+        <item quantity="other">%1$d മറച്ച ഷീറ്റുകൾ ഒഴിവാക്കി, Excel അച്ചടിക്കുമ്പോൾ ഒഴിവാക്കുന്നതുപോലെ.</item>
+    </plurals>
+    <string name="cvt_text_after_word">Word ഡോക്യുമെന്റ്</string>
+    <string name="cvt_text_after_text">ടെക്സ്റ്റ് ഫയൽ</string>
+    <string name="cvt_text_fact_layer">ടെക്സ്റ്റുള്ള പേജുകൾ (പകർത്തും)</string>
+    <string name="cvt_text_fact_ocr">ടെക്സ്റ്റ് തിരിച്ചറിയൽ വഴി വായിക്കുന്ന പേജുകൾ</string>
+    <string name="cvt_text_locked">ഈ PDF-ന് പാസ്‌വേഡുണ്ട്; നിങ്ങളോട് ചോദിക്കും.</string>
+    <string name="cvt_ocr_support">ഇതിനകം ടെക്സ്റ്റുള്ള പേജുകൾ അതേപടി നിലനിൽക്കും.</string>
+    <string name="cvt_ocr_nothing">എല്ലാ പേജിലും ഇതിനകം ടെക്സ്റ്റുണ്ട്, അതിനാൽ ഈ PDF ഇതിനകം തിരയാവുന്നതാണ്.</string>
+    <plurals name="cvt_text_after_sheets">
+        <item quantity="one">%1$d ഷീറ്റ്</item>
+        <item quantity="other">%1$d ഷീറ്റുകൾ, ഓരോ പേജിനും ഒന്ന്</item>
+    </plurals>
+    <plurals name="cvt_text_ocr_support">
+        <item quantity="one">%1$d പേജ് ടെക്സ്റ്റ് തിരിച്ചറിയൽ വഴി വായിക്കും, കുറച്ച് സെക്കൻഡ് എടുക്കും.</item>
+        <item quantity="other">%1$d പേജുകൾ ടെക്സ്റ്റ് തിരിച്ചറിയൽ വഴി വായിക്കും, ഓരോന്നിനും കുറച്ച് സെക്കൻഡ് എടുക്കും.</item>
+    </plurals>
+    <plurals name="cvt_ocr_action">
+        <item quantity="one">%1$d പേജ് വായിക്കൂ</item>
+        <item quantity="other">%1$d പേജുകൾ വായിക്കൂ</item>
+    </plurals>
+    <string name="cvt_ximg_looking">ചിത്രങ്ങൾ തിരയുന്നു…</string>
+    <string name="cvt_ximg_zip">ഒന്നിച്ച് ഒരു zip ഫയലായി പങ്കിടും</string>
+    <string name="cvt_ximg_fact_pictures">ചിത്രങ്ങൾ</string>
+    <string name="cvt_ximg_fact_pages">ചിത്രങ്ങളുള്ള പേജുകൾ</string>
+    <string name="cvt_ximg_fact_formats">ഫോർമാറ്റുകൾ</string>
+    <string name="cvt_ximg_hint">JPG ചിത്രങ്ങൾ ഉള്ളതുപോലെ, ഗുണമേന്മ നഷ്ടപ്പെടാതെ സേവ് ചെയ്യും; മറ്റുള്ളവയും സുതാര്യഭാഗമുള്ളവയും PNG ആയി സേവ് ചെയ്യും. പല പേജുകളിൽ ഉപയോഗിച്ച ചിത്രം ഒരിക്കൽ മാത്രം സേവ് ചെയ്യും.</string>
+    <plurals name="cvt_ximg_action">
+        <item quantity="one">%1$d ചിത്രം സേവ് ചെയ്യൂ</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ സേവ് ചെയ്യൂ</item>
+    </plurals>
+    <plurals name="cvt_ximg_tiny">
+        <item quantity="one">%1$d വളരെ ചെറിയ ചിത്രം (വര, ബുള്ളറ്റ് അല്ലെങ്കിൽ ഇടം) ഒഴിവാക്കി.</item>
+        <item quantity="other">%1$d വളരെ ചെറിയ ചിത്രങ്ങൾ (വരകൾ, ബുള്ളറ്റുകൾ, ഇടങ്ങൾ) ഒഴിവാക്കി.</item>
+    </plurals>
+    <plurals name="cvt_ximg_unreadable">
+        <item quantity="one">%1$d ചിത്രം JPEG 2000 അല്ലെങ്കിൽ JBIG2 ആണ്, ഈ ഫോൺ അത് തുറന്നേക്കില്ല. അങ്ങനെയെങ്കിൽ അത് ഒഴിവാക്കും, ഫലത്തിൽ അത് പറയും.</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ JPEG 2000 അല്ലെങ്കിൽ JBIG2 ആണ്, ഈ ഫോൺ അവ തുറന്നേക്കില്ല. അങ്ങനെയെങ്കിൽ അവ ഒഴിവാക്കും, ഫലത്തിൽ അത് പറയും.</item>
+    </plurals>
+    <plurals name="ximg_skipped">
+        <item quantity="one">%1$d ചിത്രം ഈ ഫോണിൽ വായിക്കാനായില്ല, അത് ഒഴിവാക്കി.</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ ഈ ഫോണിൽ വായിക്കാനായില്ല, അവ ഒഴിവാക്കി.</item>
+    </plurals>
+    <string name="cvt_info_page_size">പേജ് വലുപ്പം</string>
+    <string name="cvt_info_mixed_sizes">ചില പേജുകൾക്ക് വേറെ വലുപ്പമാണ്.</string>
+    <string name="cvt_info_bytes">%1$s ബൈറ്റ്</string>
+    <string name="cvt_info_security">സുരക്ഷ</string>
+    <string name="cvt_info_encrypted">പാസ്‌വേഡ് അല്ലെങ്കിൽ നിയന്ത്രണങ്ങൾ</string>
+    <string name="cvt_info_not_encrypted">പാസ്‌വേഡോ നിയന്ത്രണങ്ങളോ ഇല്ല</string>
+    <string name="cvt_info_form_fields">ഫോം ഫീൽഡുകൾ</string>
+    <string name="cvt_info_none">ഇല്ല</string>
+    <string name="cvt_info_save_support">പുതിയ വിവരങ്ങളോടെ ഒരു പകർപ്പ് സേവ് ചെയ്യും; യഥാർത്ഥ ഫയൽ മാറില്ല.</string>
+    <string name="cvt_info_change_to_save">പകർപ്പ് സേവ് ചെയ്യാൻ താഴെ ഏതെങ്കിലും വിവരം മാറ്റൂ.</string>
+    <string name="cvt_repair_checking">ഫയൽ പരിശോധിക്കുന്നു…</string>
+    <string name="cvt_repair_action">PDF നന്നാക്കുക</string>
+    <string name="cvt_repair_viewer">ഫോണിലെ PDF വ്യൂവർ</string>
+    <string name="cvt_repair_structure">ഫയൽ ഘടന</string>
+    <string name="cvt_repair_cannot_open">തുറക്കാനാവില്ല</string>
+    <string name="cvt_repair_damaged">കേടായി</string>
+    <string name="cvt_repair_password">പാസ്‌വേഡ് വേണം</string>
+    <string name="cvt_repair_nothing">ഈ ഫയലിൽ ഒന്നും പേജുകളായി വായിക്കാനാവില്ല, അതിനാൽ വീണ്ടെടുക്കാൻ ഒന്നുമില്ല.</string>
+    <string name="cvt_repair_not_pdf">ഈ ഫയൽ PDF അല്ല, അതിനാൽ നന്നാക്കാൻ ഒന്നുമില്ല.</string>
+    <string name="cvt_repair_plan_missing">ഫോണിന് കാണിക്കാനാവുന്ന %2$d പേജുകളിൽ %1$d എണ്ണം മാത്രമേ ഘടനയിലുള്ളൂ. ഒന്നും നഷ്ടപ്പെടാതിരിക്കാൻ പേജുകൾ ചിത്രങ്ങളായി പുനർനിർമ്മിക്കും; പിന്നെ അവയിലെ ടെക്സ്റ്റ് തിരഞ്ഞെടുക്കാനാവില്ല.</string>
+    <plurals name="cvt_repair_opens">
+        <item quantity="one">തുറക്കുന്നു, %1$d പേജ്</item>
+        <item quantity="other">തുറക്കുന്നു, %1$d പേജുകൾ</item>
+    </plurals>
+    <plurals name="cvt_repair_reads">
+        <item quantity="one">വായിക്കാം, %1$d പേജ്</item>
+        <item quantity="other">വായിക്കാം, %1$d പേജുകൾ</item>
+    </plurals>
+    <plurals name="cvt_repair_plan_clean">
+        <item quantity="one">ഘടന വായിക്കാം: അതിന്റെ %1$d പേജും ടെക്സ്റ്റുമായി പുതിയ പകർപ്പ് എഴുതും.</item>
+        <item quantity="other">ഘടന വായിക്കാം: എല്ലാ %1$d പേജുകളും അവയുടെ ടെക്സ്റ്റുമായി പുതിയ പകർപ്പ് എഴുതും.</item>
+    </plurals>
+    <plurals name="cvt_repair_plan_pictures">
+        <item quantity="one">ഘടന തകർന്നിരിക്കുന്നു, എങ്കിലും ഫോണിന് %1$d പേജ് ഇപ്പോഴും കാണിക്കാം. അത് ചിത്രമായി പുനർനിർമ്മിക്കും, അതിനാൽ അതിലെ ടെക്സ്റ്റ് തിരഞ്ഞെടുക്കാനാവില്ല.</item>
+        <item quantity="other">ഘടന തകർന്നിരിക്കുന്നു, എങ്കിലും ഫോണിന് %1$d പേജുകൾ ഇപ്പോഴും കാണിക്കാം. അവ ചിത്രങ്ങളായി പുനർനിർമ്മിക്കും, അതിനാൽ അവയിലെ ടെക്സ്റ്റ് തിരഞ്ഞെടുക്കാനാവില്ല.</item>
+    </plurals>
+    <plurals name="tools_repair_partial">
+        <item quantity="one">PDF പുനർനിർമ്മിച്ചു, പക്ഷേ %2$d-ൽ %1$d പേജ് മാത്രമേ വീണ്ടെടുക്കാനായുള്ളൂ.</item>
+        <item quantity="other">PDF പുനർനിർമ്മിച്ചു, പക്ഷേ %2$d-ൽ %1$d പേജുകൾ മാത്രമേ വീണ്ടെടുക്കാനായുള്ളൂ.</item>
+    </plurals>
+    <string name="tools_form_saved_no_changes">ഫോം സേവ് ചെയ്തു (മാറ്റങ്ങളില്ല)</string>
+    <string name="tools_form_err_flatten_font">ചില ഉത്തരങ്ങളിൽ ഈ ഫോമിന്റെ ഫോണ്ടിന് കാണിക്കാനാവാത്ത അക്ഷരങ്ങളുണ്ട്, അതിനാൽ ഫോം ഫ്ലാറ്റൻ ചെയ്യാനാവില്ല. ഫ്ലാറ്റൻ ചെയ്യാതെ സേവ് ചെയ്യൂ: PDF വ്യൂവറുകൾ അവ കാണിക്കും.</string>
+    <plurals name="tools_form_filled">
+        <item quantity="one">%1$d ഫീൽഡ് പൂരിപ്പിച്ചു</item>
+        <item quantity="other">%1$d ഫീൽഡുകൾ പൂരിപ്പിച്ചു</item>
+    </plurals>
+    <plurals name="tools_form_filled_flattened">
+        <item quantity="one">%1$d ഫീൽഡ് പൂരിപ്പിച്ച് ഫോം ഫ്ലാറ്റൻ ചെയ്തു</item>
+        <item quantity="other">%1$d ഫീൽഡുകൾ പൂരിപ്പിച്ച് ഫോം ഫ്ലാറ്റൻ ചെയ്തു</item>
+    </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="cvt_ximg_all_selected">എല്ലാം തിരഞ്ഞെടുത്തു (%1$d)</string>
+    <string name="cvt_ximg_choose_title">ചിത്രങ്ങൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="cvt_ximg_choose_unopened">എല്ലാം സേവ് ചെയ്യുക, അല്ലെങ്കിൽ വേണ്ടവ മാത്രം ടിക്ക് ചെയ്യുക</string>
+    <string name="cvt_ximg_from_page">പേജ് %1$d</string>
+    <string name="cvt_ximg_in_selection">തിരഞ്ഞെടുത്തു</string>
+    <string name="cvt_ximg_none_ticked">സേവ് ചെയ്യാൻ കുറഞ്ഞത് ഒരു ചിത്രം ടിക്ക് ചെയ്യുക</string>
+    <string name="cvt_ximg_not_in_selection">തിരഞ്ഞെടുത്തിട്ടില്ല</string>
+    <string name="cvt_ximg_picture_of">ചിത്രം %1$d / %2$d</string>
+    <string name="cvt_ximg_prepare_failed">ചിത്രങ്ങൾ വായിക്കാനായില്ല. ഇത് അടച്ച് വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="cvt_ximg_preparing">ചിത്രങ്ങൾ തയ്യാറാക്കുന്നു…</string>
+    <string name="cvt_ximg_select_all">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
+    <string name="cvt_ximg_select_none">മായ്ക്കുക</string>
+    <string name="cvt_ximg_selected_of">%2$d-ൽ %1$d തിരഞ്ഞെടുത്തു</string>
+    <string name="cvt_ximg_tick">ഈ ചിത്രം തിരഞ്ഞെടുക്കുക</string>
+    <string name="cvt_ximg_untick">തിരഞ്ഞെടുപ്പിൽ നിന്ന് നീക്കുക</string>
+    <string name="cvt_ximg_view_larger">ചിത്രം വലുതായി കാണുക</string>
+    <plurals name="cvt_ximg_pick_done">
+        <item quantity="one">പൂർത്തിയായി · %1$d തിരഞ്ഞെടുത്തു</item>
+        <item quantity="other">പൂർത്തിയായി · %1$d തിരഞ്ഞെടുത്തു</item>
+    </plurals>
+</resources>

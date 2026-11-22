@@ -99,6 +99,9 @@ import kotlin.math.hypot
 private val RotateLeftIcon: ImageVector = Icons.Filled.Rotate90DegreesCcw
 private val RotateRightIcon: ImageVector = Icons.Filled.Rotate90DegreesCw
 
+/** The photo turned for display: [turns] quarter turns clockwise of the photo at [path]. */
+private class TurnedPicture(val bitmap: Bitmap?, val turns: Int, val path: String)
+
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun CropEditorDialog(
@@ -120,17 +123,14 @@ fun CropEditorDialog(
      */
     turns: Int = 0
 ) {
-    val shownInitial = remember(initial, turns) { turnQuad(initial, turns) }
+    // The turn the picture on screen has. It follows [turns] once the turned picture is ready (see below), so for the
+    // moment in between the outline, the picture and everything worked out from them still agree with each other.
+    var shownTurns by rememberSaveable(initial, sourcePath) { mutableIntStateOf(turns) }
+    val shownInitial = remember(initial, shownTurns) { turnQuad(initial, shownTurns) }
     // Held above the dialog and saved, so a rotation keeps the outline the user has drawn. In the turned photo's terms.
     var crop by rememberSaveable(initial, sourcePath, saver = CropStateSaver) { mutableStateOf(shownInitial) }
-    var shownTurns by rememberSaveable(initial, sourcePath) { mutableIntStateOf(turns) }
-    if (shownTurns != turns) {
-        // Rotate was tapped: the outline being drawn turns with the picture.
-        crop = turnQuad(crop, turns - shownTurns)
-        shownTurns = turns
-    }
     // Back to the unturned photo. An untouched outline is handed back exactly as it came, so it is not taken for an edit.
-    fun toSource(shown: CropQuad) = if (shown == shownInitial) initial else turnQuad(shown, -turns)
+    fun toSource(shown: CropQuad) = if (shown == shownInitial) initial else turnQuad(shown, -shownTurns)
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var panelHeightPx by remember { mutableIntStateOf(0) }
     // Back and the arrow ask first once the outline differs from where it started.
@@ -185,14 +185,27 @@ fun CropEditorDialog(
                 result
             }
         }
-        // Turned here rather than on reload, so the picture and the outline turn in the same frame.
-        val bitmap = remember(unturned, turns) {
+        // The picture is turned off the main thread (2026-11-19): turning a 2000 px photo during composition froze the
+        // editor for a moment on every tap of Rotate. Until the turned picture is ready the old one stays up with its
+        // outline; the outline then turns in the same frame the new picture is first shown.
+        val turned by produceState<TurnedPicture?>(initialValue = null, unturned, turns, sourcePath) {
             val base = unturned
             val quarter = ((turns % 4) + 4) % 4
-            if (base == null || quarter == 0) base
-            else runCatching {
-                Bitmap.createBitmap(base, 0, 0, base.width, base.height, android.graphics.Matrix().apply { postRotate(90f * quarter) }, true)
-            }.getOrDefault(base)
+            val picture = if (base == null || quarter == 0) base else withContext(Dispatchers.Default) {
+                runCatching {
+                    // Quarter turns move whole pixels: no filtering needed, which is also faster.
+                    Bitmap.createBitmap(base, 0, 0, base.width, base.height, android.graphics.Matrix().apply { postRotate(90f * quarter) }, false)
+                }.getOrDefault(base)
+            }
+            value = TurnedPicture(picture, turns, sourcePath)
+        }
+        val bitmap = turned?.bitmap
+        turned?.let { ready ->
+            if (ready.path == sourcePath && ready.turns == turns && shownTurns != turns) {
+                // Rotate was tapped and its picture has arrived: the outline being drawn turns with it.
+                crop = turnQuad(crop, turns - shownTurns)
+                shownTurns = turns
+            }
         }
         val scope = rememberCoroutineScope()
         val latestCrop by rememberUpdatedState(crop)
@@ -203,8 +216,8 @@ fun CropEditorDialog(
         val latestCurveMode by rememberUpdatedState(curveMode)
 
         // The outline and its handles use the same mint as the live scanner, so "found page" looks the same everywhere.
-        val handleColor = ScanProTheme.colors.scanLine
-        val boundaryColor = ScanProTheme.colors.scanLine
+        val handleColor = com.example.scanpro.scanner.PageOutlineBlue
+        val boundaryColor = com.example.scanpro.scanner.PageOutlineBlue
         val pagePreview = stringResource(R.string.a11y_page_preview)
 
         Box(
@@ -242,7 +255,8 @@ fun CropEditorDialog(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .navigationBarsPadding()
+                    // No navigationBarsPadding here: the panel's measured height below already includes the navigation
+                    // bar, so the bar was counted twice and the page drawn smaller and higher than it needed to be.
                     // The bottom panel's real height, not a guess: it grows at large font sizes and wraps in landscape.
                     .padding(top = 56.dp, bottom = if (panelHeightPx > 0) with(LocalDensity.current) { panelHeightPx.toDp() } + 8.dp else 180.dp, start = 16.dp, end = 16.dp),
                 contentAlignment = Alignment.Center
@@ -359,11 +373,13 @@ fun CropEditorDialog(
                             // Explicit receiver: a bare close() would call the dialog's own close lambda, which dismisses the editor on the first draw.
                             this.close()
                         }
-                        drawPath(path, boundaryColor, style = Stroke(width = 6f))
+                        // In dp (2026-11-18): raw pixels made the outline and handles about a third of the review screen's
+                        // on a 3x phone, while their touch radius stayed 48dp.
+                        drawPath(path, boundaryColor, style = Stroke(width = 2.dp.toPx()))
 
                         // Draw 8 Handles (4 Corners + 4 Midpoints)
                         handles.forEachIndexed { index, point ->
-                            val radius = if (index < 4) 18f else 14f
+                            val radius = (if (index < 4) 12.dp else 9.dp).toPx()
                             val bendHandle = curveMode && index >= 4
                             drawCircle(if (bendHandle) DarkChrome.highlight else handleColor, radius = radius, center = point)
                             drawCircle(Color.White, radius = radius * 0.45f, center = point)
@@ -380,7 +396,9 @@ fun CropEditorDialog(
                             val actualWidth = sampleSize.coerceAtMost(image.width - left)
                             val actualHeight = sampleSize.coerceAtMost(image.height - top)
                             val loupe = 132.dp.toPx()
-                            val dstLeft = (size.width - loupe) / 2f
+                            // On the side away from the dragged corner, so the loupe never covers the corner itself
+                            // (a top corner of a narrow receipt sat right under a centred loupe).
+                            val dstLeft = if (normalized.x < 0.5f) size.width - loupe - 12.dp.toPx() else 12.dp.toPx()
                             val dstTop = 12.dp.toPx()
 
                             drawRect(

@@ -1,6 +1,19 @@
 package com.example.scanpro.feature.tools
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -74,6 +87,13 @@ internal fun ToolPage(
     actionIcon: ImageVector? = null,
     actionSupport: String? = null,
     topBarActions: @Composable RowScope.() -> Unit = {},
+    /** The tool's id: shows its "How it works" demonstration (F195), folded at the foot of the page, when it has one. */
+    demoToolId: String? = null,
+    /**
+     * A longer word on what the tool does, kept in the folded "How it works" card in place of the tool's one-line
+     * introduction, so the page does not explain the same thing twice at full weight.
+     */
+    about: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Dialog(
@@ -133,9 +153,13 @@ internal fun ToolPage(
                         .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    content = content
-                )
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Declutter (2026-11-19): the file, the main choice and the estimate lead; the demonstration sits
+                    // folded below them, one row until it is opened.
+                    content()
+                    if (demoToolId != null || about != null) ToolDemoCard(demoToolId, about)
+                }
             }
         }
     }
@@ -215,6 +239,58 @@ internal fun <T> SegmentedChoice(options: List<Pair<T, String>>, selected: T, on
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                 label = { Text(label, maxLines = 1) }
             )
+        }
+    }
+}
+
+/**
+ * Options most people leave as they are, folded under one "More options" row so a tool page leads with its main
+ * choice. Folded when the page opens; whatever is chosen inside still applies while it is folded. No box of its own,
+ * so cards placed inside are not nested in another card.
+ */
+@Composable
+internal fun MoreOptions(
+    modifier: Modifier = Modifier,
+    /** What is chosen inside, shown on the folded row (e.g. "JPG"), so nothing that applies is out of sight. */
+    summary: String? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    val stateText = stringResource(if (open) R.string.tool_demo_shown else R.string.tool_demo_hidden)
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable(role = Role.Button) { open = !open }
+                .semantics { stateDescription = stateText }
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(
+                stringResource(R.string.tools_more_options),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
+            )
+            if (!summary.isNullOrBlank() && !open) {
+                Text(
+                    summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 8.dp).widthIn(max = 160.dp)
+                )
+            }
+            Icon(if (open) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null)
+        }
+        AnimatedVisibility(open) {
+            Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
         }
     }
 }

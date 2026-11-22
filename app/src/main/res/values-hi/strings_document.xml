@@ -270,4 +270,13 @@
     <string name="doc_saved_copy_total">कुल कॉपी करें</string>
     <string name="doc_share_as_word">Word के रूप में साझा करें</string>
     <string name="doc_share_as_word_hint">ScanPro को मिले शब्दों से संपादन योग्य टेक्स्ट</string>
+    <string name="doc_colour_hex">हेक्स कोड</string>
+    <string name="doc_colour_palette">रंग पैलेट</string>
+    <string name="doc_colour_picker_title">रंग चुनें</string>
+    <string name="doc_colour_use">यह रंग लगाएँ</string>
+    <string name="doc_ink_custom">अपना रंग</string>
+    <string name="doc_save_for_next_time_hint">अगली बार इसे सेव किए गए हस्ताक्षरों से चुनें</string>
+    <string name="doc_translate_download_title">भाषा पैक डाउनलोड करें?</string>
+    <string name="doc_translate_download_body">%1$s में पहली बार अनुवाद करने पर उसका भाषा पैक Google से डाउनलोड होता है (हर भाषा के लिए लगभग 30 MB), उसी कनेक्शन से जो आपका फ़ोन अभी इस्तेमाल कर रहा है, मोबाइल डेटा सहित। इसके बाद %1$s में अनुवाद ऑफ़लाइन चलता है।</string>
+    <string name="doc_translate_download_confirm">डाउनलोड करके अनुवाद करें</string>
 </resources>

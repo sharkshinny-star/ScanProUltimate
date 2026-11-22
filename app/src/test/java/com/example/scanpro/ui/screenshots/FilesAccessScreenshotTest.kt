@@ -94,6 +94,14 @@ class FilesAccessScreenshotTest(private val dark: Boolean) {
 
     @Test fun list() = shoot("files-02-list") { List(PhoneFilesState(hasAccess = true, all = files)) }
 
+    /** The storage tiles above the list, as the Files tab shows them. */
+    @Test fun overview() = shoot("files-08-overview") {
+        PhoneFilesList(
+            state = PhoneFilesState(hasAccess = true, all = files), onRefresh = {}, onQueryChange = {}, onFilterChange = {}, onSortChange = {},
+            onToggleSelection = {}, onClearSelection = {}, onOpen = {}, onFileAction = { _, _ -> }, onSelectionAction = {}, processedCount = 12
+        )
+    }
+
     @Test fun listPdfFilter() = shoot("files-03-list-pdf") { List(PhoneFilesState(hasAccess = true, all = files, filter = PhoneFileFilter.PDF)) }
 
     @Test fun selection() = shoot("files-04-selection") {

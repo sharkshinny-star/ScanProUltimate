@@ -1,6 +1,5 @@
 package com.example.scanpro.scanner
 
-import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.filled.Folder
 import com.example.scanpro.feature.library.FolderPickerDialog
 import androidx.compose.material.icons.filled.Edit
@@ -19,6 +18,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.border
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.layout.ContentScale
@@ -43,6 +47,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
@@ -434,47 +439,9 @@ fun ScanReviewScreen(
                 IconButton(enabled = !blocked, onClick = { menu = true }) {
                     Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.scan_review_more))
                 }
-                val curveOn = stringResource(R.string.scan_review_state_on)
+                // Declutter (2026-11-19): only actions on the scan as a whole live here. No crop and Curve are on the
+                // Crop panel and "Use on all pages" on the Filters panel; listing them here too doubled every choice.
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.scan_review_no_crop)) },
-                        leadingIcon = { Icon(Icons.Default.Fullscreen, contentDescription = null) },
-                        enabled = bitmap != null,
-                        onClick = { menu = false; quads[key] = CropQuad.DEFAULT }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.scan_review_curve)) },
-                        leadingIcon = { Icon(Icons.Default.Gesture, contentDescription = null) },
-                        trailingIcon = { if (curveMode) Icon(Icons.Default.Check, contentDescription = curveOn) },
-                        enabled = bitmap != null && quads[key] != null,
-                        modifier = Modifier.semantics { if (curveMode) stateDescription = curveOn },
-                        onClick = {
-                            menu = false
-                            val image = bitmap ?: return@DropdownMenuItem
-                            val start = quads[key] ?: return@DropdownMenuItem
-                            if (curveMode) {
-                                curveMode = false
-                                quads[key] = start.straightened()
-                            } else {
-                                curveMode = true
-                                // The bend handles live on the Crop view, so it comes up with them.
-                                panel = PANEL_CROP
-                                // Start from the page's own edges; the orange handles then fine-tune each bend.
-                                scope.launch {
-                                    val estimated = withContext(Dispatchers.Default) {
-                                        runCatching { ImageProcessor.estimateCurves(image, start) }.getOrDefault(start)
-                                    }
-                                    if (curveMode && quads[key] == start) quads[key] = estimated
-                                }
-                            }
-                        }
-                    )
-                    if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) },
-                            onClick = { menu = false; pages.forEach { filters[it.toString()] = pageFilter }; onDefaultFilterChange(pageFilter) }
-                        )
-                    }
                     if (pages.size > 1) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.scan_review_move_earlier)) },
@@ -588,6 +555,8 @@ fun ScanReviewScreen(
         } } }
 
         // Thumbnails, filters and sliders; below the page, or beside it in landscape.
+        // False with animations turned off in system settings.
+        val panelMotion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
         val lowerControls: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         // Every page as a thumbnail: tap one to adjust it, "+" takes another page.
         ReviewFilmstrip(
@@ -603,50 +572,40 @@ fun ScanReviewScreen(
 
         // Crop, Filters or Adjust, one panel at a time, as Adobe Scan, CamScanner, OKEN and Lens do: the sliders and
         // crop actions no longer take room from the page while nobody is using them. A dot on Adjust says this page's sliders have moved.
-        Row(
-            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Equal-width tabs, icon above a one-line label. They were chips in a plain row: with more than one page the
+        // fourth chip was left about 40 dp on a 360 dp phone, so its label broke into one letter per line and the row
+        // grew tall enough to push the filters half-way down the screen.
+        ReviewToolTabs(
+            tools = buildList {
+                add(ReviewTool(PANEL_CROP, Icons.Default.Crop, stringResource(R.string.doc_crop)))
+                add(ReviewTool(PANEL_FILTERS, Icons.Default.ColorLens, stringResource(R.string.doc_filters)))
+                add(ReviewTool(PANEL_ADJUST, Icons.Default.Tune, stringResource(R.string.scan_review_adjust), marked = adjustments[key] != null))
+                if (pages.size > 1) add(ReviewTool(PANEL_REORDER, Icons.Default.SwapHoriz, stringResource(R.string.scan_review_reorder)))
+            },
+            selected = panel,
+            onSelect = { panel = it },
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp)
+        )
+        // Each tool's controls have a different height (a row of buttons, the filter strip, four sliders). Swapped in
+        // one frame, the page above jumped to its new size; the height now glides and the page follows it.
+        Column(
+            Modifier.fillMaxWidth().then(
+                if (panelMotion) Modifier.animateContentSize(tween(200, easing = androidx.compose.animation.core.FastOutSlowInEasing)) else Modifier
+            )
         ) {
-            FilterChip(
-                selected = panel == PANEL_CROP,
-                onClick = { panel = PANEL_CROP },
-                leadingIcon = { Icon(Icons.Default.Crop, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.doc_crop)) }
-            )
-            FilterChip(
-                selected = panel == PANEL_FILTERS,
-                onClick = { panel = PANEL_FILTERS },
-                leadingIcon = { Icon(Icons.Default.ColorLens, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.doc_filters)) }
-            )
-            FilterChip(
-                selected = panel == PANEL_ADJUST,
-                onClick = { panel = PANEL_ADJUST },
-                leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.scan_review_adjust) + if (adjustments[key] != null) " •" else "") }
-            )
-            if (pages.size > 1) {
-                FilterChip(
-                    selected = panel == PANEL_REORDER,
-                    onClick = { panel = PANEL_REORDER },
-                    leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null, Modifier.size(18.dp)) },
-                    label = { Text(stringResource(R.string.tools_organizer_organize_title).substringBefore(" ")) }
-                )
-            }
-        }
         if (panel == PANEL_CROP) {
             // Dedicated Crop controls directly under the canvas (Adobe Scan style: Auto-detect, No crop, Curve/Straighten).
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
                     enabled = !blocked && bitmap != null,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     onClick = {
                         val image = bitmap ?: return@OutlinedButton
                         scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
@@ -663,8 +622,8 @@ fun ScanReviewScreen(
                 }
                 OutlinedButton(
                     enabled = !blocked && bitmap != null,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     onClick = { quads[key] = CropQuad.DEFAULT }
                 ) {
                     Icon(Icons.Default.Fullscreen, contentDescription = null, Modifier.size(16.dp))
@@ -681,8 +640,9 @@ fun ScanReviewScreen(
                     enabled = !blocked && bitmap != null && quads[key] != null,
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = 48.dp)
                         .semantics { if (curveMode) stateDescription = curveOn },
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     colors = if (curveMode) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) else ButtonDefaults.outlinedButtonColors(),
                     onClick = {
                         val image = bitmap ?: return@OutlinedButton
@@ -737,7 +697,7 @@ fun ScanReviewScreen(
                 }
             }
         } else if (panel == PANEL_ADJUST) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                 AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
                 AdjustmentRow(stringResource(R.string.doc_contrast), sliders.second, !blocked) { setSliders(sliders.first, it, sliders.third) }
                 AdjustmentRow(stringResource(R.string.doc_saturation), sliders.third, !blocked) { setSliders(sliders.first, sliders.second, it) }
@@ -763,7 +723,7 @@ fun ScanReviewScreen(
         } else if (panel == PANEL_REORDER) {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "review_reorder_item" }) { index, uri ->
@@ -772,13 +732,12 @@ fun ScanReviewScreen(
                         shape = RoundedCornerShape(10.dp),
                         color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(1.dp, if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.padding(vertical = 4.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clickable(enabled = !blocked) { onIndexChange(index) }
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .padding(start = 12.dp)
                         ) {
                             Text(
                                 text = "${index + 1}",
@@ -790,14 +749,14 @@ fun ScanReviewScreen(
                             IconButton(
                                 enabled = !blocked && index > 0,
                                 onClick = { movePage(index, index - 1) },
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = stringResource(R.string.scan_review_move_earlier), modifier = Modifier.size(18.dp))
                             }
                             IconButton(
                                 enabled = !blocked && index < pages.lastIndex,
                                 onClick = { movePage(index, index + 1) },
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.scan_review_move_later), modifier = Modifier.size(18.dp))
                             }
@@ -805,6 +764,7 @@ fun ScanReviewScreen(
                     }
                 }
             }
+        }
         }
 
         message?.let {
@@ -1154,6 +1114,60 @@ private fun SaveOptionCell(
     }
 }
 
+/** One of the review's tools: which panel it opens, and whether it carries a dot (this page's sliders have moved). */
+private class ReviewTool(val panel: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector, val label: String, val marked: Boolean = false)
+
+/**
+ * The review's tools as one segmented control: every tool gets the same share of the width, so three or four fit on
+ * any phone, in any language and at any font size (the label shrinks before it is cut, and never wraps).
+ */
+@Composable
+private fun ReviewToolTabs(tools: List<ReviewTool>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(scheme.surfaceContainerHigh)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        tools.forEach { tool ->
+            val isSelected = tool.panel == selected
+            val container by androidx.compose.animation.animateColorAsState(
+                if (isSelected) scheme.secondaryContainer else Color.Transparent, tween(160), label = "toolTab"
+            )
+            val content by androidx.compose.animation.animateColorAsState(
+                if (isSelected) scheme.onSecondaryContainer else scheme.onSurfaceVariant, tween(160), label = "toolTabContent"
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(container)
+                    .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(tool.panel) })
+                    .heightIn(min = 48.dp)
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box {
+                    Icon(tool.icon, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
+                    if (tool.marked) {
+                        Box(Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-2).dp).size(7.dp).background(scheme.primary, CircleShape))
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
+                com.example.scanpro.core.designsystem.FitText(
+                    tool.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = content
+                )
+            }
+        }
+    }
+}
+
 private const val PANEL_FILTERS = 0
 private const val PANEL_ADJUST = 1
 private const val PANEL_CROP = 2
@@ -1271,13 +1285,13 @@ private fun CropCanvas(
                 }
                 close()
             }
-            drawPath(path, accent.copy(alpha = 0.18f))
-            drawPath(path, Color.White, style = Stroke(width = 2.dp.toPx()))
+            drawPath(path, PageOutlineBlue.copy(alpha = 0.14f))
+            drawPath(path, PageOutlineBlue, style = Stroke(width = 2.dp.toPx()))
             // Corner handles: 30 dp circles with a translucent primary fill, a white ring and a thin primary outer ring.
             points.forEach { centre ->
-                drawCircle(accent.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
+                drawCircle(PageOutlineBlue.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
                 drawCircle(Color.White, radius = 13.dp.toPx(), center = centre, style = Stroke(width = 2.5.dp.toPx()))
-                drawCircle(accent, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
+                drawCircle(PageOutlineBlue, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
             }
             if (curveMode) all.drop(4).forEach { drawCircle(Amber, radius = 9.dp.toPx(), center = it) }
             if (dragging && active < 4) {

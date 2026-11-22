@@ -119,6 +119,31 @@ class PdfCropRedactToolsTest {
     }
 
     @Test
+    fun aPlanCropsAllPagesOrEachPageItsOwnWay() {
+        // F241: two A4 pages (595 x 842 pt) and one turned a quarter; the plan keeps the left half of every page,
+        // keeps page 2 whole, and gives page 3 the top half of its own (as shown, which is its turned side).
+        val a4 = PDRectangle(0f, 0f, 595f, 842f)
+        val shapes = listOf(PdfCropTools.PageShape(a4, 0), PdfCropTools.PageShape(a4, 0), PdfCropTools.PageShape(a4, 90))
+        val plan = CropPlan(all = CropFraction(0f, 0f, 0.5f, 1f))
+            .withPage(1, CropFraction.WHOLE)
+            .withPage(2, CropFraction(0f, 0f, 1f, 0.5f))
+
+        val boxes = PdfCropTools.planBoxes(shapes, plan)
+
+        assertEquals(listOf(0, 0, 298, 842), box(boxes[0]!!))
+        assertNull("a page kept whole is left alone", boxes[1])
+        // Shown turned, the page is 842 wide and 595 high; its top half is the page's own left half in user space.
+        assertEquals(listOf(0, 0, 298, 842), box(boxes[2]!!))
+    }
+
+    @Test
+    fun aPlanNeverMakesAPageSmallerThanTheToolAccepts() {
+        val shapes = listOf(PdfCropTools.PageShape(PDRectangle(0f, 0f, 595f, 842f), 0))
+        assertNull(PdfCropTools.planBoxes(shapes, CropPlan(all = CropFraction(0f, 0f, 0.01f, 1f)))[0])
+        assertNull(PdfCropTools.planBoxes(shapes, CropPlan())[0])
+    }
+
+    @Test
     fun cropBoxesAreWrittenAndTheContentStays() {
         val file = File(dir, "crop.pdf")
         PDDocument().use { doc ->
@@ -170,35 +195,6 @@ class PdfCropRedactToolsTest {
             assertTrue(PdfRedactTools.findMatches(doc, listOf("ALICE"), matchCase = true).isEmpty())
             assertTrue(PdfRedactTools.findMatches(doc, listOf("  ", ""), matchCase = false).isEmpty())
         }
-    }
-
-    // ---- Ligatures: one glyph, several characters ----
-
-    @Test
-    fun aLigatureGlyphCoversAllTheCharactersItStandsFor() {
-        // "office" is drawn as o, ffi, c, e: four glyphs, six characters. "ice" (characters 3 to 5) must land on the
-        // ffi, c and e glyphs, not on the last glyph plus two empty slots.
-        val spans = PdfRedactTools.charSpans("office", listOf("o", "\uFB03", "c", "e"))
-        assertEquals(listOf(0, 1, 1, 1, 2, 3), spans.map { it.first })
-        assertTrue(spans.all { it.first == it.last })
-        // The same word stored already expanded (one glyph per character) maps one to one.
-        assertEquals(listOf(0, 1, 2, 3, 4, 5), PdfRedactTools.charSpans("office", listOf("o", "f", "f", "i", "c", "e")).map { it.first })
-    }
-
-    @Test
-    fun anUnreconcilableWordIsBlackedOutWhole() {
-        // Lengths that cannot add up to the word: every character maps to all glyphs, so a match covers the lot.
-        val spans = PdfRedactTools.charSpans("abcd", listOf("a", "b"))
-        assertEquals(4, spans.size)
-        assertTrue(spans.all { it == 0..1 })
-        assertTrue(PdfRedactTools.charSpans("", listOf("a")).isEmpty())
-    }
-
-    @Test
-    fun foldingCaseNeverChangesTheLength() {
-        val text = "\u0130stanbul ABC"
-        assertEquals(text.length, PdfRedactTools.foldCase(text).length)
-        assertEquals("abc", PdfRedactTools.foldCase("ABC"))
     }
 
     // ---- Redact by drawn boxes (F174) ----

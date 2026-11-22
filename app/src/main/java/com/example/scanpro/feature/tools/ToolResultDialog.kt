@@ -54,7 +54,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -126,6 +125,9 @@ private fun loadResultPreview(file: File, heightPx: Int): ResultPreview = runCat
 /** More files than this go out as the zip itself: a share intent carrying hundreds of links can fail to start. */
 internal const val MAX_SHARED_PARTS = 200
 
+/** Most bytes unpacked from one result zip for sharing; a larger (crafted or corrupt) zip is refused. */
+internal const val MAX_SHARED_BYTES = 1L * 1024 * 1024 * 1024
+
 /**
  * Unpacks a multi-file result (split parts, page images) next to the exports so the files can be shared one by one:
  * chat apps take ten pages, not a zip. Entry names are reduced to their last segment, so a crafted entry cannot
@@ -136,15 +138,32 @@ internal fun unpackForSharing(cacheDir: File, zip: File): List<File>? = runCatch
         deleteRecursively()
         mkdirs()
     }
+    val destinationPrefix = dir.canonicalPath + File.separator
     val parts = mutableListOf<File>()
+    var total = 0L
     java.util.zip.ZipInputStream(zip.inputStream().buffered()).use { input ->
         while (true) {
             val entry = input.nextEntry ?: break
             if (entry.isDirectory) continue
             if (parts.size >= MAX_SHARED_PARTS) return@runCatching null
-            val name = File(entry.name).name.ifBlank { "part_${parts.size + 1}" }
-            val out = File(dir, name)
-            out.outputStream().use { input.copyTo(it) }
+            // A counter prefix on a repeated name keeps two entries from overwriting each other; it counts up
+            // because the prefixed name can be taken as well, by an entry that was really called that.
+            val base = File(entry.name).name.ifBlank { "part_${parts.size + 1}" }
+            var out = File(dir, base)
+            var attempt = 1
+            while (out.exists()) out = File(dir, "${attempt++}_$base")
+            // Check the final destination, including any symbolic links, before opening the file.
+            if (!out.canonicalPath.startsWith(destinationPrefix)) return@runCatching null
+            out.outputStream().use { sink ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    total += read
+                    if (total > MAX_SHARED_BYTES) return@runCatching null
+                    sink.write(buffer, 0, read)
+                }
+            }
             parts += out
         }
     }
@@ -243,7 +262,9 @@ internal fun ResultDialog(
                                 bitmap = p.bitmap.asImageBitmap(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.height(156.dp)
+                                // The placeholder's size (2026-11-18): sized by the picture, the dialog widened when it
+                                // loaded and the tick and the burst slid sideways mid-animation.
+                                modifier = Modifier.size(width = 118.dp, height = 156.dp)
                             )
                             is ResultPreview.Placeholder -> Box(Modifier.size(width = 118.dp, height = 156.dp), contentAlignment = Alignment.Center) {
                                 Icon(p.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))
@@ -275,7 +296,9 @@ internal fun ResultDialog(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    file.extension.uppercase() + " · " + formatBytes(context, result.outputSizeBytes.takeIf { it > 0 } ?: file.length()),
+                    file.extension.uppercase() + " · " + formatBytes(context, result.outputSizeBytes.takeIf { it > 0 } ?: file.length()) +
+                        // How many pages came out, for a PDF (F197): the first thing to check after Split, Merge or N-up.
+                        (if (file.extension.equals("pdf", ignoreCase = true) && result.pageCount > 0) " · " + androidx.compose.ui.res.pluralStringResource(R.plurals.pdf_outcome_pages, result.pageCount, result.pageCount) else ""),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -325,6 +348,27 @@ internal fun ResultDialog(
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
+                        }
+                    }
+                }
+
+                // Every other tool: the size before and after, quieter than the compression card (F197), so a result that
+                // grew (a watermark, OCR text) is seen, not discovered later.
+                if (!isCompression && result.originalSizeBytes > 0 && result.outputSizeBytes > 0) {
+                    Spacer(Modifier.height(10.dp))
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SizeColumn(stringResource(R.string.tools_result_original_label), formatBytes(context, result.originalSizeBytes), highlight = false)
+                            Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            SizeColumn(stringResource(R.string.img_tool_result), formatBytes(context, result.outputSizeBytes), highlight = false)
                         }
                     }
                 }

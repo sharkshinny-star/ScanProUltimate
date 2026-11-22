@@ -43,4 +43,6 @@
     <string name="settings_show_intros_title">ആമുഖങ്ങൾ വീണ്ടും കാണിക്കുക</string>
     <string name="settings_show_intros_subtitle">ടൂറും ക്യാമറ, ടൂൾ ആമുഖങ്ങളും ഒരിക്കൽ കൂടി കാണുക</string>
     <string name="settings_show_intros_done">ആമുഖങ്ങൾ വീണ്ടും കാണിക്കും</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="hint_tool_step_pick_any">ഏത് ഫയലും തിരഞ്ഞെടുക്കാം: PDF, ഫോട്ടോ, ഡോക്യുമെന്റ്, പാട്ട്, വീഡിയോ അല്ലെങ്കിൽ ആർക്കൈവ്</string>
 </resources>

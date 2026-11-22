@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Merged into release builds made with -Pscanpro.allFilesAccess=false (F210): a Play build without "All files access",
+     for use if Google declines the MANAGE_EXTERNAL_STORAGE declaration. Files then works through the system file picker
+     only, and no screen asks for the permission (BuildConfig.ALL_FILES_ACCESS is false). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:node="remove" />
+</manifest>

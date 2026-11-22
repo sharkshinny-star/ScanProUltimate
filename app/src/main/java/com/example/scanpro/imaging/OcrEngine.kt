@@ -122,8 +122,10 @@ open class OcrEngine @Inject constructor(@ApplicationContext private val context
         // free the pixels while recognition is still reading them.
         if (bitmap != null) task.addOnCompleteListener { bitmap.recycle() }
         val result = task.await()
-        val width = (bitmap?.width ?: 0).toFloat()
-        val height = (bitmap?.height ?: 0).toFloat()
+        // Without a decoded bitmap (ML Kit read the file itself) the boxes are in the image's own pixels: without its
+        // size every word was dropped, and Make searchable counted a page with text as "no text found".
+        val width = (bitmap?.width ?: image.width).toFloat()
+        val height = (bitmap?.height ?: image.height).toFloat()
         val words = if (width <= 0f || height <= 0f) emptyList() else buildList {
             result.textBlocks.forEach { block ->
                 block.lines.forEach { line ->

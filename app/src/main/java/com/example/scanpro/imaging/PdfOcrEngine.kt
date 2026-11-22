@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.core.graphics.createBitmap
 import com.example.scanpro.data.OcrScript
-import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -56,12 +55,13 @@ object PdfOcrEngine {
             PdfToolsEngine.loadPdf(input).use { document ->
                 val total = document.numberOfPages
                 userRequire(total > 0, R.string.err_pdf_has_no_pages)
-                val stripper = PDFTextStripper()
+                // One pass over the text layer; a page with only a stray line over a picture (a scanning app's stamp)
+                // is read as well, the same rule the tool page counts with before it runs.
+                val chars = PageTextRules.visibleCharsPerPage(document)
+                coroutineContext.ensureActive()
                 val needsText = (0 until total).filter { index ->
-                    coroutineContext.ensureActive()
-                    stripper.startPage = index + 1
-                    stripper.endPage = index + 1
-                    runCatching { stripper.getText(document) }.getOrDefault("").isBlank()
+                    val visible = chars.getOrElse(index) { 0 }
+                    PageTextRules.needsOcr(visible, visible in 1 until PageTextRules.SPARSE_TEXT_CHARS && PageTextRules.pageHasImage(document.getPage(index)))
                 }
                 if (needsText.isEmpty()) {
                     return@withContext PdfOcrOutcome(null, total, 0, total, 0, input.length())

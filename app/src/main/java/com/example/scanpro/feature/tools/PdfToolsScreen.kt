@@ -15,11 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Merge
-import androidx.compose.material.icons.filled.Contrast
-import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,15 +50,14 @@ import com.example.scanpro.imaging.TextExportFormat
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.ui.openFile
 import com.example.scanpro.core.ui.shareFile
-import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.FirstRunHints
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.RecentPdf
 import com.example.scanpro.data.ToolResultFile
 import com.example.scanpro.data.ThemeMode
-import com.example.scanpro.feature.document.CropEditorDialog
-import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.ImageToolsEngine
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfToolsEngine
@@ -132,6 +128,10 @@ fun PdfToolsScreen(
     var showConvertImageDialog by rememberSaveable { mutableStateOf(false) }
     var showResizeImageDialog by rememberSaveable { mutableStateOf(false) }
     var showPdfToImagesDialog by rememberSaveable { mutableStateOf(false) }
+    // Office to PDF, Extract images and Repair open their own pages first (F211), so the result is known before running.
+    var officeUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var showExtractImagesPage by rememberSaveable { mutableStateOf(false) }
+    var showRepairPage by rememberSaveable { mutableStateOf(false) }
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
     var showSplitDialog by rememberSaveable { mutableStateOf(false) }
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
@@ -140,6 +140,8 @@ fun PdfToolsScreen(
     var showWatermarkDialog by rememberSaveable { mutableStateOf(false) }
     var showPageNumbersDialog by rememberSaveable { mutableStateOf(false) }
     var showGreyscaleDialog by rememberSaveable { mutableStateOf(false) }
+    var showInvertDialog by rememberSaveable { mutableStateOf(false) }
+    var showEditPdf by rememberSaveable { mutableStateOf(false) }
     var showFlattenDialog by rememberSaveable { mutableStateOf(false) }
     var showCropPdfDialog by rememberSaveable { mutableStateOf(false) }
     var showRedactDialog by rememberSaveable { mutableStateOf(false) }
@@ -148,6 +150,7 @@ fun PdfToolsScreen(
     var showHeaderFooterDialog by rememberSaveable { mutableStateOf(false) }
     val blankPagesFound by viewModel.blankPages.collectAsStateWithLifecycle()
     val pdfInfo by viewModel.pdfInfo.collectAsStateWithLifecycle()
+    val fileInfo by viewModel.fileInfo.collectAsStateWithLifecycle()
 
     var activeCropSourcePath by rememberSaveable { mutableStateOf<String?>(null) }
     var activeCropUri by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -217,9 +220,9 @@ fun PdfToolsScreen(
         }
     }
 
-    var saveSourceFile by remember { mutableStateOf<File?>(null) }
+    var saveSourcePath by rememberSaveable { mutableStateOf<String?>(null) }
     fun saveTo(destUri: Uri?) {
-        val file = saveSourceFile ?: return
+        val file = saveSourcePath?.let { File(it) } ?: return
         if (destUri == null) return
         viewModel.saveTo(file, destUri)
     }
@@ -253,7 +256,7 @@ fun PdfToolsScreen(
 
     /** "Save" on a result: the system's save dialog for the file's own type, then a copy is written there. */
     fun saveCopy(file: File) {
-        saveSourceFile = file
+        saveSourcePath = file.absolutePath
         val name = file.name
         when (mimeFor(file)) {
             "application/zip" -> saveZipLauncher.launch(name)
@@ -282,7 +285,7 @@ fun PdfToolsScreen(
             "pdf2img" -> showPdfToImagesDialog = true
             "protect" -> showPasswordDialog = true
             "unlock" -> viewModel.inspectForUnlock(uri)
-            "repair" -> viewModel.repair(uri)
+            "repair" -> showRepairPage = true
             "split" -> showSplitDialog = true
             "organize", "extract", "rotate" -> { organizerMode = tool; showOrganizerSheet = true }
             "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
@@ -302,14 +305,16 @@ fun PdfToolsScreen(
             "pdf2excel" -> { pdfTextFormat = TextExportFormat.EXCEL; showPdfToTextDialog = true }
             "blank_pages" -> viewModel.findBlankPages(uri)
             "greyscale" -> showGreyscaleDialog = true
+            "invert_pdf" -> showInvertDialog = true
+            "edit_pdf" -> showEditPdf = true
             "flatten" -> showFlattenDialog = true
             "crop_pdf" -> showCropPdfDialog = true
             "redact" -> showRedactDialog = true
             "redact_box" -> showRedactBoxesEditor = true
             "nup" -> showNupDialog = true
             "header_footer" -> showHeaderFooterDialog = true
-            "extract_images" -> viewModel.extractImages(uri)
-            "pdf_info" -> viewModel.openPdfInfo(uri)
+            "extract_images" -> showExtractImagesPage = true
+            "pdf_info" -> viewModel.openFileInfo(uri)
         }
     }
     fun startTool(tool: String, uri: Uri) {
@@ -328,7 +333,11 @@ fun PdfToolsScreen(
         openTool(target.tool, target.uri)
     }
     val officePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) viewModel.officeToPdf(uri)
+        if (uri != null) officeUri = uri
+    }
+    // File info and metadata (F243) takes any file, not only PDFs, and opens it straight away.
+    val anyFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) viewModel.openFileInfo(uri)
     }
     val printFallback by viewModel.printFallback.collectAsStateWithLifecycle()
     val activityContext = LocalContext.current
@@ -369,7 +378,7 @@ fun PdfToolsScreen(
                 ordering = request.uris
             }
             com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.IMAGES_TO_PDF -> imagesToOrder = request.uris
-            com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.OFFICE_TO_PDF -> request.uris.firstOrNull()?.let(viewModel::officeToPdf)
+            com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.OFFICE_TO_PDF -> request.uris.firstOrNull()?.let { officeUri = it }
         }
     }
     ordering?.let { picked ->
@@ -397,7 +406,7 @@ fun PdfToolsScreen(
     }
     imagesToConvert?.let { images ->
         ImagesToPdfDialog(
-            count = images.size,
+            images = images,
             onDismiss = {
                 // The ordered copies live in cache; deleting them is file work, so not on the main thread.
                 cropScope.launch(Dispatchers.IO) {
@@ -408,9 +417,19 @@ fun PdfToolsScreen(
                 }
                 imagesToConvert = null
             },
-            onConfirm = { size, quality ->
+            onConfirm = { size, quality, margin ->
                 imagesToConvert = null
-                viewModel.imagesToPdf(images, size, quality)
+                viewModel.imagesToPdf(images, size, quality, margin)
+            }
+        )
+    }
+    officeUri?.let { picked ->
+        OfficeToPdfPage(
+            uri = picked,
+            onDismiss = { officeUri = null },
+            onConfirm = {
+                officeUri = null
+                viewModel.officeToPdf(picked)
             }
         )
     }
@@ -421,6 +440,7 @@ fun PdfToolsScreen(
             "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
             "img2pdf" -> imagesPicker.launch("image/*")
             "office" -> officePicker.launch(OFFICE_MIME_TYPES)
+            "pdf_info" -> anyFilePicker.launch(arrayOf("*/*"))
             "crop_img", "compress_img", "resize_img" -> singleImagePicker.launch("image/*")
             "convert_img" -> multiImagePicker.launch("image/*")
             else -> singlePdfPicker.launch(arrayOf("application/pdf"))
@@ -496,16 +516,16 @@ fun PdfToolsScreen(
             if (toolRunning) ToolProgressHost(viewModel.progress, onCancel = viewModel::cancel)
 
             activeCropSourcePath?.let { stagedPath ->
-                CropEditorDialog(
+                // A straight crop with aspect ratios, turn and mirror (F193), in the picture's own format.
+                ImageCropEditor(
                     sourcePath = stagedPath,
-                    initial = CropQuad.DEFAULT,
                     onDismiss = {
                         File(stagedPath).delete()
                         activeCropSourcePath = null
                         activeCropUri = null
                         cropReturn = null
                     },
-                    onConfirm = { quad ->
+                    onConfirm = { spec ->
                         val originalUri = activeCropUri
                         val target = cropReturn
                         activeCropSourcePath = null
@@ -516,14 +536,16 @@ fun PdfToolsScreen(
                                 cropScope.launch {
                                     // Checked on the IO thread too; a crop that fails says so instead of ending the app.
                                     val croppedFile = withContext(Dispatchers.IO) {
-                                        val dest = File(context.cacheDir, "precrop_${UUID.randomUUID()}.jpg")
+                                        val staged = File(stagedPath)
+                                        val format = ImageToolsEngine.formatOf(stagedPath) ?: ImageExportFormat.JPEG
+                                        val dest = File(context.cacheDir, "precrop_${UUID.randomUUID()}.${format.extension}")
                                         try {
-                                            ImageProcessor.cropSourceToNewFile(File(stagedPath), dest, quad)
+                                            ImageToolsEngine.cropToFile(staged, dest, spec, format)
                                         } catch (failed: Exception) {
                                             if (failed is kotlinx.coroutines.CancellationException) throw failed
                                             dest.delete()
                                         } finally {
-                                            File(stagedPath).delete()
+                                            staged.delete()
                                         }
                                         dest.takeIf { it.exists() && it.length() > 0 }
                                     }
@@ -532,7 +554,7 @@ fun PdfToolsScreen(
                                 }
                             } else {
                                 File(stagedPath).delete()
-                                viewModel.cropImage(originalUri, quad)
+                                viewModel.cropImageRect(originalUri, spec)
                             }
                         } else {
                             File(stagedPath).delete()
@@ -679,6 +701,23 @@ fun PdfToolsScreen(
                 )
             }
 
+            if (showExtractImagesPage && uri != null) {
+                ExtractImagesPage(
+                    uri = uri,
+                    onDismiss = { showExtractImagesPage = false },
+                    onConfirm = { showExtractImagesPage = false; viewModel.extractImages(uri) },
+                    onConfirmChosen = { dir, chosen -> showExtractImagesPage = false; viewModel.saveChosenImages(uri, dir, chosen) }
+                )
+            }
+
+            if (showRepairPage && uri != null) {
+                RepairPage(
+                    uri = uri,
+                    onDismiss = { showRepairPage = false },
+                    onConfirm = { showRepairPage = false; viewModel.repair(uri) }
+                )
+            }
+
             if (showPdfToImagesDialog && uri != null) {
                 PdfToImagesDialog(
                     uri = uri,
@@ -731,6 +770,8 @@ fun PdfToolsScreen(
                     isProtect = isProtect,
                     fileUri = uri,
                     initialError = if (!isProtect && wrongPassword) stringResource(R.string.tools_wrong_password_try_again) else null,
+                    // The same file, now in Unlock: once unlocked, the copy can be protected with a new password.
+                    onUnlockInstead = if (isProtect) ({ selectedTool = "unlock" }) else null,
                     onDismiss = { showPasswordDialog = false; viewModel.clearWrongPassword() },
                     onConfirm = { pwd ->
                         showPasswordDialog = false
@@ -815,15 +856,13 @@ fun PdfToolsScreen(
             }
 
             blankPagesFound?.let { found ->
-                BlankPagesDialog(found = found, onDismiss = viewModel::clearBlankPages, onRemove = { viewModel.removeBlankPages(found) })
+                BlankPagesDialog(found = found, onDismiss = viewModel::clearBlankPages, onRemove = { ticked -> viewModel.removeBlankPages(found.copy(blankPages = ticked)) })
             }
 
             if (showGreyscaleDialog && uri != null) {
-                ToolConfirmDialog(
-                    icon = Icons.Default.Contrast,
-                    title = stringResource(R.string.tools_card_greyscale),
-                    body = stringResource(R.string.tools_grey_confirm_body, com.example.scanpro.imaging.PdfCleanupTools.GREYSCALE_DPI),
-                    confirmLabel = stringResource(R.string.tools_grey_confirm_action),
+                RecolourPdfPage(
+                    uri = uri,
+                    invert = false,
                     onDismiss = { showGreyscaleDialog = false },
                     onConfirm = { showGreyscaleDialog = false; viewModel.greyscale(uri) }
                 )
@@ -839,6 +878,7 @@ fun PdfToolsScreen(
 
             if (showNupDialog && uri != null) {
                 NupDialog(
+                    uri = uri,
                     onDismiss = { showNupDialog = false },
                     onConfirm = { perSheet -> showNupDialog = false; viewModel.nup(uri, perSheet) }
                 )
@@ -846,6 +886,7 @@ fun PdfToolsScreen(
 
             if (showHeaderFooterDialog && uri != null) {
                 HeaderFooterDialog(
+                    uri = uri,
                     onDismiss = { showHeaderFooterDialog = false },
                     onConfirm = { config -> showHeaderFooterDialog = false; viewModel.headerFooter(uri, config) }
                 )
@@ -853,27 +894,57 @@ fun PdfToolsScreen(
 
             if (showCropPdfDialog && uri != null) {
                 CropPdfDialog(
+                    uri = uri,
                     onDismiss = { showCropPdfDialog = false },
-                    onConfirm = { options -> showCropPdfDialog = false; viewModel.cropPdf(uri, options) }
+                    onConfirm = { options -> showCropPdfDialog = false; viewModel.cropPdf(uri, options) },
+                    onConfirmPlan = { plan -> showCropPdfDialog = false; viewModel.cropPdfPlan(uri, plan) }
                 )
             }
 
             if (showRedactDialog && uri != null) {
                 RedactDialog(
+                    uri = uri,
                     onDismiss = { showRedactDialog = false },
                     onConfirm = { terms, matchCase -> showRedactDialog = false; viewModel.redact(uri, terms, matchCase) }
                 )
             }
 
+            if (showEditPdf && uri != null) {
+                EditPdfTextEditor(
+                    uri = uri,
+                    suggestedName = remember(uri) { viewModel.displayName(uri) + " edited" },
+                    onDismiss = { showEditPdf = false },
+                    onSave = { edits, name -> showEditPdf = false; viewModel.editPdfText(uri, edits, name) }
+                )
+            }
+
+            if (showInvertDialog && uri != null) {
+                RecolourPdfPage(
+                    uri = uri,
+                    invert = true,
+                    onDismiss = { showInvertDialog = false },
+                    onConfirm = { showInvertDialog = false; viewModel.invertColors(uri) }
+                )
+            }
+
             if (showFlattenDialog && uri != null) {
-                ToolConfirmDialog(
-                    icon = Icons.Default.Layers,
-                    title = stringResource(R.string.tools_card_flatten),
-                    body = stringResource(R.string.tools_flatten_confirm_body),
-                    confirmLabel = stringResource(R.string.tools_flatten_confirm_action),
+                FlattenPage(
+                    uri = uri,
                     onDismiss = { showFlattenDialog = false },
                     onConfirm = { showFlattenDialog = false; viewModel.flatten(uri) }
                 )
+            }
+
+            fileInfo?.let { session ->
+                // Keyed by the file, so pending edits never carry over to the next file.
+                key(session.uri) {
+                    FileInfoScreen(
+                        session = session,
+                        onDismiss = viewModel::closeFileInfo,
+                        onSave = { edit -> viewModel.saveFileInfo(session, edit) },
+                        onExport = { json -> viewModel.exportFileInfo(session, json) }
+                    )
+                }
             }
 
             pdfInfo?.let { session ->
@@ -881,6 +952,7 @@ fun PdfToolsScreen(
                 key(session.uri) {
                     PdfInfoDialog(
                         info = session.info,
+                        uri = session.uri,
                         onDismiss = viewModel::closePdfInfo,
                         onSave = { edit -> viewModel.saveMetadata(session.uri, edit, removeAll = false) },
                         onRemoveAll = { viewModel.saveMetadata(session.uri, null, removeAll = true) }
@@ -916,6 +988,7 @@ fun PdfToolsScreen(
 
             insertBase?.let { flat ->
                 InsertPagesDialog(
+                    baseUri = uri,
                     keptPages = flat.size / 2,
                     nameOf = viewModel::displayName,
                     onDismiss = { insertBase = null },
@@ -1064,7 +1137,7 @@ private const val RESULTS_SHOWN = 5
 private val RETRYABLE_TOOLS = setOf(
     "compress", "pdf2img", "protect", "unlock", "repair", "split", "organize", "extract", "rotate", "ocr", "page_numbers",
     "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
+    "blank_pages", "greyscale", "invert_pdf", "edit_pdf", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
 )
 
 /** Tools whose input is a picture, not a PDF: their failures are never offered Repair. */
@@ -1079,7 +1152,7 @@ private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img"
  */
 private val OPENS_PAGES = setOf(
     "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
+    "blank_pages", "greyscale", "invert_pdf", "edit_pdf", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
 )
 
 internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {
@@ -1091,7 +1164,11 @@ internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-    else -> "application/pdf"
+    "pdf" -> "application/pdf"
+    "json" -> "application/json"
+    "csv" -> "text/csv"
+    // Any other file a tool hands back (File info saves copies of every kind): its own type, never "PDF" by default.
+    else -> android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase()) ?: "application/octet-stream"
 }
 
 /** Keeps the files picked for Merge or Images to PDF through a rotation (null when nothing is picked). */

@@ -32,4 +32,5 @@
     <string name="msg_sign_progress" tools:ignore="PluralsCandidate">ಪುಟ %1$d / %2$d ಕ್ಕೆ ಸಹಿ ಮಾಡಲಾಗುತ್ತಿದೆ</string>
     <string name="msg_sign_failed">PDF ಗೆ ಸಹಿ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
     <string name="msg_sign_done" tools:ignore="PluralsCandidate">ಸಹಿ ಮಾಡಿದ ಪ್ರತಿಯನ್ನು ಉಳಿಸಲಾಗಿದೆ. ಸೇರಿಸಿದ ಅಂಶಗಳು: %1$d</string>
+    <string name="sign_existing_digital_signature">ಈ PDF ನಲ್ಲಿ ಈಗಾಗಲೇ ಡಿಜಿಟಲ್ ಸಹಿ ಇದೆ. ಇಲ್ಲಿ ಉಳಿಸುವ ಪ್ರತಿಯು ಆ ಸಹಿಯ ಪರಿಶೀಲನೆಯಲ್ಲಿ ಇನ್ನು ಮಾನ್ಯವಾಗುವುದಿಲ್ಲ. ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
 </resources>

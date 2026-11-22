@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Image tools (F193): Compress, Convert, Resize and Crop image -->
+    <string name="img_tool_original">Original</string>
+    <string name="img_tool_result">Result</string>
+    <string name="img_tool_crop">Crop</string>
+    <string name="img_tool_now">Now</string>
+    <string name="img_tool_after">After</string>
+    <string name="img_tool_unreadable">This picture couldn\'t be opened. Close this and pick it again, or try another picture.</string>
+    <string name="img_tool_unreadable_short">The picture couldn\'t be opened</string>
+    <string name="img_compress_png_hint">PNG keeps every pixel exactly. Best for screenshots, drawings and pictures with see-through parts; photos are usually smaller as JPG or WebP.</string>
+    <string name="img_compress_png_no_quality">PNG has no quality setting: it keeps every pixel. To make it smaller, lower the resolution below, or use a target size.</string>
+    <string name="img_compress_larger_as">As %1$s this picture would be larger than it is now. For a photo, JPG or WebP makes it smaller.</string>
+    <string name="img_tool_estimating">Working out the result…</string>
+    <string name="img_tool_about">About %1$s</string>
+    <string name="img_tool_smaller">%1$d%% smaller</string>
+    <string name="img_tool_larger">%1$d%% larger</string>
+    <string name="img_tool_dims" translatable="false">%1$d × %2$d px</string>
+    <string name="img_tool_other_format">Image</string>
+    <string name="img_transparency_white">Transparent areas turn white in a JPG. Choose PNG or WebP to keep them see-through.</string>
+
+    <string name="img_section_make_smaller">Make it smaller by</string>
+    <string name="img_section_resolution">Resolution</string>
+    <string name="img_section_format">Format</string>
+    <string name="img_section_quality">Quality</string>
+    <string name="img_section_new_size">New size</string>
+    <string name="img_section_common_sizes">Common sizes</string>
+    <string name="img_section_convert_to">Convert to</string>
+
+    <string name="img_compress_target_hint">Keeps the full resolution when it can, and lowers it only if the quality would otherwise suffer.</string>
+    <string name="img_compress_already_small">This picture is already small (%1$s). Type a size below, or use Quality.</string>
+    <string name="img_compress_no_gain">This picture is already well compressed: these settings would not make it smaller, so the original would be kept. Try a lower quality or resolution.</string>
+    <string name="img_quality_high">High</string>
+    <string name="img_quality_balanced">Balanced</string>
+    <string name="img_quality_small">Smallest</string>
+    <string name="img_quality_smaller_file">Smaller file</string>
+    <string name="img_quality_better_picture">Better picture</string>
+    <string name="img_lossless">Lossless</string>
+    <string name="img_res_original">Original (%1$d px)</string>
+    <string name="img_resolution_hint">The longest side. Most upload forms and messaging apps need no more than 1920 px.</string>
+
+    <string name="img_convert_action">Convert to %1$s</string>
+    <string name="img_convert_make_pdf">Make PDF</string>
+    <string name="img_convert_already">This picture is already a %1$s. Pick another format.</string>
+    <string name="img_convert_quality_hint" formatted="false">90% or more looks the same as the original to the eye.</string>
+    <string name="img_convert_tap_to_crop">Tap the crop button on a picture to crop it first.</string>
+    <string name="img_crop_picture_n">Crop picture %1$d</string>
+    <plurals name="img_pictures_count">
+        <item quantity="one">%1$d picture</item>
+        <item quantity="other">%1$d pictures</item>
+    </plurals>
+
+    <string name="img_resize_enlarge_warning">Making a picture bigger than the original adds no detail, so it may look soft.</string>
+    <string name="img_resize_linked_hint">Proportions linked: change one side and the other follows. Tap the link to set both.</string>
+    <string name="img_resize_unlinked_hint">Proportions unlinked: if the shape differs from the picture, choose how it fits below.</string>
+    <string name="img_fit_fit_desc">Whole picture kept, proportions kept; one side may come out shorter than asked.</string>
+    <string name="img_fit_fill_desc">Exact size, proportions kept; the edges that do not fit are cut off.</string>
+    <string name="img_fit_stretch_desc">Exact size, whole picture; it is squashed or stretched to fit.</string>
+    <string name="img_format_kept">Same format as now (%1$s).</string>
+
+    <string name="img_crop_title">Crop image</string>
+    <string name="img_crop_done">Done</string>
+    <string name="img_crop_frame">Crop frame. Drag the corners or edges to resize, or drag inside to move.</string>
+    <string name="img_crop_free">Free</string>
+    <string name="img_crop_original">Original</string>
+    <string name="img_crop_square">Square</string>
+    <string name="img_crop_4_5" translatable="false">4:5</string>
+    <string name="img_crop_3_4" translatable="false">3:4</string>
+    <string name="img_crop_4_3" translatable="false">4:3</string>
+    <string name="img_crop_16_9" translatable="false">16:9</string>
+    <string name="img_crop_9_16" translatable="false">9:16</string>
+    <string name="img_crop_rotate">Rotate</string>
+    <string name="img_crop_flip">Mirror</string>
+    <string name="img_crop_reset">Reset</string>
+</resources>
