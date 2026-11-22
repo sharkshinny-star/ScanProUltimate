@@ -49,7 +49,11 @@ class LibraryRecoveryTest : RepositoryTestBase() {
         val doc = load(id)!!
         assertEquals(listOf(a, b, c), doc.order())
         assertEquals(listOf(0, 1, 2), doc.pages.sortedBy { it.position }.map { it.position })
-        assertTrue(doc.page(1).sourcePath.endsWith("source_001_$b"))
+        // The source is a copy of the rendered picture (it carries the crop, filter and any redaction), not the original photo.
+        val recovered = File(doc.page(1).sourcePath)
+        assertTrue(recovered.name.startsWith("recovered_"))
+        assertEquals(File(doc.page(1).imagePath).readText(), recovered.readText())
+        assertTrue(File(root, "$id/source/source_001_$b").isFile)
         assertTrue(File(doc.page(1).imagePath).isFile)
         assertFalse(doc.isTrashed)
         assertEquals("", doc.ocrText)
@@ -58,12 +62,14 @@ class LibraryRecoveryTest : RepositoryTestBase() {
         assertTrue(repository.documentsNeedingPdf().contains(id))
     }
 
-    @Test fun aPageWithoutItsPhotoUsesTheRenderedImageAsItsSource() = runBlocking {
+    @Test fun aPagesSourceIsACopyOfItsRenderedImageEvenWithoutThePhoto() = runBlocking {
         val a = pageId()
         val id = orphan(listOf("page_000_$a.jpg" to "unused"), withSources = false)
         repository.recoverOrphanedDocuments()
         val page = load(id)!!.pages.single()
-        assertEquals(page.imagePath, page.sourcePath)
+        // Not the same file: a render writes the page's picture and must not read its own output.
+        assertFalse(page.imagePath == page.sourcePath)
+        assertEquals(File(page.imagePath).readText(), File(page.sourcePath).readText())
     }
 
     @Test fun splitHalvesAreRecoveredToo() = runBlocking {

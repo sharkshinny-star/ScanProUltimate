@@ -17,8 +17,13 @@ import kotlinx.coroutines.withContext
  *
  * Each document lives in its own folder under `documents/<id>`. A folder with no record is rebuilt from what is in
  * it: one page per image in `rendered/`, matched to its photo in `source/` by the page id in the file name.
- * Edit settings and recognised text are not stored in the files, so recovered pages start unedited and without
+ * Edit settings and recognised text are not stored in the files, so recovered pages start with no edits and without
  * text; the PDF is rebuilt the next time it is needed, and "Run OCR again" makes the pages searchable.
+ *
+ * The page's source is a copy of its rendered picture, not the original photo. The rendered picture is what the user
+ * saw and what is in the PDF: it already has the crop, the filter and any redaction. Starting from the original photo
+ * with no edits, the first rotate or filter would render the page again from the unredacted photo and quietly bring
+ * back what had been blacked out. The price is that a recovered page's crop cannot be widened again.
  */
 internal class LibraryRecovery(private val store: DocumentStore) {
     private class Found(val file: File, val index: Int?, val pageId: String)
@@ -50,10 +55,17 @@ internal class LibraryRecovery(private val store: DocumentStore) {
         }.sortedWith(compareBy<Found>({ it.index ?: Int.MAX_VALUE }, { it.file.lastModified() }, { it.file.name }))
         if (found.isEmpty()) return null
 
-        val sources = File(folder, "source").listFiles { file -> file.isFile }.orEmpty()
+        val sourceDir = File(folder, "source").apply { mkdirs() }
         val pages = found.mapIndexed { position, page ->
-            // Without its photo the rendered page stands in as the source, so the page can still be opened and edited.
-            val source = sources.firstOrNull { it.name.contains(page.pageId) } ?: page.file
+            // A copy of the rendered picture (see the class note), so edits start from what the user saw, redactions included,
+            // and a render never reads and overwrites the same file. Only if the copy cannot be made does the page keep its
+            // original photo (or, with none, its own picture) as the source.
+            val copy = File(sourceDir, "recovered_${page.pageId}.jpg")
+            val copied = runCatching { page.file.copyTo(copy, overwrite = true) }.isSuccess && copy.length() > 0
+            val source = if (copied) copy else {
+                copy.delete()
+                File(folder, "source").listFiles { file -> file.isFile }.orEmpty().firstOrNull { it.name.contains(page.pageId) } ?: page.file
+            }
             ScanPage(
                 id = page.pageId,
                 documentId = folder.name,
