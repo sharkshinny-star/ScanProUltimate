@@ -6,7 +6,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -261,7 +260,13 @@ fun ScanProNavHost(
     }
 }
 
-private const val PushDuration = 280
+private const val PushDuration = 300
+
+/**
+ * Material 3's emphasized decelerate curve (F197): a quick start that settles softly, which reads as smoother than
+ * FastOutSlowIn for full-width slides. Same duration, so no extra frames are drawn.
+ */
+private val EmphasizedDecelerate = androidx.compose.animation.core.CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
 private const val TabFadeDuration = 150
 /** How long the camera takes to appear; the camera screen waits this long before binding the camera (see there). */
 internal const val CameraEnterDuration = 180
@@ -296,22 +301,23 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Bool
     // Sheet popping back to caller: caller is already rendered and stationary underneath.
     pop && initialState.isSheetLike() -> EnterTransition.None
     // The screen underneath comes back from a quarter of the way across, opaque.
-    pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing)) { it / 4 }
+    pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = EmphasizedDecelerate)) { it / 4 }
     // The pushed screen draws its own background, so it slides in opaque.
-    else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing)) { it }
+    else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = EmphasizedDecelerate)) { it }
 }
 
 /** The transition for the screen going out, mirroring [enterFor]. */
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.exitFor(pop: Boolean): ExitTransition = when {
     betweenTabs() -> if (pop) fadeOut(tween(TabFadeDuration, easing = FastOutLinearInEasing)) else ExitTransition.KeepUntilTransitionsFinished
-    // Sheet rising on top: the caller screen stays stationary and fully visible underneath.
-    !pop && targetState.isSheetLike() -> ExitTransition.None
+    // Sheet rising on top: the caller screen stays stationary and fully visible underneath. ExitTransition.None removed
+    // the caller on the first frame, so the camera faded in over the bare background (a flash of empty screen).
+    !pop && targetState.isSheetLike() -> ExitTransition.KeepUntilTransitionsFinished
     // Sheet popping: drops immediately off-screen accelerating downward with zero hesitation.
     pop && initialState.isSheetLike() ->
         fadeOut(tween(CameraExitDuration, easing = FastOutLinearInEasing)) +
             scaleOut(tween(CameraExitDuration, easing = FastOutLinearInEasing), targetScale = 0.96f)
-    pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it })
-    else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it / 4 })
+    pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = EmphasizedDecelerate), targetOffset = { it })
+    else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = EmphasizedDecelerate), targetOffset = { it / 4 })
 }
 
 /** Switches bottom-bar tabs the standard way: one copy of each tab, with its state saved and restored. */

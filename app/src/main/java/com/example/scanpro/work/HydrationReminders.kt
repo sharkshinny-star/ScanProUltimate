@@ -10,7 +10,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.example.scanpro.core.di.ApplicationScope
 import com.example.scanpro.core.notifications.AppNotifications
 import com.example.scanpro.core.notifications.HydrationSchedule
 import com.example.scanpro.data.SettingsStore
@@ -18,9 +17,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,17 +38,23 @@ class HydrationReminders @Inject constructor(
         if (settings.hydrationReminders.first()) schedule(ExistingWorkPolicy.KEEP) else cancel()
     }
 
-    /** The switch in Settings or the notice's "Turn off" button. */
+    /** The switch in Settings. */
     suspend fun setEnabled(enabled: Boolean) {
         settings.setHydrationReminders(enabled)
         if (enabled) schedule(ExistingWorkPolicy.REPLACE) else cancel()
     }
 
-    internal fun schedule(policy: ExistingWorkPolicy, nowMs: Long = System.currentTimeMillis()) {
-        val next = HydrationSchedule.next(nowMs)
+    /** The timings in Settings: the queued reminder moves to the new times at once. */
+    suspend fun setTiming(timing: HydrationSchedule.Timing) {
+        settings.setHydrationTiming(timing)
+        if (settings.hydrationReminders.first()) schedule(ExistingWorkPolicy.REPLACE)
+    }
+
+    internal suspend fun schedule(policy: ExistingWorkPolicy, nowMs: Long = System.currentTimeMillis()) {
+        val next = HydrationSchedule.next(nowMs, settings.hydrationTiming.first())
         val request = OneTimeWorkRequestBuilder<HydrationWorker>()
             .setInitialDelay((next.atMs - nowMs).coerceAtLeast(0), TimeUnit.MILLISECONDS)
-            .setInputData(workDataOf(HydrationWorker.KEY_DUE_AT to next.atMs, HydrationWorker.KEY_SLOT to next.slot))
+            .setInputData(workDataOf(HydrationWorker.KEY_DUE_AT to next.atMs))
             .build()
         WorkManager.getInstance(context).enqueueUniqueWork(UNIQUE_NAME, policy, request)
     }
@@ -79,8 +82,11 @@ class HydrationWorker @AssistedInject constructor(
         // Switched off since this was queued: nothing is shown and nothing more is queued.
         if (!settings.hydrationReminders.first()) return Result.success()
         val now = System.currentTimeMillis()
-        if (HydrationSchedule.isDue(inputData.getLong(KEY_DUE_AT, 0L), now)) {
-            runCatching { notifications.drinkWater(inputData.getInt(KEY_SLOT, 0)) }
+        val dueAt = inputData.getLong(KEY_DUE_AT, 0L)
+        val timing = settings.hydrationTiming.first()
+        // Not shown when late, nor when queued for a time that is no longer one of the day's reminders.
+        if (HydrationSchedule.isDue(dueAt, now) && HydrationSchedule.isSlot(dueAt, timing)) {
+            runCatching { notifications.drinkWater(HydrationSchedule.wording(HydrationSchedule.minuteOfDay(dueAt), timing)) }
         }
         // Appended, not replaced: replacing work of the same name would cancel this very run.
         reminders.schedule(ExistingWorkPolicy.APPEND_OR_REPLACE, now)
@@ -89,29 +95,23 @@ class HydrationWorker @AssistedInject constructor(
 
     companion object {
         const val KEY_DUE_AT = "dueAt"
-        const val KEY_SLOT = "slot"
     }
 }
 
-/** The "Turn off" button on a drink-water notice: stops the reminders without opening the app. */
+/**
+ * The two buttons on a drink-water notice, "I drank" and "Skip". Both only put the notice away, without opening the
+ * app; neither answer is kept anywhere, so the app holds no record of what the user drinks.
+ */
 @AndroidEntryPoint
-class HydrationOffReceiver : BroadcastReceiver() {
-    @Inject lateinit var reminders: HydrationReminders
-    @Inject @ApplicationScope lateinit var scope: CoroutineScope
+class HydrationActionReceiver : BroadcastReceiver() {
+    @Inject lateinit var notifications: AppNotifications
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != ACTION_TURN_OFF) return
-        val pending = goAsync()
-        scope.launch {
-            try {
-                reminders.setEnabled(false)
-            } finally {
-                pending.finish()
-            }
-        }
+        if (intent.action == ACTION_DRANK || intent.action == ACTION_SKIP) notifications.clearDrinkWater()
     }
 
     companion object {
-        const val ACTION_TURN_OFF = "com.example.scanpro.action.DRINK_WATER_OFF"
+        const val ACTION_DRANK = "com.example.scanpro.action.DRINK_WATER_DRANK"
+        const val ACTION_SKIP = "com.example.scanpro.action.DRINK_WATER_SKIP"
     }
 }

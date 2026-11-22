@@ -56,6 +56,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,6 +69,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -108,6 +110,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -168,11 +171,13 @@ fun PdfViewerScreen(
     // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
     val renderLock = remember { Mutex() }
     val closeScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-    // Rendered pages, about 24 MB of them, kept so scrolling back doesn't render again. Evicted pages are not
-    // recycled: a page on screen can be evicted while it is still drawn, and the garbage collector frees it once
-    // nothing shows it.
+    // Rendered pages, kept so scrolling back doesn't render again. A page is drawn up to 2400 px wide, 13 to 33 MB, so
+    // a fixed 24 MB held only one of them; the budget is a share of the app's memory limit instead (24 to 96 MB, a few
+    // pages). Evicted pages are not recycled: a page on screen can be evicted while it is still drawn, and the garbage
+    // collector frees it once nothing shows it.
     val pageCache = remember {
-        object : android.util.LruCache<Int, Bitmap>(24 * 1024 * 1024) {
+        val budget = (Runtime.getRuntime().maxMemory() / 6).coerceIn(24L * 1024 * 1024, 96L * 1024 * 1024).toInt()
+        object : android.util.LruCache<Int, Bitmap>(budget) {
             override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
         }
     }
@@ -180,13 +185,38 @@ fun PdfViewerScreen(
     // The text of every page, read once per file; each search then scans these strings.
     var pageTexts by remember { mutableStateOf<List<String>?>(null) }
     // Copies made for viewing (including decrypted ones) are removed when the viewer closes.
-    val tempFiles = remember { mutableListOf<File>() }
+    // Added to from the loading and unlock coroutines and read on the main thread when the viewer closes, so it must
+    // tolerate both at once.
+    val tempFiles = remember { java.util.concurrent.CopyOnWriteArrayList<File>() }
     var needsPassword by remember { mutableStateOf(false) }
     // The file actually on screen: an unlocked or unrestricted copy when the original is protected.
     var openedFile by remember { mutableStateOf<File?>(null) }
     LaunchedEffect(openedFile) { pageTexts = null }
     var lockedFile by remember { mutableStateOf<File?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+
+    // Each page's width / height, read in the background once the file is open, so every page has its real height
+    // before it is drawn: with mixed page sizes the list no longer jumps as pages render, and "go to page" and search
+    // jumps land where they should. A page not read yet (or one that cannot be read) keeps the A4 default.
+    val pageAspects = remember { mutableStateMapOf<Int, Float>() }
+    LaunchedEffect(pdfRenderer) {
+        pageAspects.clear()
+        val renderer = pdfRenderer ?: return@LaunchedEffect
+        val batch = HashMap<Int, Float>()
+        for (index in 0 until renderer.pageCount) {
+            ensureActive()
+            val aspect = withContext(Dispatchers.IO) {
+                // The lock is taken per page, so page renders on screen are never kept waiting for the whole document.
+                runCatching { renderLock.withLock { renderer.openPage(index).use { it.width.toFloat() / it.height } } }.getOrNull()
+            }
+            // A renderer that has been closed throws for every page: stop instead of trying them all.
+            if (aspect == null) break
+            if (aspect.isFinite() && aspect > 0f) batch[index] = aspect
+            // Published in batches: each publish redraws the pages on screen.
+            if (batch.size >= 25) { pageAspects.putAll(batch); batch.clear() }
+        }
+        pageAspects.putAll(batch)
+    }
 
     // Set when the viewer closes; a renderer that finishes opening after that is closed at once instead of leaking.
     val viewerClosed = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
@@ -196,6 +226,11 @@ fun PdfViewerScreen(
         val descriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
         try {
             val renderer = PdfRenderer(descriptor)
+            // Nothing to show: say so as a failed load rather than leave a blank screen.
+            if (renderer.pageCount == 0) {
+                renderer.close()
+                throw IllegalStateException("The PDF has no pages")
+            }
             val stale = renderLock.withLock {
                 if (viewerClosed.get()) true else {
                     // Replace (and close) any renderer already open, e.g. after a second password attempt.
@@ -350,7 +385,8 @@ fun PdfViewerScreen(
                             ensureActive()
                             stripper.startPage = i + 1
                             stripper.endPage = i + 1
-                            runCatching { stripper.getText(pdDoc) }.getOrDefault("")
+                            // A line break or a run of spaces is one space, so a phrase that wraps onto the next line is still found.
+                            runCatching { stripper.getText(pdDoc) }.getOrDefault("").replace(SEARCH_WHITESPACE, " ")
                         }
                     }
                 } finally {
@@ -358,7 +394,8 @@ fun PdfViewerScreen(
                     tempPdf.delete()
                 }
             }.also { pageTexts = it }
-            val matches = texts.withIndex().filter { (_, text) -> text.contains(query, ignoreCase = true) }.map { it.index }
+            val needle = query.trim().replace(SEARCH_WHITESPACE, " ")
+            val matches = texts.withIndex().filter { (_, text) -> text.contains(needle, ignoreCase = true) }.map { it.index }
             matchingPageIndices = matches
             if (searchRestoring) {
                 searchRestoring = false
@@ -383,13 +420,16 @@ fun PdfViewerScreen(
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = {
                     if (isSearchActive) {
+                        // Focused when it opens, so the keyboard comes up (2026-11-18): a second tap was needed before.
+                        val searchFocus = androidx.compose.runtime.remember { androidx.compose.ui.focus.FocusRequester() }
+                        androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { searchFocus.requestFocus() } }
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text(stringResource(R.string.viewer_search_placeholder)) },
                             singleLine = true,
                             // No fixed height: an outlined field needs 56 dp, and 52 dp clipped the bottom of the typed text.
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(searchFocus),
                             trailingIcon = {
                                 if (isSearchingText) {
                                     ProcessingDots(MaterialTheme.colorScheme.primary)
@@ -437,7 +477,7 @@ fun PdfViewerScreen(
                             IconButton(
                                 onClick = {
                                     if (matchingPageIndices.isNotEmpty()) {
-                                        currentMatchIdx = (currentMatchIdx - 1 + matchingPageIndices.size) % matchingPageIndices.size
+                                        currentMatchIdx = previousMatchIndex(matchingPageIndices, currentPage - 1)
                                         scope.launch { listState.scrollToItem(matchingPageIndices[currentMatchIdx]) }
                                     }
                                 }
@@ -447,7 +487,7 @@ fun PdfViewerScreen(
                             IconButton(
                                 onClick = {
                                     if (matchingPageIndices.isNotEmpty()) {
-                                        currentMatchIdx = (currentMatchIdx + 1) % matchingPageIndices.size
+                                        currentMatchIdx = nextMatchIndex(matchingPageIndices, currentPage - 1)
                                         scope.launch { listState.scrollToItem(matchingPageIndices[currentMatchIdx]) }
                                     }
                                 }
@@ -583,8 +623,11 @@ fun PdfViewerScreen(
                                 detectTransformGestures { _, pan, zoom, _ ->
                                     scale = (scale * zoom).coerceIn(1f, 3.5f)
                                     if (scale > 1f) {
-                                        offsetX += pan.x
-                                        offsetY += pan.y
+                                        // Kept within the zoomed page (2026-11-18): it could be panned right off the screen.
+                                        val maxX = size.width * (scale - 1f) / 2f
+                                        val maxY = size.height * (scale - 1f) / 2f
+                                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
                                     } else {
                                         offsetX = 0f
                                         offsetY = 0f
@@ -614,8 +657,11 @@ fun PdfViewerScreen(
                                 detectTransformGestures { _, pan, zoom, _ ->
                                     scale = (scale * zoom).coerceIn(1f, 3.5f)
                                     if (scale > 1f) {
-                                        offsetX += pan.x
-                                        offsetY += pan.y
+                                        // Kept within the zoomed page (2026-11-18): it could be panned right off the screen.
+                                        val maxX = size.width * (scale - 1f) / 2f
+                                        val maxY = size.height * (scale - 1f) / 2f
+                                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
                                     } else {
                                         offsetX = 0f
                                         offsetY = 0f
@@ -646,7 +692,8 @@ fun PdfViewerScreen(
                                     renderLock = renderLock,
                                     pageCache = pageCache,
                                     pageIndex = index,
-                                    pageCount = pageCount
+                                    pageCount = pageCount,
+                                    knownAspect = pageAspects[index]
                                 )
                             }
                         }
@@ -709,8 +756,13 @@ fun PdfViewerScreen(
                             openRenderer(unlocked)
                             passwordError = null
                             needsPassword = false
-                        } catch (_: Exception) {
-                            passwordError = resources.getString(R.string.viewer_wrong_password)
+                        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            // Only a refused password is "wrong password"; a full disk or a damaged file is not.
+                            passwordError = resources.getString(
+                                if (error is InvalidPasswordException) R.string.viewer_wrong_password else R.string.viewer_load_failed
+                            )
                         } finally {
                             unlocking = false
                         }
@@ -809,12 +861,14 @@ private fun PdfPageItem(
     renderLock: Mutex,
     pageCache: android.util.LruCache<Int, Bitmap>,
     pageIndex: Int,
-    pageCount: Int
+    pageCount: Int,
+    knownAspect: Float? = null
 ) {
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var sharp by remember { mutableStateOf<Bitmap?>(null) }
     var isPageLoading by remember { mutableStateOf(true) }
-    var aspectRatio by remember { mutableFloatStateOf(0.707f) }
+    var aspectRatio by remember { mutableFloatStateOf(knownAspect ?: 0.707f) }
+    LaunchedEffect(knownAspect) { if (knownAspect != null) aspectRatio = knownAspect }
     var widthPx by remember { mutableIntStateOf(0) }
 
     // Keyed on the renderer too: after a password unlock the same page index belongs to a different file.
@@ -893,6 +947,21 @@ private fun PdfPageItem(
         }
     }
 }
+
+/**
+ * The match to go to for "next": the first page after the one on screen ([currentPage], 0-based), wrapping to the first
+ * match past the end. [matches] are page indices, ascending. Going by the page on screen (not by the last match visited)
+ * keeps Next sensible after the reader has scrolled away from the match.
+ */
+internal fun nextMatchIndex(matches: List<Int>, currentPage: Int): Int =
+    matches.indexOfFirst { it > currentPage }.takeIf { it >= 0 } ?: 0
+
+/** The match to go to for "previous": the last page before the one on screen, wrapping to the last match. */
+internal fun previousMatchIndex(matches: List<Int>, currentPage: Int): Int =
+    matches.indexOfLast { it < currentPage }.takeIf { it >= 0 } ?: matches.lastIndex
+
+/** Any run of white space (spaces, tabs, line breaks) in page text or in a search, compared as one space. */
+private val SEARCH_WHITESPACE = Regex("\\s+")
 
 /** Largest zoomed page bitmap, in pixels (about 40 MB as ARGB). */
 private const val ZOOM_PIXEL_BUDGET = 10_000_000f

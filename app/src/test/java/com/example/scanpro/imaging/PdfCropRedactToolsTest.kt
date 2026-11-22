@@ -119,6 +119,31 @@ class PdfCropRedactToolsTest {
     }
 
     @Test
+    fun aPlanCropsAllPagesOrEachPageItsOwnWay() {
+        // F241: two A4 pages (595 x 842 pt) and one turned a quarter; the plan keeps the left half of every page,
+        // keeps page 2 whole, and gives page 3 the top half of its own (as shown, which is its turned side).
+        val a4 = PDRectangle(0f, 0f, 595f, 842f)
+        val shapes = listOf(PdfCropTools.PageShape(a4, 0), PdfCropTools.PageShape(a4, 0), PdfCropTools.PageShape(a4, 90))
+        val plan = CropPlan(all = CropFraction(0f, 0f, 0.5f, 1f))
+            .withPage(1, CropFraction.WHOLE)
+            .withPage(2, CropFraction(0f, 0f, 1f, 0.5f))
+
+        val boxes = PdfCropTools.planBoxes(shapes, plan)
+
+        assertEquals(listOf(0, 0, 298, 842), box(boxes[0]!!))
+        assertNull("a page kept whole is left alone", boxes[1])
+        // Shown turned, the page is 842 wide and 595 high; its top half is the page's own left half in user space.
+        assertEquals(listOf(0, 0, 298, 842), box(boxes[2]!!))
+    }
+
+    @Test
+    fun aPlanNeverMakesAPageSmallerThanTheToolAccepts() {
+        val shapes = listOf(PdfCropTools.PageShape(PDRectangle(0f, 0f, 595f, 842f), 0))
+        assertNull(PdfCropTools.planBoxes(shapes, CropPlan(all = CropFraction(0f, 0f, 0.01f, 1f)))[0])
+        assertNull(PdfCropTools.planBoxes(shapes, CropPlan())[0])
+    }
+
+    @Test
     fun cropBoxesAreWrittenAndTheContentStays() {
         val file = File(dir, "crop.pdf")
         PDDocument().use { doc ->

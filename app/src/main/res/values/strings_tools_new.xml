@@ -12,12 +12,12 @@
     <string name="tools_desc_greyscale">Turn colour pages grey</string>
     <string name="tools_card_flatten">Flatten PDF</string>
     <string name="tools_tile_flatten">Flatten</string>
-    <string name="tools_desc_flatten">Lock forms and comments in place</string>
+    <string name="tools_desc_flatten">Make form answers and comments part of the page</string>
     <string name="tools_card_extract_images">Extract images</string>
     <string name="tools_desc_extract_images">Save the pictures inside a PDF</string>
-    <string name="tools_card_pdf_info">PDF info and metadata</string>
+    <string name="tools_card_pdf_info">File info and metadata</string>
     <string name="tools_tile_pdf_info">Info &amp; metadata</string>
-    <string name="tools_desc_pdf_info">See, edit or remove hidden details</string>
+    <string name="tools_desc_pdf_info">See, edit or remove the hidden details of any file</string>
 
     <!-- Progress line shared by the new tools: "Page 3 of 12". -->
     <string name="tools_new_progress_page">Page %1$d of %2$d</string>
@@ -101,15 +101,15 @@
     <!-- First-use introductions of the new tools. -->
     <string name="hint_tool_blank_pages">Find the empty pages in a scanned PDF and remove them, after you check the list.</string>
     <string name="hint_tool_greyscale">Turn a colour PDF into shades of grey, for cheaper printing or a smaller file.</string>
-    <string name="hint_tool_flatten">Draw form answers, comments and stamps into the pages so nobody can change them.</string>
+    <string name="hint_tool_flatten">Draw form answers, comments and stamps into the pages, so they can no longer be edited as fields or comments. A PDF editor can still change the page itself.</string>
     <string name="hint_tool_extract_images">Save every picture inside a PDF as its own image file.</string>
-    <string name="hint_tool_pdf_info">See a PDF\'s hidden details, edit the title or author, or remove them all for privacy.</string>
+    <string name="hint_tool_pdf_info">See the hidden details of any file (photos, documents, music, videos, archives), edit them where the format allows, or remove them for privacy.</string>
     <!-- Crop PDF pages and Redact text (F172). -->
     <string name="tools_card_crop_pdf">Crop PDF pages</string>
     <string name="tools_tile_crop_pdf">Crop pages</string>
     <string name="tools_desc_crop_pdf">Trim margins or white space</string>
     <string name="hint_tool_crop_pdf">Trim the margins of every page, automatically around the content or by the millimetre. The text layer is kept.</string>
-    <string name="tools_crop_pdf_body">Auto trims each page to its content with a little padding; Margins cuts the amount you set from every page as it is shown. Nothing is deleted, so the pages can be uncropped later with Repair.</string>
+    <string name="tools_crop_pdf_body">Auto trims each page to its content with a little padding; By hand keeps what you frame, the same on every page or page by page. Nothing is deleted, so the pages can be uncropped later with Repair.</string>
     <string name="tools_crop_pdf_mode_auto">Auto trim</string>
     <string name="tools_crop_pdf_mode_margins">Margins</string>
     <string name="tools_crop_pdf_padding">Padding around content</string>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Image tools (F193). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_tool_original">ಮೂಲ</string>
+    <string name="img_tool_result">ಫಲಿತಾಂಶ</string>
+    <string name="img_tool_crop">ಕ್ರಾಪ್</string>
+    <string name="img_tool_now">ಈಗ</string>
+    <string name="img_tool_after">ನಂತರ</string>
+    <string name="img_tool_estimating">ಫಲಿತಾಂಶ ಸಿದ್ಧವಾಗುತ್ತಿದೆ…</string>
+    <string name="img_tool_about">ಸುಮಾರು %1$s</string>
+    <string name="img_tool_smaller">%1$d%% ಚಿಕ್ಕದು</string>
+    <string name="img_tool_larger">%1$d%% ದೊಡ್ಡದು</string>
+    <string name="img_tool_other_format">ಚಿತ್ರ</string>
+    <string name="img_transparency_white">JPG ನಲ್ಲಿ ಪಾರದರ್ಶಕ ಭಾಗಗಳು ಬಿಳಿಯಾಗುತ್ತವೆ. ಅವನ್ನು ಪಾರದರ್ಶಕವಾಗಿಡಲು PNG ಅಥವಾ WebP ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="img_section_make_smaller">ಚಿಕ್ಕದಾಗಿಸುವ ವಿಧಾನ</string>
+    <string name="img_section_resolution">ರೆಸಲ್ಯೂಶನ್</string>
+    <string name="img_section_format">ಫಾರ್ಮ್ಯಾಟ್</string>
+    <string name="img_section_quality">ಗುಣಮಟ್ಟ</string>
+    <string name="img_section_new_size">ಹೊಸ ಗಾತ್ರ</string>
+    <string name="img_section_common_sizes">ಸಾಮಾನ್ಯ ಗಾತ್ರಗಳು</string>
+    <string name="img_section_convert_to">ಇದಕ್ಕೆ ಬದಲಿಸಿ</string>
+    <string name="img_compress_target_hint">ಸಾಧ್ಯವಾದಾಗ ಪೂರ್ಣ ರೆಸಲ್ಯೂಶನ್ ಉಳಿಸುತ್ತದೆ; ಇಲ್ಲದಿದ್ದರೆ ಗುಣಮಟ್ಟ ಕೆಡುವಾಗ ಮಾತ್ರ ಅದನ್ನು ಕಡಿಮೆ ಮಾಡುತ್ತದೆ.</string>
+    <string name="img_compress_already_small">ಈ ಚಿತ್ರ ಈಗಾಗಲೇ ಚಿಕ್ಕದು (%1$s). ಕೆಳಗೆ ಗಾತ್ರ ಟೈಪ್ ಮಾಡಿ, ಅಥವಾ ಗುಣಮಟ್ಟ ಬಳಸಿ.</string>
+    <string name="img_compress_no_gain">ಈ ಚಿತ್ರ ಈಗಾಗಲೇ ಚೆನ್ನಾಗಿ ಕಂಪ್ರೆಸ್ ಆಗಿದೆ: ಈ ಸೆಟ್ಟಿಂಗ್‌ಗಳಿಂದ ಚಿಕ್ಕದಾಗುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಮೂಲವನ್ನೇ ಉಳಿಸಲಾಗುತ್ತದೆ. ಕಡಿಮೆ ಗುಣಮಟ್ಟ ಅಥವಾ ರೆಸಲ್ಯೂಶನ್ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="img_quality_high">ಉನ್ನತ</string>
+    <string name="img_quality_balanced">ಸಮತೋಲಿತ</string>
+    <string name="img_quality_small">ಅತಿ ಚಿಕ್ಕದು</string>
+    <string name="img_quality_smaller_file">ಚಿಕ್ಕ ಫೈಲ್</string>
+    <string name="img_quality_better_picture">ಉತ್ತಮ ಚಿತ್ರ</string>
+    <string name="img_lossless">ಲಾಸ್‌ಲೆಸ್</string>
+    <string name="img_res_original">ಮೂಲ (%1$d px)</string>
+    <string name="img_resolution_hint">ಅತಿ ಉದ್ದದ ಬದಿ. ಹೆಚ್ಚಿನ ಅಪ್‌ಲೋಡ್ ಫಾರ್ಮ್‌ಗಳು ಮತ್ತು ಮೆಸೇಜಿಂಗ್ ಆ್ಯಪ್‌ಗಳಿಗೆ 1920 px ಗಿಂತ ಹೆಚ್ಚು ಬೇಕಿಲ್ಲ.</string>
+    <string name="img_convert_action">%1$s ಗೆ ಬದಲಿಸಿ</string>
+    <string name="img_convert_make_pdf">PDF ಮಾಡಿ</string>
+    <string name="img_convert_already">ಈ ಚಿತ್ರ ಈಗಾಗಲೇ %1$s ಆಗಿದೆ. ಬೇರೆ ಫಾರ್ಮ್ಯಾಟ್ ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="img_convert_quality_hint" formatted="false">90% ಅಥವಾ ಹೆಚ್ಚು ಕಣ್ಣಿಗೆ ಮೂಲದಂತೆಯೇ ಕಾಣುತ್ತದೆ.</string>
+    <string name="img_convert_tap_to_crop">ಮೊದಲು ಕ್ರಾಪ್ ಮಾಡಲು ಚಿತ್ರದ ಮೇಲಿನ ಕ್ರಾಪ್ ಬಟನ್ ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="img_crop_picture_n">ಚಿತ್ರ %1$d ಕ್ರಾಪ್ ಮಾಡಿ</string>
+    <plurals name="img_pictures_count">
+        <item quantity="one">%1$d ಚಿತ್ರ</item>
+        <item quantity="other">%1$d ಚಿತ್ರಗಳು</item>
+    </plurals>
+    <string name="img_resize_enlarge_warning">ಚಿತ್ರವನ್ನು ಮೂಲಕ್ಕಿಂತ ದೊಡ್ಡದು ಮಾಡಿದರೆ ಹೊಸ ವಿವರ ಸೇರುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಮಸುಕಾಗಿ ಕಾಣಬಹುದು.</string>
+    <string name="img_resize_linked_hint">ಅನುಪಾತ ಜೋಡಿಸಲಾಗಿದೆ: ಒಂದು ಬದಿ ಬದಲಿಸಿದರೆ ಇನ್ನೊಂದೂ ಬದಲಾಗುತ್ತದೆ. ಎರಡನ್ನೂ ಹೊಂದಿಸಲು ಲಿಂಕ್ ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="img_resize_unlinked_hint">ಅನುಪಾತ ಬೇರ್ಪಡಿಸಲಾಗಿದೆ: ಆಕಾರ ಚಿತ್ರಕ್ಕಿಂತ ಬೇರೆಯಾದರೆ, ಅದು ಹೇಗೆ ಹೊಂದಬೇಕು ಎಂದು ಕೆಳಗೆ ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="img_fit_fit_desc">ಪೂರ್ಣ ಚಿತ್ರ ಮತ್ತು ಅನುಪಾತ ಉಳಿಯುತ್ತದೆ; ಒಂದು ಬದಿ ಕೇಳಿದ್ದಕ್ಕಿಂತ ಚಿಕ್ಕದಾಗಬಹುದು.</string>
+    <string name="img_fit_fill_desc">ನಿಖರ ಗಾತ್ರ, ಅನುಪಾತ ಉಳಿಯುತ್ತದೆ; ಹೊಂದದ ಅಂಚುಗಳು ಕತ್ತರಿಸಲ್ಪಡುತ್ತವೆ.</string>
+    <string name="img_fit_stretch_desc">ನಿಖರ ಗಾತ್ರ, ಪೂರ್ಣ ಚಿತ್ರ; ಹೊಂದಿಸಲು ಒತ್ತಲಾಗುತ್ತದೆ ಅಥವಾ ಎಳೆಯಲಾಗುತ್ತದೆ.</string>
+    <string name="img_format_kept">ಈಗಿನ ಅದೇ ಫಾರ್ಮ್ಯಾಟ್ (%1$s).</string>
+    <string name="img_crop_title">ಚಿತ್ರ ಕ್ರಾಪ್ ಮಾಡಿ</string>
+    <string name="img_crop_done">ಮುಗಿದಿದೆ</string>
+    <string name="img_crop_frame">ಕ್ರಾಪ್ ಫ್ರೇಮ್. ಗಾತ್ರ ಬದಲಿಸಲು ಮೂಲೆ ಅಥವಾ ಅಂಚುಗಳನ್ನು ಎಳೆಯಿರಿ, ಅಥವಾ ಸರಿಸಲು ಒಳಗೆ ಎಳೆಯಿರಿ.</string>
+    <string name="img_crop_free">ಮುಕ್ತ</string>
+    <string name="img_crop_original">ಮೂಲ</string>
+    <string name="img_crop_square">ಚೌಕ</string>
+    <string name="img_crop_rotate">ತಿರುಗಿಸಿ</string>
+    <string name="img_crop_flip">ಕನ್ನಡಿ</string>
+    <string name="img_crop_reset">ಮರುಹೊಂದಿಸಿ</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_compress_larger_as">%1$s ಆಗಿ ಈ ಚಿತ್ರ ಈಗಿರುವುದಕ್ಕಿಂತ ದೊಡ್ಡದಾಗುತ್ತದೆ. ಫೋಟೋಗೆ JPG ಅಥವಾ WebP ಬಳಸಿದರೆ ಚಿಕ್ಕದಾಗುತ್ತದೆ.</string>
+    <string name="img_compress_png_hint">PNG ಪ್ರತಿ ಪಿಕ್ಸೆಲ್ ಅನ್ನೂ ಹಾಗೆಯೇ ಉಳಿಸುತ್ತದೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್, ರೇಖಾಚಿತ್ರ ಮತ್ತು ಪಾರದರ್ಶಕ ಭಾಗಗಳಿರುವ ಚಿತ್ರಗಳಿಗೆ ಉತ್ತಮ; ಫೋಟೋಗಳು ಸಾಮಾನ್ಯವಾಗಿ JPG ಅಥವಾ WebP ಆಗಿದ್ದರೆ ಚಿಕ್ಕದಾಗುತ್ತವೆ.</string>
+    <string name="img_compress_png_no_quality">PNG ಗೆ ಗುಣಮಟ್ಟದ ಸೆಟ್ಟಿಂಗ್ ಇಲ್ಲ: ಅದು ಪ್ರತಿ ಪಿಕ್ಸೆಲ್ ಅನ್ನೂ ಉಳಿಸುತ್ತದೆ. ಚಿಕ್ಕದಾಗಿಸಲು ಕೆಳಗಿನ ರೆಸಲ್ಯೂಶನ್ ಕಡಿಮೆ ಮಾಡಿ, ಅಥವಾ ಗುರಿ ಗಾತ್ರ ಬಳಸಿ.</string>
+    <string name="img_tool_unreadable">ಈ ಚಿತ್ರವನ್ನು ತೆರೆಯಲಾಗಲಿಲ್ಲ. ಇದನ್ನು ಮುಚ್ಚಿ ಮತ್ತೆ ಆರಿಸಿ, ಅಥವಾ ಬೇರೆ ಚಿತ್ರ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="img_tool_unreadable_short">ಚಿತ್ರವನ್ನು ತೆರೆಯಲಾಗಲಿಲ್ಲ</string>
+</resources>

@@ -14,7 +14,6 @@ import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.ThemeMode
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -97,5 +96,47 @@ class CropEditorDialogTest {
             bottomLeft = NormalizedPoint(0f, 1f)
         )
         assertEquals(expected, confirmedCrop)
+    }
+
+    /**
+     * Rotate turns the picture off the main thread; the outline follows when the turned picture arrives. However many
+     * turns were made, an outline the user did not touch must come back from Done exactly as it went in.
+     */
+    @Test
+    fun rotating_keeps_the_outline_and_the_picture_in_step() {
+        val lopsided = CropQuad(
+            topLeft = NormalizedPoint(0.05f, 0.1f),
+            topRight = NormalizedPoint(0.7f, 0.2f),
+            bottomRight = NormalizedPoint(0.8f, 0.95f),
+            bottomLeft = NormalizedPoint(0.1f, 0.6f)
+        )
+        var confirmedCrop: CropQuad? = null
+        var dismissed = false
+        val turns = androidx.compose.runtime.mutableIntStateOf(0)
+        compose.setContent {
+            ScanProTheme(themeMode = ThemeMode.DARK) {
+                CropEditorDialog(
+                    sourcePath = testImageFile.absolutePath,
+                    initial = lopsided,
+                    onDismiss = { dismissed = true },
+                    onConfirm = { confirmedCrop = it },
+                    onRotateRight = { turns.intValue++ },
+                    turns = turns.intValue
+                )
+            }
+        }
+        val done = hasText(app.getString(R.string.common_done), substring = true) and hasClickAction()
+        val rotate = hasText(app.getString(R.string.doc_rotate), substring = true) and hasClickAction()
+        compose.waitUntil(5000) { runCatching { compose.onNode(done).assertIsEnabled(); true }.getOrDefault(false) }
+        // Three taps, the last two in quick succession: a turn that is overtaken must not leave the outline behind.
+        compose.onNode(rotate).performClick()
+        repeat(5) { Thread.sleep(100); compose.waitForIdle() }
+        compose.onNode(rotate).performClick()
+        compose.onNode(rotate).performClick()
+        repeat(8) { Thread.sleep(100); compose.waitForIdle() }
+        compose.onNode(done).performClick()
+        compose.waitForIdle()
+        assertEquals(lopsided, confirmedCrop)
+        assertEquals(false, dismissed)
     }
 }

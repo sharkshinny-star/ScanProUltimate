@@ -256,4 +256,22 @@
     <string name="home_recent_files">ಇತ್ತೀಚಿನ ಫೈಲ್‌ಗಳು</string>
     <string name="home_recent_opened">ತೆರೆದವು</string>
     <string name="home_recent_scans">ಸ್ಕ್ಯಾನ್‌ಗಳು</string>
+    <string name="settings_section_about">ScanPro ಬಗ್ಗೆ</string>
+    <string name="settings_group_more">ಇನ್ನಷ್ಟು</string>
+    <string name="settings_about_tagline">ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಕೆಲಸ ಮಾಡುವ ಡಾಕ್ಯುಮೆಂಟ್ ಸ್ಕ್ಯಾನರ್ ಮತ್ತು PDF ಟೂಲ್‌ಕಿಟ್.</string>
+    <string name="settings_group_general">ಸಾಮಾನ್ಯ</string>
+    <string name="settings_group_data">ಡೇಟಾ ಮತ್ತು ಗೌಪ್ಯತೆ</string>
+    <string name="settings_stat_documents">ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</string>
+    <string name="settings_stat_storage">ಬಳಸಿದ ಸಂಗ್ರಹಣೆ</string>
+    <string name="settings_stat_recycle_bin">ರೀಸೈಕಲ್ ಬಿನ್‌ನಲ್ಲಿ</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">ಟ್ಯಾಗ್ ಸೇರಿಸಿ</string>
+    <string name="name_pattern_example">ಮುಂದಿನ ಸ್ಕ್ಯಾನ್: %1$s</string>
+    <string name="name_pattern_sample_text">ಇನ್‌ವಾಯ್ಸ್ Acme</string>
+    <string name="name_pattern_suggestions">ಸಲಹೆಗಳು</string>
+    <string name="name_pattern_tag_date">ದಿನಾಂಕ</string>
+    <string name="name_pattern_tag_mode">ಸ್ಕ್ಯಾನ್ ಪ್ರಕಾರ</string>
+    <string name="name_pattern_tag_text">ಪುಟದ ಪಠ್ಯ</string>
+    <string name="name_pattern_tag_time">ಸಮಯ</string>
+    <string name="name_pattern_unknown">ಟ್ಯಾಗ್ ಅಲ್ಲ, ಟೈಪ್ ಮಾಡಿದಂತೆಯೇ ಉಳಿಸಲಾಗಿದೆ: %1$s</string>
 </resources>

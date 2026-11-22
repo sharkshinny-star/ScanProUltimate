@@ -4,4 +4,9 @@
     <color name="scanpro_splash_icon_bg">#4457E6</color>
     <color name="scanpro_widget_background">#1C1F2B</color>
     <color name="scanpro_widget_button">#4C5BE8</color>
+    <!-- Widget secondary buttons (F197) -->
+    <color name="scanpro_widget_tonal">#2A3050</color>
+    <color name="scanpro_widget_tonal_text">#DDE1FF</color>
+    <color name="scanpro_widget_heading">#F1F2F8</color>
+    <color name="scanpro_widget_subtle">#B4B8CB</color>
 </resources>

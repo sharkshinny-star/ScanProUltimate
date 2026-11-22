@@ -3,6 +3,7 @@ package com.example.scanpro.core.operations
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -30,12 +31,23 @@ class OperationForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val label = intent?.getStringExtra(EXTRA_LABEL)
         ensureChannel()
-        ServiceCompat.startForeground(
-            this,
-            NOTIFICATION_ID,
-            buildNotification(label),
-            if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
-        )
+        // Refused when Android 15+'s daily data-sync budget is used up (or the app is not allowed to start one now):
+        // the work carries on in its own scope without the notification, rather than the app crashing (F210).
+        val started = runCatching {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                buildNotification(label),
+                if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
+            )
+        }.isSuccess
+        if (!started) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+        // The notification's Cancel button (F215): stops the running work the way the in-app Stop does; the work's
+        // own finish then takes the notification down.
+        if (intent?.action == ACTION_CANCEL) cancelHandler?.invoke()
         if (intent?.action == ACTION_STOP) {
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             // With the start id, a newer "show" request that is already queued keeps the service alive.
@@ -60,6 +72,13 @@ class OperationForegroundService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .addAction(
+                0,
+                getString(R.string.common_cancel),
+                PendingIntent.getService(
+                    this, 1, intent(this).setAction(ACTION_CANCEL), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            )
             .build()
 
     private fun ensureChannel() {
@@ -79,6 +98,14 @@ class OperationForegroundService : Service() {
         private const val NOTIFICATION_ID = 0x5CA7
         private const val EXTRA_LABEL = "label"
         private const val ACTION_STOP = "com.example.scanpro.action.STOP_OPERATION_SERVICE"
+        private const val ACTION_CANCEL = "com.example.scanpro.action.CANCEL_OPERATION"
+
+        /**
+         * What the notification's Cancel button does; set by [OperationRunner], which owns the running work. Null
+         * (nothing happens) if the process was restarted and no work is running.
+         */
+        @Volatile
+        var cancelHandler: (() -> Unit)? = null
 
         /** Shows (or updates) the "working" notification. A refusal, e.g. from the background on Android 12+, is harmless. */
         fun show(context: Context, label: String?) {

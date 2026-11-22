@@ -220,6 +220,22 @@ class PdfCleanupToolsTest {
     }
 
     @Test
+    fun eachExtractedPictureKnowsItsPage() = runBlocking {
+        val source = pdf("pages.pdf") { doc ->
+            val first = LosslessFactory.createFromImage(doc, solid(30, 30, Color.RED))
+            val second = LosslessFactory.createFromImage(doc, solid(40, 40, Color.BLUE))
+            PDPageContentStream(doc, page(doc)).use { it.drawImage(first, 10f, 10f) }
+            PDPageContentStream(doc, page(doc)).use { it.drawImage(first, 10f, 10f) } // the same picture again: kept once, on page 1
+            PDPageContentStream(doc, page(doc)).use { it.drawImage(second, 10f, 10f) }
+        }
+
+        val found = PdfCleanupTools.extractImagesWithPages(context, source, File(dir, "pages-out").apply { mkdirs() })
+
+        assertEquals(listOf(1, 3), found.map { it.page })
+        assertEquals(2, found.map { it.file.name }.distinct().size)
+    }
+
+    @Test
     fun aPdfWithoutImagesSaysSo() = runBlocking {
         val source = pdf("text.pdf") { doc -> write(doc, page(doc), "No pictures") }
         try {
@@ -245,6 +261,16 @@ class PdfCleanupToolsTest {
             PdfCleanupTools.pageImages(page, HashSet<COSBase>(), found)
             assertEquals(1, found.size)
         }
+    }
+
+    @Test
+    fun toInvertedColorsInvertsRgbValues() {
+        val bitmap = solid(10, 10, Color.rgb(255, 255, 255))
+        PdfCleanupTools.toInvertedColors(bitmap)
+        val pixel = bitmap.getPixel(0, 0)
+        assertEquals(0, Color.red(pixel))
+        assertEquals(0, Color.green(pixel))
+        assertEquals(0, Color.blue(pixel))
     }
 
     // ---- helpers ----

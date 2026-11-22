@@ -1,5 +1,10 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.rememberScrollState
+
+import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.TextButton
@@ -7,7 +12,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.AssistChip
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -24,14 +28,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -47,11 +49,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material.icons.rounded.Badge
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Clear
@@ -281,7 +281,7 @@ fun LibraryRoute(
         },
         onPhonePdfs = onPhonePdfs,
         // Files on this phone (F168): Home's section, the card above My documents and the On this phone pane.
-        homePhoneFiles = if (mode != ScanProDestinations.HOME) null else {
+        homePhoneFiles = if (mode != ScanProDestinations.HOME || !com.example.scanpro.feature.phonepdfs.PhonePdfSource.available) null else {
             {
                 com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
                     actions = phoneFileActions,
@@ -294,7 +294,7 @@ fun LibraryRoute(
                 )
             }
         },
-        filesAccessCard = if (mode != ScanProDestinations.FILES || phonePdfsCardDismissed) null else {
+        filesAccessCard = if (mode != ScanProDestinations.FILES || phonePdfsCardDismissed || !com.example.scanpro.feature.phonepdfs.PhonePdfSource.available) null else {
             {
                 com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
                     actions = phoneFileActions,
@@ -310,7 +310,10 @@ fun LibraryRoute(
             }
         },
         phoneFilesPane = if (mode != ScanProDestinations.FILES) null else {
-            { com.example.scanpro.feature.phonepdfs.PhoneFilesPane(actions = phoneFileActions, onNotNow = null) }
+            { com.example.scanpro.feature.phonepdfs.PhoneFilesPane(actions = phoneFileActions, onNotNow = null, showSearch = false) }
+        },
+        phoneFilesSearch = if (mode != ScanProDestinations.FILES) null else {
+            { modifier -> com.example.scanpro.feature.phonepdfs.PhoneFilesSearchField(modifier) }
         }
     )
 }
@@ -381,6 +384,8 @@ internal fun LibraryScreen(
     onPhonePdfs: () -> Unit = {},
     /** Home: Files on this phone (access card or newest files). */
     homePhoneFiles: (@Composable () -> Unit)? = null,
+    /** Files, On this phone tab: its search field, shown in the top bar beside the title. */
+    phoneFilesSearch: (@Composable (Modifier) -> Unit)? = null,
     /** Files > My documents: the access card, until granted or closed. */
     filesAccessCard: (@Composable () -> Unit)? = null,
     /** Files > On this phone. Null hides the My documents / On this phone switch. */
@@ -389,6 +394,10 @@ internal fun LibraryScreen(
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
     var phoneFilesTab by rememberSaveable { mutableStateOf(false) }
+    // On this phone has its own search, sort and grid switch, and lists other files than the documents the top bar
+    // counts: while it shows, the bar keeps only its title and menu (two searches and two sorts on one screen read
+    // as clutter, and the bar's ones acted on the tab that was not showing).
+    val onPhoneTab = phoneFilesPane != null && phoneFilesTab
     // Files keeps the saved layout; Search is always a list. The saved sort orders both.
     val gridMode = mode == ScanProDestinations.FILES && savedGrid
     var moveToFolderOpen by rememberSaveable { mutableStateOf(false) }
@@ -476,23 +485,34 @@ internal fun LibraryScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopBarWithProgress(busy, onStop = onStop) {
+            // Home's title is the greeting, so the banner carries the task's words there; the other titles show them.
+            TopBarWithProgress(busy, onStop = onStop, status = if (isHome) busyLabel else null) {
                 TopAppBar(
                     colors = topBarColors,
                     scrollBehavior = scrollBehavior,
+                    // Files and Search: a lower bar, so the list starts higher (owner, 2026-11-19: "a lot of gap").
+                    expandedHeight = if (isHome) TopAppBarDefaults.TopAppBarExpandedHeight else 56.dp,
                     title = {
                         when {
                             selecting -> TitleWithStatus(pluralStringResource(R.plurals.lib_title_selected_count, selected.size, selected.size), if (busy) busyLabel else null)
-                            isHome -> BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
+                            isHome -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
+                                // The space beside the name: a small scene, a different one at random each time.
+                                com.example.scanpro.core.designsystem.HeaderSceneStrip(Modifier.weight(1f).padding(start = 8.dp).height(52.dp))
+                            }
                             isSearch -> Text(stringResource(R.string.common_search))
-                            else -> TitleWithStatus(
-                                stringResource(R.string.lib_title_files),
-                                when {
-                                    busy -> busyLabel
-                                    overview.documentCount == 0 -> null
-                                    else -> pluralStringResource(R.plurals.lib_document_count, overview.documentCount, overview.documentCount)
-                                }
-                            )
+                            else -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                TitleWithStatus(
+                                    stringResource(R.string.lib_title_files),
+                                    when {
+                                        busy -> busyLabel
+                                        overview.documentCount == 0 || onPhoneTab -> null
+                                        else -> pluralStringResource(R.plurals.lib_document_count, overview.documentCount, overview.documentCount)
+                                    }
+                                )
+                                // On this phone: the search sits here, in the free space beside the title.
+                                if (onPhoneTab) phoneFilesSearch?.invoke(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp))
+                            }
                         }
                     },
                     navigationIcon = {
@@ -567,12 +587,12 @@ internal fun LibraryScreen(
                                 }
                             }
                         } else {
-                            if (!isSearch && !isHome) {
+                            if (!isSearch && !isHome && !onPhoneTab) {
                                 IconButton(onClick = onSearch) {
                                     Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.common_search))
                                 }
                             }
-                            if (!isHome) Box {
+                            if (!isHome && !onPhoneTab) Box {
                                 IconButton(onClick = { sortMenuOpen = true }) {
                                     Icon(Icons.AutoMirrored.Rounded.Sort, contentDescription = stringResource(R.string.lib_cd_sort))
                                 }
@@ -601,7 +621,7 @@ internal fun LibraryScreen(
                                     }
                                 }
                             }
-                            if (mode == ScanProDestinations.FILES) IconButton(onClick = { onGridChange(!gridMode) }) {
+                            if (mode == ScanProDestinations.FILES && !onPhoneTab) IconButton(onClick = { onGridChange(!gridMode) }) {
                                 Icon(
                                     if (gridMode) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
                                     contentDescription = stringResource(if (gridMode) R.string.lib_cd_show_as_list else R.string.lib_cd_show_as_grid)
@@ -703,13 +723,16 @@ internal fun LibraryScreen(
             } else {
                 Column(Modifier.fillMaxSize().widthIn(max = 1100.dp)) {
                     // Files: ScanPro's own documents, or every file on the phone (F168).
-                    if (phoneFilesPane != null && !selecting) {
+                    // Kept while selecting, only disabled (2026-11-18): hiding it moved the list 48dp up under the finger
+                    // that had just long-pressed a document.
+                    if (phoneFilesPane != null) {
                         androidx.compose.material3.SingleChoiceSegmentedButtonRow(
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
                         ) {
                             listOf(R.string.phone_files_tab_mine, R.string.phone_files_tab_phone).forEachIndexed { index, label ->
                                 SegmentedButton(
                                     selected = phoneFilesTab == (index == 1),
+                                    enabled = !selecting,
                                     onClick = { phoneFilesTab = index == 1 },
                                     shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 2),
                                     label = { Text(stringResource(label), maxLines = 1, overflow = TextOverflow.Ellipsis) }
@@ -717,8 +740,8 @@ internal fun LibraryScreen(
                             }
                         }
                     }
-                    if (phoneFilesPane != null && phoneFilesTab && !selecting) {
-                        phoneFilesPane()
+                    if (onPhoneTab && !selecting) {
+                        phoneFilesPane?.invoke()
                         return@Column
                     }
                     if (isSearch) {
@@ -1040,7 +1063,11 @@ private fun EmptyLibrary(
 ) {
     val fresh = query.isBlank() && !favoritesOnly && folder.isBlank()
     Box(Modifier.fillMaxSize().padding(horizontal = 32.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(max = 360.dp)) {
+        // Scrolls when it doesn't fit (a phone on its side, a 2x font): the buttons at the bottom were cut off.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.widthIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(vertical = 16.dp)
+        ) {
             IconTile(
                 icon = when {
                     query.isNotBlank() -> Icons.Rounded.Search
@@ -1179,7 +1206,8 @@ private fun HomeDashboard(
             ScanHeroCard(
                 onStartScan = onStartScan,
                 enabled = !busy,
-                compact = documentCount > 0,
+                // Compact until the first library read too: it started full size and shrank on every cold start.
+                compact = documentCount > 0 || overview.revision == 0L,
                 onQuickScan = onQuickScan,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
@@ -1274,7 +1302,8 @@ private fun HomeDashboard(
                         now = now
                     )
                 }
-                com.example.scanpro.feature.tools.HomeRecentRow(items)
+                // A fresh row per chip, so a new list starts at its beginning rather than at the old one's scroll.
+                androidx.compose.runtime.key(recentKind) { com.example.scanpro.feature.tools.HomeRecentRow(items) }
             }
         }
         // Files on this phone (F168): the access card until granted or closed, then the newest files with See all.
@@ -1379,15 +1408,16 @@ private fun ScanHeroCard(
     // A scan beam sweeps down the page glyph and back, like the scanner finding a page. Read while drawing,
     // so it never recomposes the card; still when animations are off.
     val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
-    val beam = androidx.compose.animation.core.rememberInfiniteTransition(label = "hero").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            androidx.compose.animation.core.tween(2_400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-            androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "beam"
-    )
+    // Overhaul 2026-11-18: the beam used to sweep forever, redrawing Home every frame for as long as it was open (battery,
+    // and frames taken from scrolling). It now sweeps down and back once when Home appears, then rests at the top.
+    val beam = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(motion) {
+        if (!motion) return@LaunchedEffect
+        val sweep = androidx.compose.animation.core.tween<Float>(1_400, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        beam.snapTo(0f)
+        beam.animateTo(1f, sweep)
+        beam.animateTo(0f, sweep)
+    }
     Box(
         modifier
             .fillMaxWidth()
@@ -1406,14 +1436,13 @@ private fun ScanHeroCard(
                         radius = size.width * 0.5f,
                         center = Offset(size.width * 0.1f, 0f)
                     )
-                    // The brand glyph, large and faint, running off the right edge.
-                    // Kept to the right third so the faint glyph (and its scan line) never runs behind the text.
-                    // Capped by the width too: a large font makes the card taller, and a glyph sized by height alone
-                    // then grew leftwards behind the text and the button.
-                    // The glyph keeps to the part of the card above the mode pills, so its scan line never runs behind them.
+                    // The brand glyph, faint, whole and inside the right third of the card. It used to be larger and run
+                    // off the right edge, which cut its brackets and the moving scan line in half and read as a clipped
+                    // picture. Capped by the width (a large font makes the card taller, and a glyph sized by height
+                    // alone grew leftwards behind the text) and kept above the mode pills.
                     val glyphArea = size.height - if (onQuickScan != null) 64.dp.toPx() else 0f
-                    val glyph = minOf(glyphArea * 1.05f, size.width * 0.75f)
-                    val left = size.width - glyph * 0.62f
+                    val glyph = minOf(glyphArea * 0.96f, size.width * 0.32f)
+                    val left = size.width - glyph - 6.dp.toPx()
                     val top = (glyphArea - glyph) / 2f
                     translate(left = left, top = top) {
                         drawScanGlyph(
@@ -1497,15 +1526,12 @@ private fun ScanHeroCard(
             ) {
                 Icon(Icons.Rounded.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                // One line: at a large font size the label shrinks to fit rather than breaking onto two lines.
-                val labelStyle = MaterialTheme.typography.labelLarge
-                Text(
+                // One line that shrinks to fit. Its lower limit used to be 12 sp, which was not small enough at 150 % text
+                // ("Start scanninc") or for the longer Tamil label: both were cut mid-letter at the button's edge.
+                com.example.scanpro.core.designsystem.FitText(
                     stringResource(R.string.lib_hero_start_scanning),
-                    style = labelStyle,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    softWrap = false,
-                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = labelStyle.fontSize)
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -1558,12 +1584,16 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
     val perRow = minOf(if (com.example.scanpro.navigation.isWideWindow()) 8 else 4, actions.size.coerceAtLeast(1))
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         actions.chunked(perRow).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // The tiles of a row share the height of the tallest one, and each centres its icon and label. Every label
+            // used to reserve two lines, which left a one-line label (all three, in English) sitting above an empty band.
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { action ->
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                         modifier = Modifier
                             .weight(1f)
+                            .fillMaxHeight()
                             .clip(RoundedCornerShape(18.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable(enabled = enabled, role = Role.Button, onClick = action.onClick)
@@ -1577,9 +1607,7 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
                             style = MaterialTheme.typography.labelMedium,
                             textAlign = TextAlign.Center,
                             maxLines = 2,
-                            minLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize),
                             lineHeight = MaterialTheme.typography.labelMedium.lineHeight
                         )
                     }
@@ -1594,7 +1622,7 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
 /** Picks an existing folder, types a new one, or takes the documents out of any folder. */
 @Composable
 private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
-    var name by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(pluralStringResource(R.plurals.lib_move_documents_title, count, count)) },

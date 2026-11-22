@@ -42,9 +42,41 @@ class ResultShareTest {
     }
 
     @Test
+    fun absoluteAndDotEntryNamesStayInsideTheFolder() {
+        val cache = tmp.newFolder("cache")
+        val outside = File(tmp.root, "outside.pdf")
+        val parts = unpackForSharing(cache, zipOf(
+            outside.absolutePath to "absolute",
+            ".." to "parent",
+            "." to "current",
+            "../pages-sibling/other.pdf" to "sibling"
+        ))!!
+        val destination = File(cache, "exports/shared_parts/pages").canonicalFile
+        assertEquals(listOf("absolute", "parent", "current", "sibling"), parts.map { it.readText() })
+        assertTrue(parts.all { it.canonicalFile.parentFile == destination })
+        assertTrue(!outside.exists())
+    }
+
+    @Test
     fun tooManyFilesFallsBackToTheZip() {
         val cache = tmp.newFolder("cache")
         val entries = (1..MAX_SHARED_PARTS + 1).map { "p$it.png" to "x" }.toTypedArray()
         assertNull(unpackForSharing(cache, zipOf(*entries)))
+    }
+
+    @Test
+    fun repeatedNamesAreKeptNotOverwritten() {
+        val cache = tmp.newFolder("cache")
+        val parts = unpackForSharing(cache, zipOf("a/page.jpg" to "one", "b/page.jpg" to "two"))!!
+        assertEquals(2, parts.map { it.name }.distinct().size)
+        assertEquals(listOf("one", "two"), parts.map { it.readText() })
+    }
+
+    @Test
+    fun `an entry named like the fallback does not displace an earlier file`() {
+        val cache = tmp.newFolder("cache")
+        val parts = unpackForSharing(cache, zipOf("1_page.jpg" to "one", "a/page.jpg" to "two", "b/page.jpg" to "three"))!!
+        assertEquals(3, parts.map { it.name }.distinct().size)
+        assertEquals(listOf("one", "two", "three"), parts.map { it.readText() })
     }
 }

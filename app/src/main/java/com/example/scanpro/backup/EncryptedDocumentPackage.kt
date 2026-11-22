@@ -121,6 +121,14 @@ class EncryptedDocumentPackage(private val context: Context) {
         private const val MAX_RESTORE_BYTES = 2L * 1024 * 1024 * 1024
         /** The encrypted file itself: the unpacked limit plus room for chunk tags and zip headers. */
         private const val MAX_PACKAGE_BYTES = MAX_RESTORE_BYTES + MAX_RESTORE_BYTES / 16
+        /**
+         * Largest version 1 (single-stream) package this phone will decrypt. Android's GCM holds the whole
+         * ciphertext and its plaintext in memory before it releases any of it, roughly twice the file size, so the
+         * limit follows the heap the app was given: a third of it, never below 32 MB or above 512 MB. Version 2
+         * packages are read in chunks and have no such limit.
+         */
+        internal fun legacyPackageLimit(): Long =
+            (Runtime.getRuntime().maxMemory() / 3).coerceIn(32L * 1024 * 1024, 512L * 1024 * 1024)
         /** A 300-page document with sources and signatures needs a few thousand; millions of empty entries would exhaust the file system. */
         private const val MAX_ENTRIES = 20_000
         /** OCR text and edit settings of the largest documents fit in a few MB; the manifest is read into memory whole. */
@@ -235,6 +243,8 @@ class EncryptedDocumentPackage(private val context: Context) {
                 input.readFully(magic)
                 val chunked = magic.contentEquals(MAGIC_CHUNKED)
                 require(chunked || magic.contentEquals(MAGIC)) { "Not a ScanPro encrypted package" }
+                // Refused here, before the key is derived, so an oversized file costs nothing.
+                if (!chunked && encrypted.length() > legacyPackageLimit()) throw BackupTooLargeException()
                 val iterations = input.readInt()
                 require(iterations in 100_000..1_000_000) { "Invalid backup header" }
                 val salt = ByteArray(16).also(input::readFully)
@@ -243,7 +253,8 @@ class EncryptedDocumentPackage(private val context: Context) {
                     val noncePrefix = ByteArray(ChunkedAead.PREFIX_BYTES).also(input::readFully)
                     ChunkedAead.Reader(input, key, noncePrefix)
                 } else {
-                    // Version 1 packages: one GCM stream (kept so older backups still restore).
+                    // Version 1 packages: one GCM stream (kept so older backups still restore); the size was
+                    // checked against legacyPackageLimit() above.
                     val iv = ByteArray(12).also(input::readFully)
                     val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
                         init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
@@ -260,7 +271,10 @@ class EncryptedDocumentPackage(private val context: Context) {
                         while (entry != null) {
                             if (++entries > MAX_ENTRIES) throw BackupTooLargeException()
                             val safe = File(outDir, entry.name).canonicalFile
-                            require(safe.path.startsWith(outDir.canonicalPath + File.separator)) { "Unsafe backup entry" }
+                            // Keep rejection explicit so static analysis can follow the guard to every file operation.
+                            if (!safe.canonicalPath.startsWith(outDir.canonicalPath + File.separator)) {
+                                throw IllegalArgumentException("Unsafe backup entry")
+                            }
                             if (entry.isDirectory) {
                                 safe.mkdirs()
                             } else {

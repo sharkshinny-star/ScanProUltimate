@@ -162,23 +162,67 @@ internal object PageNumberGeometry {
     ): WatermarkGeometry.Stamp {
         val (seenW, seenH) = WatermarkGeometry.seenSize(width, height, rotation)
         val seenX = when (position) {
-            PageNumberPosition.BOTTOM_LEFT -> margin
+            PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.TOP_LEFT -> margin
             PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.TOP_CENTER -> (seenW - textWidth) / 2f
             PageNumberPosition.BOTTOM_RIGHT, PageNumberPosition.TOP_RIGHT -> seenW - margin - textWidth
         }
         // Seen y points down; this is the baseline.
         val seenY = when (position) {
             PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.BOTTOM_RIGHT -> seenH - margin
-            PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> margin + fontSize
+            PageNumberPosition.TOP_LEFT, PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> margin + fontSize
         }
         val (px, py) = WatermarkGeometry.toPage(seenX, seenY, width, height, rotation)
         return WatermarkGeometry.Stamp(px, py, Math.toRadians((((rotation % 360) + 360) % 360).toDouble()))
     }
+
+    /**
+     * How much the number and its margin grow or shrink with the page (F210): 11 pt with a half-inch margin suits A4
+     * and Letter, but on a page made from a 3000-pixel photo (3000 pt wide) it was a speck, and on a receipt-sized
+     * page "Page 10 of 120" ran off the edge. Scaled by the page's shorter side against A4's, within 0.5 to 5 times.
+     */
+    fun sizeScale(seenWidth: Float, seenHeight: Float): Float =
+        (minOf(seenWidth, seenHeight) / A4_SHORT_SIDE_PT).coerceIn(0.5f, 5f)
+
+    /** The font size that keeps a number [widthPerPoint] wide per point of font size inside [seenWidth] between its margins. */
+    fun fittedFontSize(fontSize: Float, widthPerPoint: Float, margin: Float, seenWidth: Float): Float {
+        val room = seenWidth - 2f * margin
+        if (widthPerPoint <= 0f || room <= 0f) return fontSize
+        return minOf(fontSize, room / widthPerPoint)
+    }
+
+    /** The text written for page [page] of [total] (both from 1). The words are the same in every language: the PDF font has Latin letters only. */
+    fun text(format: PageNumberFormat, page: Int, total: Int): String = when (format) {
+        PageNumberFormat.PAGE_N_OF_M -> "Page $page of $total"
+        PageNumberFormat.N_SLASH_M -> "$page / $total"
+        PageNumberFormat.DASH -> "- $page -"
+        PageNumberFormat.SIMPLE -> "$page"
+    }
+
+    private const val A4_SHORT_SIDE_PT = 595f
 }
 
 enum class PageNumberPosition {
-    BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT
+    BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT, TOP_LEFT
 }
+
+/**
+ * The fonts page numbers can be written in. SANS, SERIF and MONO are the PDF standard fonts Helvetica (Arial's twin),
+ * Times (Times New Roman's) and Courier, which every reader has; the others are carried by the app and embedded.
+ * Its own list, not Edit PDF's, because [PageNumbersConfig] is public and Edit PDF's editor is not.
+ */
+enum class PageNumberFont { SANS, SERIF, MONO, ROBOTO, INTER, MONTSERRAT, GELASIO }
+
+/** The matching font of Edit PDF's editor, which has the files and the on-screen look of each. */
+internal val PageNumberFont.editorFamily: PdfTextEditor.Family
+    get() = when (this) {
+        PageNumberFont.SANS -> PdfTextEditor.Family.SANS
+        PageNumberFont.SERIF -> PdfTextEditor.Family.SERIF
+        PageNumberFont.MONO -> PdfTextEditor.Family.MONO
+        PageNumberFont.ROBOTO -> PdfTextEditor.Family.ROBOTO
+        PageNumberFont.INTER -> PdfTextEditor.Family.INTER
+        PageNumberFont.MONTSERRAT -> PdfTextEditor.Family.MONTSERRAT
+        PageNumberFont.GELASIO -> PdfTextEditor.Family.GELASIO
+    }
 
 enum class PageNumberFormat {
     PAGE_N_OF_M,
@@ -192,8 +236,17 @@ data class PageNumbersConfig(
     val format: PageNumberFormat = PageNumberFormat.PAGE_N_OF_M,
     val skipFirstPage: Boolean = false,
     val marginPt: Float = 36f,
-    val fontSizePt: Float = 11f
+    /** On an A4 page; larger pages get it larger (see PageNumberGeometry.sizeScale). */
+    val fontSizePt: Float = 11f,
+    /** 0xAARRGGBB; the dark grey numbers always had by default. Transparency is ignored. */
+    val colourArgb: Int = DEFAULT_PAGE_NUMBER_COLOUR,
+    val font: PageNumberFont = PageNumberFont.SANS,
+    val bold: Boolean = false,
+    val italic: Boolean = false,
+    val underline: Boolean = false,
 )
+
+const val DEFAULT_PAGE_NUMBER_COLOUR: Int = 0xFF333333.toInt()
 
 /**
  * Merge reached file [index] (0-based), [uri], which needs a password to open: none was given for it, or
@@ -555,7 +608,9 @@ object PdfToolsEngine {
         pageSize: PdfPageSize = PdfPageSize.AUTO,
         quality: PdfQuality = PdfQuality.BALANCED,
         outputFile: File,
-        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        /** The white border around each picture, in points. */
+        margin: Float = PdfExporter.MARGIN
     ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(imageUris.isNotEmpty(), R.string.tools_err_no_images)
         outputFile.parentFile?.mkdirs()
@@ -607,7 +662,8 @@ object PdfToolsEngine {
                     // Decoding is the slow part, so Cancel is honoured between pages here too.
                     if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
                     onProgress(number, total, creating)
-                }
+                },
+                margin = margin
             )
 
             return@withContext PdfToolResult(
@@ -649,7 +705,7 @@ object PdfToolsEngine {
                 ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
                     openRenderer(pfd, tempFile).use { renderer ->
                         val totalPages = renderer.pageCount
-                        val chosen = pages?.asSequence()?.filter { it in 1..totalPages }?.distinct()?.sorted()?.toList() ?: (1..totalPages).toList()
+                        val chosen = PdfToImagesMath.chosenPages(pages, totalPages)
                         userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
                         chosen.forEachIndexed { step, pageNumber ->
                             val i = pageNumber - 1
@@ -657,10 +713,8 @@ object PdfToolsEngine {
                             onProgress(step + 1, chosen.size, AppStrings.get(R.string.tools_progress_exporting_page, pageNumber, format.extension.uppercase()))
 
                             renderer.openPage(i).use { page ->
-                                // Capped so a poster-sized page can't run out of memory.
-                                val scale = minOf(scale, 4000f / maxOf(page.width, page.height).coerceAtLeast(1))
-                                val width = (page.width * scale).toInt().coerceAtLeast(1)
-                                val height = (page.height * scale).toInt().coerceAtLeast(1)
+                                // Capped so a poster-sized page can't run out of memory; the tool page shows the same sizes.
+                                val (width, height) = PdfToImagesMath.pixelSize(page.width, page.height, scale)
                                 val canvas = bitmap?.takeIf { it.width == width && it.height == height }
                                     ?: createBitmap(width, height).also { bitmap?.recycle(); bitmap = it }
                                 // PdfRenderer draws onto what is there: transparent pixels turn black in a JPEG, and a
@@ -668,18 +722,18 @@ object PdfToolsEngine {
                                 canvas.eraseColor(Color.WHITE)
                                 page.render(canvas, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
-                                val imgFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.${format.extension}")
+                                val imgFile = File(outputDir, PdfToImagesMath.fileName(base, i + 1, totalPages, format.extension))
                                 FileOutputStream(imgFile).buffered().use { out ->
                                     if (format == ImageExportFormat.JPEG) {
-                                        canvas.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                                        canvas.compress(Bitmap.CompressFormat.JPEG, PdfToImagesMath.JPEG_QUALITY, out)
                                     } else if (format == ImageExportFormat.PNG) {
                                         canvas.compress(Bitmap.CompressFormat.PNG, 100, out)
                                     } else {
                                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                                            canvas.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+                                            canvas.compress(Bitmap.CompressFormat.WEBP_LOSSY, PdfToImagesMath.WEBP_QUALITY, out)
                                         } else {
                                             @Suppress("DEPRECATION")
-                                            canvas.compress(Bitmap.CompressFormat.WEBP, 90, out)
+                                            canvas.compress(Bitmap.CompressFormat.WEBP, PdfToImagesMath.WEBP_QUALITY, out)
                                         }
                                     }
                                 }
@@ -918,6 +972,31 @@ object PdfToolsEngine {
         }
     }
 
+    /** Smallest and largest page-number size offered (points, on an A4 page). */
+    const val MIN_PAGE_NUMBER_PT = 6f
+    const val MAX_PAGE_NUMBER_PT = 36f
+    /** The underline sits this far below the baseline and is this thick, as fractions of the font size. */
+    internal const val UNDERLINE_DROP = 0.14f
+    internal const val UNDERLINE_THICKNESS = 0.06f
+
+    /**
+     * The font page numbers are written in (F242): a standard PDF font for Sans (Helvetica), Serif (Times) and Mono
+     * (Courier), or one the app carries, embedded (only the letters used). Helvetica if a carried font cannot be read.
+     */
+    private fun pageNumberFont(context: Context, doc: PDDocument, config: PageNumbersConfig): com.tom_roush.pdfbox.pdmodel.font.PDFont {
+        val b = config.bold
+        val i = config.italic
+        fun standard(regular: PDType1Font, bold: PDType1Font, italic: PDType1Font, boldItalic: PDType1Font) =
+            if (b && i) boldItalic else if (b) bold else if (i) italic else regular
+        val helvetica = standard(PDType1Font.HELVETICA, PDType1Font.HELVETICA_BOLD, PDType1Font.HELVETICA_OBLIQUE, PDType1Font.HELVETICA_BOLD_OBLIQUE)
+        return when (config.font) {
+            PageNumberFont.SERIF -> standard(PDType1Font.TIMES_ROMAN, PDType1Font.TIMES_BOLD, PDType1Font.TIMES_ITALIC, PDType1Font.TIMES_BOLD_ITALIC)
+            PageNumberFont.MONO -> standard(PDType1Font.COURIER, PDType1Font.COURIER_BOLD, PDType1Font.COURIER_OBLIQUE, PDType1Font.COURIER_BOLD_OBLIQUE)
+            PageNumberFont.SANS -> helvetica
+            else -> runCatching { CarriedFonts(context).load(doc, config.font.editorFamily, b, i) }.getOrNull() ?: helvetica
+        }
+    }
+
     /**
      * Adds page numbers to pages of a PDF document with position and formatting controls.
      */
@@ -937,9 +1016,12 @@ object PdfToolsEngine {
                 val totalPages = doc.numberOfPages
                 userRequire(totalPages > 0, R.string.tools_err_no_pages)
 
-                val font = PDType1Font.HELVETICA
-                val fontSize = config.fontSizePt.coerceIn(8f, 24f)
-                val margin = config.marginPt.coerceIn(12f, 100f)
+                val font = pageNumberFont(context, doc, config)
+                val baseFontSize = config.fontSizePt.coerceIn(MIN_PAGE_NUMBER_PT, MAX_PAGE_NUMBER_PT)
+                val red = ((config.colourArgb shr 16) and 0xFF) / 255f
+                val green = ((config.colourArgb shr 8) and 0xFF) / 255f
+                val blue = (config.colourArgb and 0xFF) / 255f
+                val baseMargin = config.marginPt.coerceIn(12f, 100f)
 
                 var numberedCount = 0
                 val label = AppStrings.get(R.string.tools_progress_page_numbers)
@@ -955,14 +1037,15 @@ object PdfToolsEngine {
                     val box = page.cropBox
 
                     val pageNum = i + 1
-                    val text = when (config.format) {
-                        PageNumberFormat.PAGE_N_OF_M -> "Page $pageNum of $totalPages"
-                        PageNumberFormat.N_SLASH_M -> "$pageNum / $totalPages"
-                        PageNumberFormat.DASH -> "- $pageNum -"
-                        PageNumberFormat.SIMPLE -> "$pageNum"
-                    }
+                    val text = PageNumberGeometry.text(config.format, pageNum, totalPages)
 
-                    val textWidth = (font.getStringWidth(text) / 1000f) * fontSize
+                    // Sized to the page as seen (F210), and never wider than the page between its margins.
+                    val (seenW, seenH) = WatermarkGeometry.seenSize(box.width, box.height, page.rotation)
+                    val grow = PageNumberGeometry.sizeScale(seenW, seenH)
+                    val margin = baseMargin * grow
+                    val widthPerPoint = font.getStringWidth(text) / 1000f
+                    val fontSize = PageNumberGeometry.fittedFontSize(baseFontSize * grow, widthPerPoint, margin, seenW)
+                    val textWidth = widthPerPoint * fontSize
 
                     // Placed on the page as seen, so a page turned with /Rotate gets an upright number on the edge the reader sees.
                     val spot = PageNumberGeometry.place(config.position, textWidth, fontSize, margin, box.width, box.height, page.rotation)
@@ -970,12 +1053,24 @@ object PdfToolsEngine {
                     val sin = Math.sin(spot.angleRad).toFloat()
 
                     PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
-                        cs.setNonStrokingColor(0.2f, 0.2f, 0.2f)
+                        // Drawn in a frame turned and moved to the number's spot, so the underline turns with it.
+                        cs.saveGraphicsState()
+                        cs.transform(Matrix(cos, sin, -sin, cos, box.lowerLeftX + spot.x, box.lowerLeftY + spot.y))
+                        cs.setNonStrokingColor(red, green, blue)
                         cs.beginText()
                         cs.setFont(font, fontSize)
-                        cs.setTextMatrix(Matrix(cos, sin, -sin, cos, box.lowerLeftX + spot.x, box.lowerLeftY + spot.y))
+                        cs.newLineAtOffset(0f, 0f)
                         cs.showText(text)
                         cs.endText()
+                        if (config.underline) {
+                            val y = -fontSize * UNDERLINE_DROP
+                            cs.setStrokingColor(red, green, blue)
+                            cs.setLineWidth(fontSize * UNDERLINE_THICKNESS)
+                            cs.moveTo(0f, y)
+                            cs.lineTo(textWidth, y)
+                            cs.stroke()
+                        }
+                        cs.restoreGraphicsState()
                     }
                     numberedCount++
                 }
@@ -1048,7 +1143,18 @@ object PdfToolsEngine {
     /** Opens a PDF with [password] ("" when there is none); a missing or wrong one throws [InvalidPasswordException]. */
     internal fun openPdf(file: File, password: String = ""): PDDocument =
         // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
-        PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
+        // The scratch file is capped (F215): a small file built to inflate without end (a "decompression bomb") now
+        // fails with an error at the cap instead of filling the phone's storage.
+        PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly(scratchLimit(file.length()))).editable()
+
+    /**
+     * The most scratch storage a PDF of [fileBytes] may use while a tool works on it: eight times its own size, and
+     * never less than [MIN_SCRATCH_BYTES], so an honest file (even a small one of tightly packed scans) is never
+     * refused.
+     */
+    internal fun scratchLimit(fileBytes: Long): Long = maxOf(MIN_SCRATCH_BYTES, fileBytes.coerceAtLeast(0L) * 8L)
+
+    internal const val MIN_SCRATCH_BYTES = 1024L * 1024L * 1024L
 
     /**
      * A PDF that opens without a password can still carry an owner-password encryption dictionary (print or copy

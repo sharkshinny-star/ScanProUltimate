@@ -32,4 +32,5 @@
     <string name="msg_sign_progress" tools:ignore="PluralsCandidate">பக்கம் %1$d / %2$d இல் கையொப்பமிடப்படுகிறது</string>
     <string name="msg_sign_failed">PDF இல் கையொப்பமிட முடியவில்லை</string>
     <string name="msg_sign_done" tools:ignore="PluralsCandidate">கையொப்பமிட்ட நகல் சேமிக்கப்பட்டது. சேர்க்கப்பட்டவை: %1$d</string>
+    <string name="sign_existing_digital_signature">இந்த PDF-இல் ஏற்கனவே டிஜிட்டல் கையொப்பம் உள்ளது. இங்கே சேமிக்கும் நகல் அந்தக் கையொப்பத்தின் சரிபார்ப்பில் இனி செல்லாது. அசல் கோப்பு மாறாது.</string>
 </resources>

@@ -21,8 +21,10 @@
     <!-- Scans, imports and exports use the Photo Picker, the system file picker (SAF) and app-private storage.
          The two permissions below serve one optional feature only: "Files on this phone" (Home and Files), which
          lists and opens the PDFs, images, Office and text files in shared storage, read only; nothing is uploaded.
-         Neither is requested at launch: the user reads an explainer card and then grants it on the system "All files
-         access" page (Android 11+) or in the usual permission dialog (Android 7-10). Google Play needs a permission declaration for MANAGE_EXTERNAL_STORAGE.
+         Asked for once at start (F196, owner's request): on the welcome's permission page with the camera and
+         notifications, or by a one-time prompt for people past the welcome; each says what it is for and leads to
+         the system "All files access" page (Android 11+) or the usual permission dialog (Android 7-10). Not now
+         leaves the app fully usable, and Files keeps its own access card. Google Play needs a permission declaration for MANAGE_EXTERNAL_STORAGE.
          requestLegacyExternalStorage (on the application) is read by Android 10 only, where READ_EXTERNAL_STORAGE
          would otherwise show media files but no PDFs; later versions ignore it. -->
     <uses-permission
@@ -32,6 +34,8 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
+    <!-- allowBackup stays true only so the device-transfer rules apply; backup_rules.xml and data_extraction_rules.xml
+         exclude every cloud backup, so nothing leaves the phone. Keep both files in step with any new storage. -->
     <application
         android:name=".ScanProApplication"
         android:allowBackup="true"
@@ -112,10 +116,10 @@
                 android:resource="@xml/scan_widget_info" />
         </receiver>
 
-        <!-- "Turn off" on a drink-water notice stops the reminders without opening the app. Not exported:
+        <!-- "I drank" and "Skip" on a drink-water notice put it away without opening the app. Not exported:
              only ScanPro's own PendingIntent may fire it. -->
         <receiver
-            android:name=".work.HydrationOffReceiver"
+            android:name=".work.HydrationActionReceiver"
             android:exported="false" />
 
         <service

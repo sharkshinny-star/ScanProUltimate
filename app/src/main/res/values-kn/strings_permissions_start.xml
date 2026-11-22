@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Files access asked at start (F196). Machine translation, not yet reviewed by a speaker. -->
+    <string name="ui_permission_files_title">ನಿಮ್ಮ ಫೋನ್‌ನ ಫೈಲ್‌ಗಳು</string>
+    <string name="ui_permission_files_body_settings">ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಈಗಾಗಲೇ ಇರುವ PDF, Word, Excel ಫೈಲ್‌ಗಳು ಮತ್ತು ಫೋಟೋಗಳನ್ನು ಹುಡುಕಿ ತೆರೆಯಲು. ಓದಲು ಮಾತ್ರ, ಮತ್ತು ಏನೂ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಹೋಗುವುದಿಲ್ಲ. ಮುಂದೆ Android ಸೆಟ್ಟಿಂಗ್ ಪುಟ ತೆರೆಯುತ್ತದೆ: “ಎಲ್ಲ ಫೈಲ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸಲು ಅನುಮತಿಸಿ” ಆನ್ ಮಾಡಿ, ನಂತರ ಹಿಂತಿರುಗಿ.</string>
+    <string name="ui_permission_files_body_dialog">ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಈಗಾಗಲೇ ಇರುವ PDF, Word, Excel ಫೈಲ್‌ಗಳು ಮತ್ತು ಫೋಟೋಗಳನ್ನು ಹುಡುಕಿ ತೆರೆಯಲು. ಓದಲು ಮಾತ್ರ, ಮತ್ತು ಏನೂ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಹೋಗುವುದಿಲ್ಲ.</string>
+    <string name="files_start_title">ನಿಮ್ಮ ಫೋನ್‌ನ ಎಲ್ಲ ದಾಖಲೆಗಳನ್ನು ನೋಡಿ</string>
+    <string name="files_start_allow">ಅನುಮತಿಸಿ</string>
+</resources>

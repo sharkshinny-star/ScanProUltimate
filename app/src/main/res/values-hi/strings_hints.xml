@@ -43,4 +43,6 @@
     <string name="settings_show_intros_title">परिचय फिर से दिखाएँ</string>
     <string name="settings_show_intros_subtitle">टूर और कैमरा व टूल के परिचय एक बार फिर देखें</string>
     <string name="settings_show_intros_done">परिचय फिर से दिखेंगे</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="hint_tool_step_pick_any">कोई भी फ़ाइल चुनें: PDF, फ़ोटो, दस्तावेज़, गाना, वीडियो या आर्काइव</string>
 </resources>

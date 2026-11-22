@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Page tools (F210). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_reading_pdf">PDF വായിക്കുന്നു…</string>
+    <string name="pages_count_unknown">പേജുകൾ എണ്ണാൻ കഴിഞ്ഞില്ല: PDF കേടായതാകാം അല്ലെങ്കിൽ പാസ്‌വേഡ് വേണ്ടതാകാം. എങ്കിലും ശ്രമിക്കാം.</string>
+
+    <string name="pages_split_how">എങ്ങനെ വിഭജിക്കണം</string>
+    <string name="pages_split_ranges_hint" tools:ignore="TypographyDashes">ഓരോ ശ്രേണിയും ഒരു പ്രത്യേക ഫയലാകും, ഉദാഹരണത്തിന് 1-3, 4, 8-10</string>
+    <string name="pages_split_overlap">ചില ഫയലുകൾ ഒരേ പേജുകൾ പങ്കിടുന്നു: ആ പേജുകൾ ഒന്നിലധികം ഫയലുകളിൽ വരും.</string>
+    <plurals name="pages_split_zip_hint">
+        <item quantity="one">%1$d ഫയൽ ഒരു ZIP ഫയലിൽ സേവ് ചെയ്യുന്നു.</item>
+        <item quantity="other">%1$d ഫയലുകൾ ഒരുമിച്ച് ഒരു ZIP ഫയലിൽ സേവ് ചെയ്യുന്നു.</item>
+    </plurals>
+    <plurals name="pages_split_file_line">
+        <item quantity="one">ഫയൽ %1$d: പേജ് %2$s (%3$d പേജ്)</item>
+        <item quantity="other">ഫയൽ %1$d: പേജുകൾ %2$s (%3$d പേജുകൾ)</item>
+    </plurals>
+    <plurals name="pages_split_more_files">
+        <item quantity="one">…കൂടാതെ %1$d ഫയൽ കൂടി</item>
+        <item quantity="other">…കൂടാതെ %1$d ഫയലുകൾ കൂടി</item>
+    </plurals>
+
+    <string name="pages_numbers_where">എവിടെ</string>
+    <string name="pages_numbers_edge_top">മുകളിൽ</string>
+    <string name="pages_numbers_edge_bottom">താഴെ</string>
+    <string name="pages_numbers_align_left">ഇടത്</string>
+    <string name="pages_numbers_align_centre">നടുവിൽ</string>
+    <string name="pages_numbers_align_right">വലത്</string>
+    <string name="pages_numbers_latin_note">ആപ്പിന്റെ ഭാഷ ഏതായാലും നമ്പറുകൾ ലാറ്റിൻ അക്ഷരങ്ങളിലും അക്കങ്ങളിലുമാണ് എഴുതുന്നത് (ഉദാ. Page 3 of 12).</string>
+    <string name="pages_numbers_cover_hint">കവർ ശൂന്യമായി തുടരും, പക്ഷേ എണ്ണത്തിൽ പെടും, അതിനാൽ നമ്പർ 2 മുതൽ തുടങ്ങും.</string>
+    <string name="pages_numbers_only_cover">ഈ PDF-ൽ ഒരു പേജ് മാത്രം, നിങ്ങൾ ഒഴിവാക്കാൻ തിരഞ്ഞെടുത്ത കവർ: ഒന്നിനും നമ്പർ വരില്ല.</string>
+    <string name="pages_numbers_preview_page_two">പേജ് 2-ൽ കാണിക്കുന്നു, നമ്പർ ലഭിക്കുന്ന ആദ്യ പേജ്.</string>
+    <plurals name="pages_numbers_numbered">
+        <item quantity="one">%1$d പേജിന് നമ്പർ ചേർക്കും</item>
+        <item quantity="other">%1$d പേജുകൾക്ക് നമ്പർ ചേർക്കും</item>
+    </plurals>
+
+    <string name="pages_nup_per_sheet_title">ഓരോ ഷീറ്റിലും പേജുകൾ</string>
+    <plurals name="pages_nup_sheets">
+        <item quantity="one">%1$d ഷീറ്റ്</item>
+        <item quantity="other">%1$d ഷീറ്റുകൾ</item>
+    </plurals>
+    <string name="pages_nup_scale">ഓരോ പേജും അതിന്റെ വലിപ്പത്തിന്റെ ഏകദേശം %1$d%% ൽ അച്ചടിക്കും.</string>
+    <string name="pages_nup_small_print">ഇത്ര ചെറിയ ടെക്സ്റ്റ് കടലാസിൽ വായിക്കാൻ പ്രയാസമാകാം. ഓരോ ഷീറ്റിലും കുറച്ച് പേജുകൾ ആണെങ്കിൽ അത് വലുതായിരിക്കും.</string>
+    <plurals name="pages_nup_last_sheet">
+        <item quantity="one">അവസാന ഷീറ്റിൽ %1$d പേജ് ഉണ്ട്; ബാക്കി സ്ഥലം ശൂന്യമായിരിക്കും.</item>
+        <item quantity="other">അവസാന ഷീറ്റിൽ %1$d പേജുകൾ ഉണ്ട്; ബാക്കി സ്ഥലം ശൂന്യമായിരിക്കും.</item>
+    </plurals>
+
+    <plurals name="pages_blank_found_count">
+        <item quantity="one">%2$d-ൽ %1$d പേജ് ശൂന്യമായി തോന്നുന്നു</item>
+        <item quantity="other">%2$d-ൽ %1$d പേജുകൾ ശൂന്യമായി തോന്നുന്നു</item>
+    </plurals>
+    <string name="pages_blank_review">ടിക്ക് ചെയ്ത പേജുകൾ നീക്കം ചെയ്യും. സൂക്ഷിക്കേണ്ട പേജിന്റെ ടിക്ക് മാറ്റുക.</string>
+    <string name="pages_blank_none_ticked">നീക്കം ചെയ്യാൻ കുറഞ്ഞത് ഒരു പേജ് ടിക്ക് ചെയ്യുക.</string>
+    <string name="pages_blank_copy_note">ഇവ ഒരു പുതിയ പകർപ്പിൽ നിന്ന് നീക്കം ചെയ്യും; യഥാർത്ഥ ഫയൽ അതേപടി തുടരും.</string>
+
+    <string name="pages_insert_pick_first">പേജുകൾ എടുക്കേണ്ട PDF തിരഞ്ഞെടുക്കുക.</string>
+    <string name="pages_insert_change_pdf">മറ്റൊരു PDF തിരഞ്ഞെടുക്കുക</string>
+    <plurals name="pages_insert_summary">
+        <item quantity="one">%1$d പേജ് പേജ് %2$d-ന് ശേഷം ചേരും, ആകെ %3$d പേജുകൾ.</item>
+        <item quantity="other">%1$d പേജുകൾ പേജ് %2$d-ന് ശേഷം ചേരും, ആകെ %3$d പേജുകൾ.</item>
+    </plurals>
+    <plurals name="pages_insert_summary_start">
+        <item quantity="one">%1$d പേജ് തുടക്കത്തിൽ ചേരും, ആകെ %2$d പേജുകൾ.</item>
+        <item quantity="other">%1$d പേജുകൾ തുടക്കത്തിൽ ചേരും, ആകെ %2$d പേജുകൾ.</item>
+    </plurals>
+
+    <string name="pages_merge_counting">പേജുകൾ എണ്ണുന്നു…</string>
+    <string name="pages_merge_summary">%1$s ഉള്ള ഒരു PDF, ഏകദേശം %2$s</string>
+    <plurals name="pages_merge_not_counted">
+        <item quantity="one">എണ്ണിയിട്ടില്ല: ലോക്ക് ചെയ്തതോ വായിക്കാൻ കഴിയാത്തതോ ആയ %1$d ഫയൽ.</item>
+        <item quantity="other">എണ്ണിയിട്ടില്ല: ലോക്ക് ചെയ്തതോ വായിക്കാൻ കഴിയാത്തതോ ആയ %1$d ഫയലുകൾ.</item>
+    </plurals>
+    <string name="pages_merge_unreadable">വായിക്കാൻ കഴിഞ്ഞില്ല · %1$s</string>
+
+    <plurals name="pages_org_turned">
+        <item quantity="one">%1$d പേജ് തിരിച്ചു</item>
+        <item quantity="other">%1$d പേജുകൾ തിരിച്ചു</item>
+    </plurals>
+    <string name="pages_org_nothing_changed">ആദ്യം ഒരു പേജ് നീക്കുക, തിരിക്കുക അല്ലെങ്കിൽ നീക്കം ചെയ്യുക: ഇപ്പോഴത്തെ നിലയിൽ PDF അതേപടി വരും.</string>
+    <string name="pages_org_turn_one">ഒരു പേജ് തിരിക്കാൻ അതിൽ ടാപ്പ് ചെയ്യുക: ഇതുവരെ ഒന്നും തിരിച്ചിട്ടില്ല.</string>
+    <string name="pages_org_pick_pages">പുറത്തെടുക്കേണ്ട പേജുകളിൽ ടാപ്പ് ചെയ്യുക.</string>
+
+    <string name="pages_compress_estimating">ഓരോ നിലയിലും എന്ത് ലഭിക്കുമെന്ന് കണക്കാക്കുന്നു…</string>
+    <string name="pages_compress_level">എത്ര ചെറുതാക്കണം</string>
+    <string name="pages_compress_no_change">മാറ്റമില്ല</string>
+    <string name="pages_compress_text_note">ഈ PDF കൂടുതലും ടെക്സ്റ്റ് ആണ്, അത് ഇതിനകം ചെറുതാണ്. കംപ്രസ് ചെയ്യുമ്പോൾ ചിത്രങ്ങൾ മാത്രം ചെറുതാകും, അതിനാൽ വലിയ മാറ്റം പ്രതീക്ഷിക്കേണ്ട; ടെക്സ്റ്റ് വ്യക്തവും തിരയാവുന്നതുമായി തുടരും.</string>
+    <string name="pages_compress_no_gain">ഈ നിലയിൽ ഈ PDF ചെറുതാകാൻ സാധ്യതയില്ല, അതിനാൽ അതേ വലിപ്പത്തിലുള്ള പകർപ്പ് ലഭിക്കും.</string>
+    <string name="pages_compress_picture_note">ഈ PDF-ൽ ടെക്സ്റ്റ് ലെയർ ഇല്ല, അതിനാൽ ഈ നിലയിൽ ഓരോ പേജും വീണ്ടും ചിത്രമായി സേവ് ചെയ്യും. ആദ്യ പേജ് എങ്ങനെയിരിക്കുമെന്ന് ഫലം പ്രിവ്യൂ കാണിക്കുന്നു.</string>
+    <string name="pages_compress_target_unreachable">ഈ PDF ഏകദേശം %1$s വരെ മാത്രമേ ചെറുതാകാൻ സാധ്യതയുള്ളൂ, അതിനാൽ അതിലും ചെറിയ ലക്ഷ്യം എത്തിയേക്കില്ല.</string>
+    <string name="pages_compress_target_text_warning">ഇത്ര ചെറിയ വലിപ്പത്തിലെത്താൻ പേജുകൾ ചിത്രങ്ങളായി സേവ് ചെയ്തേക്കാം: അപ്പോൾ അവയിലെ ടെക്സ്റ്റ് തിരയാനോ പകർത്താനോ കഴിയില്ല.</string>
+    <string name="pages_compress_estimate_failed">ഈ PDF-ന് ഒരു കണക്ക് കണ്ടെത്താൻ കഴിഞ്ഞില്ല. പൂർത്തിയാകുമ്പോൾ യഥാർത്ഥ വലിപ്പം കാണിക്കും.</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_numbers_bold">ബോൾഡ്</string>
+    <string name="pages_numbers_closeup">ക്ലോസ്-അപ്പ്</string>
+    <string name="pages_numbers_colour">നിറം</string>
+    <string name="pages_numbers_colour_green">പച്ച</string>
+    <string name="pages_numbers_colour_grey">കടും ചാരനിറം</string>
+    <string name="pages_numbers_colour_red">ചുവപ്പ്</string>
+    <string name="pages_numbers_font">ഫോണ്ട്</string>
+    <string name="pages_numbers_font_twins">Helvetica അല്ലെങ്കിൽ Times ആയി എഴുതുന്നു; ഇവ Arial, Times New Roman എന്നിവയുടെ ഇരട്ടകളാണ്, എല്ലാ PDF റീഡറിലും ഉണ്ട്: ഒരേ രൂപവും വീതിയും, അതിനാൽ ഫയലിൽ ഒന്നും ചേർക്കേണ്ടതില്ല.</string>
+    <string name="pages_numbers_italic">ഇറ്റാലിക്</string>
+    <string name="pages_numbers_look">ശൈലി</string>
+    <string name="pages_numbers_regular">സാധാരണ</string>
+    <string name="pages_numbers_size">വലുപ്പം</string>
+    <string name="pages_numbers_size_value">%1$d pt</string>
+    <string name="pages_numbers_style">രൂപം</string>
+    <string name="pages_numbers_underline">അടിവര</string>
+</resources>

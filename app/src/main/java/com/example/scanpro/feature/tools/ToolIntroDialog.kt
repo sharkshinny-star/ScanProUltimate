@@ -20,6 +20,7 @@ internal class ToolIntro(@StringRes val description: Int, val input: HintInput) 
             HintInput.Image -> R.string.hint_tool_step_pick_image
             HintInput.Images -> R.string.hint_tool_step_pick_images
             HintInput.Office -> R.string.hint_tool_step_pick_office
+            HintInput.AnyFile -> R.string.hint_tool_step_pick_any
         }
 }
 
@@ -50,6 +51,8 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "resize_img" -> ToolIntro(R.string.hint_tool_resize_img, HintInput.Image)
     "blank_pages" -> ToolIntro(R.string.hint_tool_blank_pages, HintInput.Pdf)
     "greyscale" -> ToolIntro(R.string.hint_tool_greyscale, HintInput.Pdf)
+    "edit_pdf" -> ToolIntro(R.string.hint_tool_edit_pdf, HintInput.Pdf)
+    "invert_pdf" -> ToolIntro(R.string.hint_tool_invert_pdf, HintInput.Pdf)
     "flatten" -> ToolIntro(R.string.hint_tool_flatten, HintInput.Pdf)
     "crop_pdf" -> ToolIntro(R.string.hint_tool_crop_pdf, HintInput.Pdf)
     "redact" -> ToolIntro(R.string.hint_tool_redact, HintInput.Pdf)
@@ -57,7 +60,7 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "nup" -> ToolIntro(R.string.hint_tool_nup, HintInput.Pdf)
     "header_footer" -> ToolIntro(R.string.hint_tool_header_footer, HintInput.Pdf)
     "extract_images" -> ToolIntro(R.string.hint_tool_extract_images, HintInput.Pdf)
-    "pdf_info" -> ToolIntro(R.string.hint_tool_pdf_info, HintInput.Pdf)
+    "pdf_info" -> ToolIntro(R.string.hint_tool_pdf_info, HintInput.AnyFile)
     else -> null
 }
 
@@ -70,7 +73,12 @@ internal fun ToolIntroDialog(tool: PdfToolCard, intro: ToolIntro, onContinue: ()
     IllustratedDialog(
         title = stringResource(tool.title),
         body = stringResource(intro.description),
-        illustration = { ToolFlowIllustration(tool.icon, tool.tone, intro.input, Modifier.fillMaxSize()) },
+        // The tool's own demonstration when it has one (F195); the general file-to-tool picture otherwise.
+        illustration = {
+            val scene = com.example.scanpro.core.designsystem.toolDemoScene(tool.id)
+            if (scene != null) com.example.scanpro.core.designsystem.ToolDemo(scene, Modifier.fillMaxSize())
+            else ToolFlowIllustration(tool.icon, tool.tone, intro.input, Modifier.fillMaxSize())
+        },
         confirmText = stringResource(R.string.common_continue),
         onConfirm = onContinue,
         dismissText = stringResource(R.string.common_cancel),

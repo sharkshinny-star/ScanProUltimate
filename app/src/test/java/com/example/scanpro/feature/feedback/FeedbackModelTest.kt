@@ -1,40 +1,25 @@
 package com.example.scanpro.feature.feedback
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FeedbackModelTest {
     @Test
-    fun aFaceIsNeededBeforeSubmitting() {
-        assertFalse(canSubmitRating(0, emptySet(), ""))
-        assertTrue(canSubmitRating(2, emptySet(), ""))
+    fun fourAndFiveAreThankedAndLowerRatingsAreAskedWhatWentWrong() {
+        assertEquals(RatingFollowUp.THANKS, followUpFor(5))
+        assertEquals(RatingFollowUp.THANKS, followUpFor(4))
+        (1..3).forEach { assertEquals("rating $it", RatingFollowUp.PROBLEM, followUpFor(it)) }
     }
 
     @Test
-    fun otherAloneNeedsText() {
-        val other = setOf(FeedbackReason.OTHER)
-        assertFalse(canSubmitRating(2, other, "  "))
-        assertTrue(canSubmitRating(2, other, "Pages upside down"))
-        assertTrue("another chip says enough", canSubmitRating(2, other + FeedbackReason.SLOW, ""))
-    }
-
-    @Test
-    fun lowAndHighRatingsAskDifferentThings() {
-        assertTrue(FeedbackReason.BLURRY in reasonsFor(1))
-        assertEquals(reasonsFor(1), reasonsFor(3))
-        assertTrue(FeedbackReason.QUALITY in reasonsFor(5))
-        assertEquals(reasonsFor(4), reasonsFor(5))
-        assertTrue(reasonsFor(0).isEmpty())
-        assertTrue(reasonsFor(2).last() == FeedbackReason.OTHER && reasonsFor(4).last() == FeedbackReason.OTHER)
-    }
-
-    @Test
-    fun emailTextListsTheAnswers() {
-        val text = ratingEmailText("Rating: 2/5 (Poor)", "What went wrong?", listOf("Too slow", "Other"), "Comments:", " Takes ages \n")
-        assertEquals("Rating: 2/5 (Poor)\n\nWhat went wrong?\n• Too slow\n• Other\n\nComments:\nTakes ages", text)
-        assertEquals("Rating: 5/5 (Loved it)", ratingEmailText("Rating: 5/5 (Loved it)", "Q", emptyList(), "Comments:", ""))
+    fun nothingFollowsWhatIsNotARating() {
+        assertNull(followUpFor(0))
+        assertNull(followUpFor(6))
+        assertNull(Mood.of(0))
+        assertEquals(Mood.LOVED, Mood.of(5))
     }
 
     @Test

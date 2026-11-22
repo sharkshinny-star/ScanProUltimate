@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Convert and info tools (F211): PDF to images, Images to PDF, Office to PDF, PDF to text, OCR, Extract images,
+         PDF info, Repair and Fill forms. What each tool will produce, shown before it runs. -->
+
+    <!-- Shared -->
+    <string name="cvt_reading_pdf">Reading the PDF…</string>
+    <string name="cvt_pdf_unreadable">This PDF can\'t be opened. Try Repair PDF first.</string>
+    <string name="cvt_pdf_locked">This PDF needs its password. Unlock it first.</string>
+    <string name="cvt_checking_pages">Checking which pages have text…</string>
+    <string name="cvt_up_to">Up to %1$s</string>
+    <string name="cvt_portrait">Portrait</string>
+    <string name="cvt_landscape">Landscape</string>
+    <string name="cvt_size_mm" translatable="false">%1$d × %2$d mm</string>
+    <string name="cvt_size_in" translatable="false">%1$s × %2$s in</string>
+    <plurals name="cvt_pictures">
+        <item quantity="one">%1$d picture</item>
+        <item quantity="other">%1$d pictures</item>
+    </plurals>
+
+    <!-- PDF to images -->
+    <string name="cvt_dpi" translatable="false">%1$d dpi</string>
+    <string name="cvt_dpi_screen">Screen: small files for messaging</string>
+    <string name="cvt_dpi_standard">Standard: clear on any phone or computer</string>
+    <string name="cvt_dpi_sharp">Sharp: zoom in on fine print</string>
+    <string name="cvt_dpi_print">Print: large files, fit for printing</string>
+    <string name="cvt_dpi_pixels">At %1$d dpi each picture is %2$s.</string>
+    <string name="cvt_format_jpg">JPG: the smallest files for scans and photos.</string>
+    <string name="cvt_format_png">PNG: lossless, so text and lines stay crisp; larger files.</string>
+    <string name="cvt_format_webp">WebP: smaller than JPG, but some older apps can\'t open it.</string>
+    <string name="cvt_pages_type">Type the pages to export, for example 1–3, 7</string>
+    <string name="cvt_pdf2img_mixed">The pages differ in size; the largest picture is shown.</string>
+    <string name="cvt_pdf2img_single">One %1$s image, ready to share</string>
+    <plurals name="cvt_pdf2img_zip">
+        <item quantity="one">%1$d %2$s image, shared as one zip file</item>
+        <item quantity="other">%1$d %2$s images, shared together as one zip file</item>
+    </plurals>
+    <plurals name="cvt_pdf2img_action">
+        <item quantity="one">Export %1$d image</item>
+        <item quantity="other">Export %1$d images</item>
+    </plurals>
+    <plurals name="cvt_pdf2img_capped">
+        <item quantity="one">%1$d page is too large for this resolution, so its picture is made %2$d px on its longest side.</item>
+        <item quantity="other">%1$d pages are too large for this resolution, so their pictures are made %2$d px on the longest side.</item>
+    </plurals>
+    <plurals name="cvt_pages_chosen">
+        <item quantity="one">%1$d page chosen</item>
+        <item quantity="other">%1$d pages chosen</item>
+    </plurals>
+
+    <!-- Images to PDF -->
+    <string name="cvt_reading_images">Reading the pictures…</string>
+    <string name="cvt_img2pdf_orientation">Each page turns to suit its picture, portrait or landscape.</string>
+    <string name="cvt_img2pdf_quality_hint">Pictures are stored at up to %1$d px on their longest side; larger ones are scaled down.</string>
+    <string name="cvt_margin">Margin</string>
+    <string name="cvt_margin_none">None</string>
+    <string name="cvt_margin_small">Small</string>
+    <string name="cvt_margin_large">Large</string>
+    <string name="cvt_margin_hint">%1$d mm of white around each picture.</string>
+    <plurals name="cvt_img2pdf_support">
+        <item quantity="one">%1$d page with its picture</item>
+        <item quantity="other">%1$d pages, one picture on each, in the order you arranged</item>
+    </plurals>
+    <plurals name="cvt_img2pdf_unreadable">
+        <item quantity="one">%1$d picture couldn\'t be read and is left out.</item>
+        <item quantity="other">%1$d pictures couldn\'t be read and are left out.</item>
+    </plurals>
+    <plurals name="cvt_img2pdf_soft">
+        <item quantity="one">%1$d picture has fewer than %2$d dots per inch on its page and may look soft when printed.</item>
+        <item quantity="other">%1$d pictures have fewer than %2$d dots per inch on their pages and may look soft when printed.</item>
+    </plurals>
+
+    <!-- Office to PDF -->
+    <string name="cvt_office_reading">Reading the file…</string>
+    <string name="cvt_office_action">Convert to PDF</string>
+    <string name="cvt_office_support">Converted on this phone; nothing is uploaded.</string>
+    <string name="cvt_office_after_pdf">PDF</string>
+    <string name="cvt_office_pages_later">Pages are counted while converting</string>
+    <string name="cvt_office_legacy">This is an older Office file (.doc, .xls or .ppt) or one locked with a password. Open it in Office or Google Docs, save it as .docx, .xlsx or .pptx, then convert that copy.</string>
+    <string name="cvt_office_kind_docx">Word document</string>
+    <string name="cvt_office_kind_xlsx">Excel workbook</string>
+    <string name="cvt_office_kind_pptx">PowerPoint presentation</string>
+    <string name="cvt_office_kind_text">Text file</string>
+    <string name="cvt_office_kind_csv">CSV table</string>
+    <string name="cvt_office_kind_html">Web page</string>
+    <string name="cvt_office_kind_unknown">File</string>
+    <string name="cvt_office_fact_slides">Slides</string>
+    <string name="cvt_office_fact_sheets">Sheets</string>
+    <string name="cvt_office_fact_lines">Lines</string>
+    <string name="cvt_office_fact_pictures">Pictures</string>
+    <string name="cvt_office_fact_paper">Paper</string>
+    <string name="cvt_office_paper_value">A4, 16 mm margins</string>
+    <string name="cvt_office_kept_docx">Text, headings, lists, tables and pictures are kept. Pages follow A4, so they may break in different places than in Word; text boxes, shapes and charts are not drawn.</string>
+    <string name="cvt_office_kept_xlsx">Each visible sheet becomes a table with its values. Charts, pictures in cells and colours are not drawn.</string>
+    <string name="cvt_office_kept_pptx">Each slide becomes a page with its text and pictures, in slide order. Designs, backgrounds, charts and animations are not drawn.</string>
+    <string name="cvt_office_kept_text">The text is kept as it is, line for line; CSV files become a table.</string>
+    <string name="cvt_office_kept_html">The page\'s text, tables and built-in pictures are kept. Nothing is loaded from the internet.</string>
+    <string name="office_note_slides_truncated">Only the first %1$s slides are converted; the rest are left out.</string>
+    <string name="office_err_empty_result">The conversion produced no pages. The file may be empty or damaged.</string>
+    <plurals name="cvt_office_slides">
+        <item quantity="one">At least %1$d page, one per slide</item>
+        <item quantity="other">At least %1$d pages, one per slide</item>
+    </plurals>
+    <plurals name="cvt_office_sheets">
+        <item quantity="one">%1$d sheet as a table</item>
+        <item quantity="other">%1$d sheets, each as a table</item>
+    </plurals>
+    <plurals name="cvt_office_lines">
+        <item quantity="one">%1$d line of text</item>
+        <item quantity="other">%1$d lines of text</item>
+    </plurals>
+    <plurals name="cvt_office_hidden_sheets">
+        <item quantity="one">%1$d hidden sheet is left out, as Excel leaves it out when printing.</item>
+        <item quantity="other">%1$d hidden sheets are left out, as Excel leaves them out when printing.</item>
+    </plurals>
+
+    <!-- PDF to text, Word or Excel, and Make searchable -->
+    <string name="cvt_text_after_word">Word document</string>
+    <string name="cvt_text_after_text">Text file</string>
+    <string name="cvt_text_fact_layer">Pages with text (copied)</string>
+    <string name="cvt_text_fact_ocr">Pages read with text recognition</string>
+    <string name="cvt_text_locked">This PDF has a password; you\'ll be asked for it.</string>
+    <string name="cvt_ocr_support">Pages that already have text are left as they are.</string>
+    <string name="cvt_ocr_nothing">Every page already has text, so this PDF is searchable already.</string>
+    <plurals name="cvt_text_after_sheets">
+        <item quantity="one">%1$d sheet</item>
+        <item quantity="other">%1$d sheets, one per page</item>
+    </plurals>
+    <plurals name="cvt_text_ocr_support">
+        <item quantity="one">%1$d page is read with text recognition, which takes a few seconds.</item>
+        <item quantity="other">%1$d pages are read with text recognition, which takes a few seconds each.</item>
+    </plurals>
+    <plurals name="cvt_ocr_action">
+        <item quantity="one">Read %1$d page</item>
+        <item quantity="other">Read %1$d pages</item>
+    </plurals>
+
+    <!-- Extract images -->
+    <string name="cvt_ximg_looking">Looking for pictures…</string>
+    <string name="cvt_ximg_zip">Shared together as one zip file</string>
+    <string name="cvt_ximg_fact_pictures">Pictures</string>
+    <string name="cvt_ximg_fact_pages">Pages with pictures</string>
+    <string name="cvt_ximg_fact_formats">Formats</string>
+    <string name="cvt_ximg_hint">JPG pictures are saved exactly as stored, with no quality lost; the others, and any with see-through parts, are saved as PNG. A picture used on many pages is saved once.</string>
+    <string name="cvt_ximg_choose_title">Choose pictures</string>
+    <string name="cvt_ximg_choose_unopened">Save all of them, or tick only the ones you want</string>
+    <string name="cvt_ximg_none_ticked">Tick at least one picture to save</string>
+    <string name="cvt_ximg_all_selected">All %1$d selected</string>
+    <string name="cvt_ximg_selected_of">%1$d of %2$d selected</string>
+    <string name="cvt_ximg_select_all">Select all</string>
+    <string name="cvt_ximg_select_none">Clear</string>
+    <string name="cvt_ximg_preparing">Preparing the pictures…</string>
+    <string name="cvt_ximg_prepare_failed">The pictures couldn\'t be read. Close this and try again.</string>
+    <string name="cvt_ximg_picture_of">Picture %1$d of %2$d</string>
+    <string name="cvt_ximg_from_page">Page %1$d</string>
+    <string name="cvt_ximg_view_larger">View picture larger</string>
+    <string name="cvt_ximg_tick">Select this picture</string>
+    <string name="cvt_ximg_untick">Remove from the selection</string>
+    <string name="cvt_ximg_in_selection">Selected</string>
+    <string name="cvt_ximg_not_in_selection">Not selected</string>
+    <plurals name="cvt_ximg_pick_done">
+        <item quantity="one">Done · %1$d selected</item>
+        <item quantity="other">Done · %1$d selected</item>
+    </plurals>
+    <plurals name="cvt_ximg_action">
+        <item quantity="one">Save %1$d picture</item>
+        <item quantity="other">Save %1$d pictures</item>
+    </plurals>
+    <plurals name="cvt_ximg_tiny">
+        <item quantity="one">%1$d tiny image (a line, bullet or spacer) is left out.</item>
+        <item quantity="other">%1$d tiny images (lines, bullets, spacers) are left out.</item>
+    </plurals>
+    <plurals name="cvt_ximg_unreadable">
+        <item quantity="one">%1$d picture is stored as JPEG 2000 or JBIG2, which this phone may not open. If so, it is skipped and the result says so.</item>
+        <item quantity="other">%1$d pictures are stored as JPEG 2000 or JBIG2, which this phone may not open. If so, they are skipped and the result says so.</item>
+    </plurals>
+    <plurals name="ximg_skipped">
+        <item quantity="one">%1$d picture couldn\'t be read on this phone and was skipped.</item>
+        <item quantity="other">%1$d pictures couldn\'t be read on this phone and were skipped.</item>
+    </plurals>
+
+    <!-- PDF info -->
+    <string name="cvt_info_page_size">Page size</string>
+    <string name="cvt_info_mixed_sizes">Some pages have a different size.</string>
+    <string name="cvt_info_bytes">%1$s bytes</string>
+    <string name="cvt_info_security">Security</string>
+    <string name="cvt_info_encrypted">Password or restrictions</string>
+    <string name="cvt_info_not_encrypted">No password or restrictions</string>
+    <string name="cvt_info_form_fields">Form fields</string>
+    <string name="cvt_info_none">None</string>
+    <string name="cvt_info_save_support">Saves a copy with the new details; the original is not changed.</string>
+    <string name="cvt_info_change_to_save">Change a detail below to save a copy with it.</string>
+
+    <!-- Repair -->
+    <string name="cvt_repair_checking">Checking the file…</string>
+    <string name="cvt_repair_action">Repair PDF</string>
+    <string name="cvt_repair_viewer">Phone\'s PDF viewer</string>
+    <string name="cvt_repair_structure">File structure</string>
+    <string name="cvt_repair_cannot_open">Can\'t open it</string>
+    <string name="cvt_repair_damaged">Damaged</string>
+    <string name="cvt_repair_password">Password needed</string>
+    <string name="cvt_repair_nothing">Nothing in this file can be read as pages, so there is nothing to recover.</string>
+    <string name="cvt_repair_not_pdf">This file isn\'t a PDF, so there is nothing to repair.</string>
+    <string name="cvt_repair_plan_missing">The structure lists only %1$d of the %2$d pages the phone can draw. Repair rebuilds the pages as pictures so none is lost; their text can then no longer be selected.</string>
+    <plurals name="cvt_repair_opens">
+        <item quantity="one">Opens, %1$d page</item>
+        <item quantity="other">Opens, %1$d pages</item>
+    </plurals>
+    <plurals name="cvt_repair_reads">
+        <item quantity="one">Readable, %1$d page</item>
+        <item quantity="other">Readable, %1$d pages</item>
+    </plurals>
+    <plurals name="cvt_repair_plan_clean">
+        <item quantity="one">The structure can be read: Repair writes a fresh copy with its %1$d page and its text.</item>
+        <item quantity="other">The structure can be read: Repair writes a fresh copy with all %1$d pages and their text.</item>
+    </plurals>
+    <plurals name="cvt_repair_plan_pictures">
+        <item quantity="one">The structure is broken, but the phone can still draw %1$d page. It is rebuilt as a picture, so its text can no longer be selected.</item>
+        <item quantity="other">The structure is broken, but the phone can still draw %1$d pages. They are rebuilt as pictures, so their text can no longer be selected.</item>
+    </plurals>
+    <plurals name="tools_repair_partial">
+        <item quantity="one">Rebuilt the PDF, but only %1$d of %2$d pages could be recovered.</item>
+        <item quantity="other">Rebuilt the PDF, but only %1$d of %2$d pages could be recovered.</item>
+    </plurals>
+
+    <!-- Fill forms -->
+    <string name="tools_form_saved_no_changes">Form saved (no changes)</string>
+    <string name="tools_form_err_flatten_font">Some answers use letters this form\'s font can\'t show, so the form can\'t be flattened. Save it without flattening: PDF viewers will show them.</string>
+    <plurals name="tools_form_filled">
+        <item quantity="one">Filled %1$d field</item>
+        <item quantity="other">Filled %1$d fields</item>
+    </plurals>
+    <plurals name="tools_form_filled_flattened">
+        <item quantity="one">Filled %1$d field and flattened the form</item>
+        <item quantity="other">Filled %1$d fields and flattened the form</item>
+    </plurals>
+</resources>

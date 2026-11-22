@@ -131,7 +131,8 @@ private fun HomeRecentCard(item: HomeRecentItem) {
                 onLongClickLabel = longClickLabel,
                 onLongClick = item.onLongClick
             )
-            .semantics { selected = item.selected }
+            // Only cards that can be selected (long-press) say whether they are; opened PDFs and results said "not selected".
+            .semantics { if (item.onLongClick != null) selected = item.selected }
             .padding(bottom = 4.dp)
     ) {
         Box(
@@ -168,6 +169,9 @@ private fun HomeRecentCard(item: HomeRecentItem) {
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             maxLines = com.example.scanpro.core.ui.cardTitleLines(),
+            // Every card the same height: the row is as tall as its tallest visible card, so it grew and shrank while
+            // scrolled sideways past one- and two-line titles, moving everything below it.
+            minLines = com.example.scanpro.core.ui.cardTitleLines(),
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 2.dp)
         )

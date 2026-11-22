@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.scanpro.core.notifications.HydrationSchedule
 import kotlinx.coroutines.flow.Flow
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
@@ -258,6 +259,9 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     private val keyNotifyTrash = booleanPreferencesKey("notify_trash")
     private val keyNotifyBackup = booleanPreferencesKey("notify_backup")
     private val keyHydrationReminders = booleanPreferencesKey("notify_drink_water")
+    private val keyHydrationFirstMinute = intPreferencesKey("drink_water_first_minute")
+    private val keyHydrationLastMinute = intPreferencesKey("drink_water_last_minute")
+    private val keyHydrationEveryMinutes = intPreferencesKey("drink_water_every_minutes")
     private val keyLastBackupAt = longPreferencesKey("last_backup_at")
     private val keyLastBackupReminderAt = longPreferencesKey("last_backup_reminder_at")
 
@@ -270,11 +274,26 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     /** A reminder when no backup was made for a month. Off until the user asks for it. */
     val notifyBackup: Flow<Boolean> = preferences.map { it[keyNotifyBackup] ?: false }
     /**
-     * Drink-water reminders, three a day ([com.example.scanpro.core.notifications.HydrationSchedule]). On by default
-     * (owner request, 2026-11-16); the notice itself carries a "Turn off" button.
+     * Drink-water reminders through the day ([com.example.scanpro.core.notifications.HydrationSchedule]). On by
+     * default (owner request, 2026-11-16); the switch and the timings are in Settings > Notifications.
      */
     val hydrationReminders: Flow<Boolean> = preferences.map { it[keyHydrationReminders] ?: true }
     suspend fun setHydrationReminders(value: Boolean) { context.scanProSettings.edit { it[keyHydrationReminders] = value } }
+    /** When the reminders fall: the first of the day, the time after which there are none, and the gap between them. */
+    val hydrationTiming: Flow<HydrationSchedule.Timing> = preferences.map {
+        HydrationSchedule.Timing(
+            firstMinute = it[keyHydrationFirstMinute] ?: HydrationSchedule.DEFAULT_FIRST_MINUTE,
+            lastMinute = it[keyHydrationLastMinute] ?: HydrationSchedule.DEFAULT_LAST_MINUTE,
+            everyMinutes = it[keyHydrationEveryMinutes] ?: HydrationSchedule.DEFAULT_EVERY_MINUTES
+        )
+    }.distinctUntilChanged()
+    suspend fun setHydrationTiming(value: HydrationSchedule.Timing) {
+        context.scanProSettings.edit {
+            it[keyHydrationFirstMinute] = value.firstMinute
+            it[keyHydrationLastMinute] = value.lastMinute
+            it[keyHydrationEveryMinutes] = value.everyMinutes
+        }
+    }
     /** When the last backup was written (0 when never), and when the last reminder about it was shown. */
     val lastBackupAt: Flow<Long> = preferences.map { it[keyLastBackupAt] ?: 0L }
     val lastBackupReminderAt: Flow<Long> = preferences.map { it[keyLastBackupReminderAt] ?: 0L }
