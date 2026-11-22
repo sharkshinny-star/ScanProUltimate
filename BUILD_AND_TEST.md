@@ -55,7 +55,7 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 ## Latest results (2026-11-22, F255, Linux cloud container)
 
-Not run: `./gradlew --offline :app:compileDebugKotlin` failed because the cloud container cannot resolve the Android Gradle plugin offline. The F255 changes (Sign PDF stamp target, Edit text box clamp, F256 Organise pages close confirmation, F257 tools sweep) are uncompiled and untested; build and run unit tests locally.
+Not run: `./gradlew --offline :app:compileDebugKotlin` failed because the cloud container cannot resolve the Android Gradle plugin offline. The F255 changes (Sign PDF stamp target, Edit text box clamp, F256 Organise pages close confirmation, F257 tools sweep, F258 Edit PDF text) are uncompiled and untested; build and run unit tests locally.
 
 ## Latest results (2026-11-22, F254 Make searchable non-Latin text layer, Linux cloud container)
 

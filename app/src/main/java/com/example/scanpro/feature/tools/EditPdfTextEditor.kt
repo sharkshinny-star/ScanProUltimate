@@ -358,6 +358,7 @@ internal fun EditPdfTextEditor(
         onDuplicate = dup@{
             val target = selected ?: return@dup
             val now = standing(target) ?: return@dup
+            if (now.text.isBlank()) return@dup // a deleted line has nothing to copy
             val box = boxes.firstOrNull { it.target == target } ?: return@dup
             // A copy on the line below, as text of its own.
             val copy = now.copy(

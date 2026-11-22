@@ -893,7 +893,7 @@ internal object PdfTextEditor {
     private fun rightEdge(analysis: PageAnalysis): Float {
         val shape = analysis.shape
         val shown = if (shape.rotation == 90 || shape.rotation == 270) shape.height else shape.width
-        val left = (analysis.spans.minOfOrNull { it.span.left } ?: 36f).coerceIn(18f, shown / 3f)
+        val left = (analysis.spans.minOfOrNull { it.span.left } ?: 36f).coerceIn(minOf(18f, shown / 3f), shown / 3f)
         val reached = analysis.spans.maxOfOrNull { it.span.right } ?: 0f
         return maxOf(reached, shown - left).coerceAtMost(shown - 12f)
     }

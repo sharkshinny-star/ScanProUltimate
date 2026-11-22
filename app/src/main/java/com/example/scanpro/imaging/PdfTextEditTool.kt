@@ -33,7 +33,8 @@ internal class PdfTextEditSession private constructor(private val source: File, 
     /** The text runs on [page] (0-based), read once. */
     @Synchronized
     fun spans(page: Int): List<PdfTextEditor.Span> {
-        check(!closed)
+        // A call queued behind the lock can outlive the screen; an empty answer is better than a crash.
+        if (closed) return emptyList()
         return spans.getOrPut(page) { runCatching { PdfTextEditor.spans(document, page) }.getOrDefault(emptyList()) }
     }
 
@@ -246,6 +247,8 @@ internal object PdfTextEditTool {
                     if (outcome.skipped > 0) add(AppStrings.plural(R.plurals.tools_edit_skipped, outcome.skipped, outcome.skipped))
                     if (outcome.covered > 0) add(AppStrings.plural(R.plurals.tools_edit_covered, outcome.covered, outcome.covered))
                 }
+                // Cancelled while saving: leave no finished-looking file behind (the catch below removes it).
+                coroutineContext[kotlinx.coroutines.Job]?.ensureActive()
                 PdfToolResult(
                     outputFile = outputFile,
                     pageCount = pages,
