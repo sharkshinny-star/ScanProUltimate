@@ -148,10 +148,18 @@ internal class DocumentExporter(
             R.string.err_backup_password_too_short, EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH
         )
         val parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
-        val documents = db.loadAll()
+        // Only the ids up front: loading every document first would hold all pages with their recognised text and word
+        // positions in memory at once. Each one is read when its turn comes and released after it is written.
+        val ids = db.loadSummaries().map { it.id }
         val stamp = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now()))
         var written = 0
-        documents.forEachIndexed { index, doc ->
+        ids.forEachIndexed { index, id ->
+            // Deleted or moved to the recycle bin while the backup was running: nothing to write.
+            val doc = db.loadDocument(id)?.takeIf { it.trashedAt == 0L }
+            if (doc == null) {
+                onProgress(index + 1, ids.size)
+                return@forEachIndexed
+            }
             val temp = File(context.cacheDir, "backup_${UUID.randomUUID()}.scanpro")
             try {
                 encryptedPackages.export(doc, password.toCharArray(), temp)
@@ -170,7 +178,7 @@ internal class DocumentExporter(
             } finally {
                 temp.delete()
             }
-            onProgress(index + 1, documents.size)
+            onProgress(index + 1, ids.size)
         }
         written
     }

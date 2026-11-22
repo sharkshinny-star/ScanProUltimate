@@ -29,6 +29,7 @@ import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.SecretKeyFactory
@@ -236,6 +237,8 @@ class EncryptedDocumentPackage(private val context: Context) {
             userRequire(password.size >= MIN_RESTORE_PASSWORD_LENGTH, R.string.err_backup_password_too_short, MIN_RESTORE_PASSWORD_LENGTH)
             outDir.mkdirs()
             var rawInput: FileInputStream? = null
+            // Set once the header is read: a version 1 package fails authentication differently (see the catch below).
+            var legacyFormat = false
             try {
                 rawInput = FileInputStream(encrypted)
                 val input = DataInputStream(BufferedInputStream(rawInput))
@@ -243,6 +246,7 @@ class EncryptedDocumentPackage(private val context: Context) {
                 input.readFully(magic)
                 val chunked = magic.contentEquals(MAGIC_CHUNKED)
                 require(chunked || magic.contentEquals(MAGIC)) { "Not a ScanPro encrypted package" }
+                legacyFormat = !chunked
                 // Refused here, before the key is derived, so an oversized file costs nothing.
                 if (!chunked && encrypted.length() > legacyPackageLimit()) throw BackupTooLargeException()
                 val iterations = input.readInt()
@@ -362,7 +366,13 @@ class EncryptedDocumentPackage(private val context: Context) {
                 throw error
             } catch (error: Throwable) {
                 outDir.deleteRecursively()
-                val wrongPassword = generateSequence(error) { it.cause }.any { it is ChunkedAead.WrongKeyException }
+                // A version 2 package names a wrong key itself (its first chunk fails). A version 1 package is one GCM
+                // stream whose tag is checked before any plaintext is released, so a wrong password (or a damaged
+                // file, which the message also allows for) surfaces as the authentication error. In version 2 that
+                // same error after the first chunk means damage, so it is not read as a wrong password there.
+                val wrongPassword = generateSequence(error) { it.cause }.any {
+                    it is ChunkedAead.WrongKeyException || (legacyFormat && it is AEADBadTagException)
+                }
                 throw UserFacingException(
                     if (wrongPassword) R.string.err_backup_wrong_password else R.string.err_could_not_decrypt_backup,
                     cause = error

@@ -94,7 +94,8 @@ class SettingsViewModel @Inject constructor(
     fun backupAll(folder: Uri, password: String) {
         operations.enqueue(context.getString(R.string.settings_backup_running), null) {
             val count = repository.backupAll(folder, password)
-            settings.recordBackup()
+            // An empty library writes nothing, so it must not show "backed up".
+            if (count > 0) settings.recordBackup()
             operations.showMessage(context.resources.getQuantityString(R.plurals.settings_backup_done, count, count))
         }
     }

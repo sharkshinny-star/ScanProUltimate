@@ -288,6 +288,41 @@ class EncryptedDocumentPackageTest {
     }
 
     @Test
+    fun `a wrong password on a version 1 backup says so`() {
+        // Version 1 is one GCM stream: a wrong key fails its tag check, which surfaces as an authentication error
+        // inside an IOException, not as the version 2 "wrong key" error, and used to read as a generic failure.
+        val salt = ByteArray(16) { (it + 1).toByte() }
+        val iv = ByteArray(12) { (it + 40).toByte() }
+        val iterations = 100_000
+        val sealingKey = SecretKeySpec(
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+                .generateSecret(PBEKeySpec("the right password".toCharArray(), salt, iterations, 256)).encoded,
+            "AES"
+        )
+        val cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding").apply {
+            init(javax.crypto.Cipher.ENCRYPT_MODE, sealingKey, javax.crypto.spec.GCMParameterSpec(128, iv))
+        }
+        val file = File(tmp.root, "legacy-v1.scanpro")
+        FileOutputStream(file).use { raw ->
+            val header = DataOutputStream(BufferedOutputStream(raw))
+            header.write(byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '1'.code.toByte()))
+            header.writeInt(iterations)
+            header.write(salt)
+            header.write(iv)
+            header.write(cipher.doFinal(bytes(7, 4096)))
+            header.flush()
+        }
+        val outDir = File(tmp.root, "restore-legacy-wrong")
+        try {
+            EncryptedDocumentPackage.read(file, outDir, "not the password".toCharArray())
+            fail("a wrong password should be refused")
+        } catch (expected: UserFacingException) {
+            assertEquals(R.string.err_backup_wrong_password, expected.messageRes)
+        }
+        assertFalse("the restore folder is removed", outDir.exists())
+    }
+
+    @Test
     fun `copying a picked backup stops at the size limit`() {
         val out = ByteArrayOutputStream()
         EncryptedDocumentPackage.copyCapped(ByteArray(100).inputStream(), out, limit = 100)
