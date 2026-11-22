@@ -911,7 +911,18 @@ private fun ReviewFilmstrip(
     onAdd: () -> Unit,
     onMove: (from: Int, to: Int) -> Unit
 ) {
-    val cache = remember { HashMap<String, Bitmap>() }
+    // Bounded (8 MB, about a hundred thumbnails): the strip lives as long as the review, and a plain map kept every
+    // thumbnail of every earlier rotation and of every page since deleted.
+    val cache = remember {
+        object : android.util.LruCache<String, Bitmap>(THUMBNAIL_CACHE_BYTES) {
+            override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+        }
+    }
+    // Entries of an older rotation, or of a page that is gone, can never be asked for again: let go of them now.
+    LaunchedEffect(refresh, pages.size) {
+        val live = pages.mapTo(HashSet()) { "$it#$refresh" }
+        cache.snapshot().keys.forEach { if (it !in live) cache.remove(it) }
+    }
     val listState = rememberLazyListState()
     // Not while dragging: scrolling to the selected page would pull the strip out from under the finger.
     var draggingKey by remember { mutableStateOf<String?>(null) }
@@ -936,10 +947,10 @@ private fun ReviewFilmstrip(
         itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "review_thumb" }) { index, uri ->
             // A turned page is decoded again: the refresh counter is part of the cache key.
             val cacheKey = "$uri#$refresh"
-            val thumbnail by produceState<Bitmap?>(initialValue = cache[cacheKey], cacheKey) {
+            val thumbnail by produceState<Bitmap?>(initialValue = cache.get(cacheKey), cacheKey) {
                 if (value == null) {
                     value = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 160) }.getOrNull() }
-                    value?.let { cache[cacheKey] = it }
+                    value?.let { cache.put(cacheKey, it) }
                 }
             }
             val isCurrent = index == current
@@ -1357,3 +1368,5 @@ private fun detectQuad(image: Bitmap): CropQuad {
     return if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
 }
 
+/** Memory the review filmstrip may spend on page thumbnails. */
+private const val THUMBNAIL_CACHE_BYTES = 8 * 1024 * 1024
