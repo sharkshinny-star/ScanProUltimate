@@ -53,6 +53,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F287 annotation remap, Linux cloud container)
+
+- Not run: the Android build and unit tests (cloud Gradle cannot resolve the Android plugin). `CropMapping.kt` and four new `AnnotationRemapTest` tests are uncompiled; run `./gradlew testDebugUnitTest --tests '*AnnotationRemapTest*'` locally.
+
 ## Latest results (2026-11-22, F285 page aspect experiment, Linux cloud container)
 
 - Experiment only, code reverted: `PageAspect` (Zhang and He) measured through `scripts/scan-bench` on 59 page scenes: old rule mean shape error 3.1% (worst 32.9%), estimator 3.3% (worst 32.9%); not adopted. No app build or test was run for this entry.

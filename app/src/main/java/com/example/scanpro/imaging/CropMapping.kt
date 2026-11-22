@@ -2,6 +2,7 @@ package com.example.scanpro.imaging
 
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
+import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.PageAnnotation
 import kotlin.math.abs
 import kotlin.math.max
@@ -84,6 +85,20 @@ class CropMapping(crop: CropQuad, private val aspect: Float) {
         return if (abs(check.first - x) < 1e-3f && abs(check.second - y) < 1e-3f) u to v else null
     }
 
+    /** A photo point placed on the cropped page: [approximate] when it is the straight-crop estimate, not a converged answer. */
+    class Placement(val u: Float, val v: Float, val approximate: Boolean)
+
+    /**
+     * Like [fromSource], but when the curved refinement does not converge (a strongly bent crop, a point far outside it)
+     * it falls back to the straight-crop estimate, marked [Placement.approximate], instead of giving up. Null only when
+     * the crop itself cannot be mapped.
+     */
+    fun place(x: Float, y: Float): Placement? {
+        fromSource(x, y)?.let { return Placement(it.first, it.second, false) }
+        val guess = inverseStraight?.let { Homography.apply(it, x, y) } ?: return null
+        return Placement(guess.first, guess.second, true)
+    }
+
     companion object {
         private const val SAMPLES = 257
     }
@@ -103,6 +118,21 @@ object AnnotationRemap {
         newCrop: CropQuad,
         rotationDegrees: Int,
         aspect: Float
+    ): List<PageAnnotation> = remap(annotations, oldCrop, newCrop, rotationDegrees, aspect) { mapping, x, y -> mapping.place(x, y) }
+
+    /**
+     * [remap] with the placing of a photo point on the new page given, so the approximate case can be tested. A box
+     * with a corner that could only be placed approximately is moved there all the same (left where it was it would sit
+     * over the wrong content); a redaction is also grown by [APPROXIMATE_MARGIN] of the page on every side, so a small
+     * error in the estimate cannot leave part of what it hid showing.
+     */
+    internal fun remap(
+        annotations: List<PageAnnotation>,
+        oldCrop: CropQuad,
+        newCrop: CropQuad,
+        rotationDegrees: Int,
+        aspect: Float,
+        place: (CropMapping, Float, Float) -> CropMapping.Placement?
     ): List<PageAnnotation> {
         if (annotations.isEmpty() || oldCrop == newCrop) return annotations
         val from = CropMapping(oldCrop, aspect)
@@ -113,14 +143,18 @@ object AnnotationRemap {
                 item.x to item.y, item.x + item.width to item.y,
                 item.x to item.y + item.height, item.x + item.width to item.y + item.height
             )
+            var approximate = false
             val moved = corners.map { (x, y) ->
                 val (u, v) = unturn(x, y, turns)
+                // Only a crop that cannot be mapped at all leaves the box as it was.
                 val source = from.toSource(u, v) ?: return@mapNotNull item
-                val target = to.fromSource(source.first, source.second) ?: return@mapNotNull item
-                turn(target.first, target.second, turns)
+                val target = place(to, source.first, source.second) ?: return@mapNotNull item
+                if (target.approximate) approximate = true
+                turn(target.u, target.v, turns)
             }
-            val left = moved.minOf { it.first }; val right = moved.maxOf { it.first }
-            val top = moved.minOf { it.second }; val bottom = moved.maxOf { it.second }
+            val pad = if (approximate && item.type == AnnotationType.REDACT) APPROXIMATE_MARGIN else 0f
+            val left = moved.minOf { it.first } - pad; val right = moved.maxOf { it.first } + pad
+            val top = moved.minOf { it.second } - pad; val bottom = moved.maxOf { it.second } + pad
             if (right <= 0f || bottom <= 0f || left >= 1f || top >= 1f) return@mapNotNull null
             val x = max(0f, left); val y = max(0f, top)
             val width = min(1f, right) - x
@@ -128,6 +162,9 @@ object AnnotationRemap {
             if (width < 0.005f || height < 0.005f) null else item.copy(x = x, y = y, width = width, height = height)
         }
     }
+
+    /** How much a redaction placed only approximately grows on each side, as a fraction of the page. */
+    private const val APPROXIMATE_MARGIN = 0.02f
 
     /** From the turned page back to the page as cropped: each step undoes one quarter turn clockwise. */
     private fun unturn(x: Float, y: Float, turns: Int): Pair<Float, Float> {
