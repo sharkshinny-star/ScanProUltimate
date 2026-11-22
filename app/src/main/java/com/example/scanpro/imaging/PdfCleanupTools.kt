@@ -597,13 +597,13 @@ object PdfCleanupTools {
         // stored, its see-through parts came out as a black or white box (F211).
         if (onlyJpeg && !cmyk && !PdfImageSurvey.hasTransparency(image)) {
             val file = File(dir, "$stem.jpg")
-            image.cosObject.createRawInputStream().use { input -> FileOutputStream(file).buffered().use { input.copyTo(it) } }
+            file.deleteIfFails { image.cosObject.createRawInputStream().use { input -> FileOutputStream(file).buffered().use { input.copyTo(it) } } }
             return file
         }
         val bitmap = runCatching { image.image }.getOrNull() ?: return null
         val file = File(dir, "$stem.png")
         try {
-            FileOutputStream(file).buffered().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            file.deleteIfFails { FileOutputStream(file).buffered().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
         } finally {
             bitmap.recycle()
         }
@@ -646,11 +646,12 @@ object PdfCleanupTools {
         outputDir.mkdirs()
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "ximg_in_${UUID.randomUUID()}.pdf")
         val base = PdfToolsEngine.sourceBaseName(context, inputUri)
+        val savedSoFar = mutableListOf<ExtractedImage>()
         try {
             PdfToolsEngine.loadPdf(temp).use { doc ->
                 val total = doc.numberOfPages
                 val seen = HashSet<COSBase>()
-                val files = mutableListOf<ExtractedImage>()
+                val files = savedSoFar
                 // The same picture embedded twice as separate objects (a logo on every page of a merged PDF) is saved
                 // once: identical bytes, identical file.
                 val digests = HashSet<String>()
@@ -675,6 +676,10 @@ object PdfCleanupTools {
                 userRequire(files.isNotEmpty(), R.string.tools_ximg_err_none)
                 files
             }
+        } catch (error: Throwable) {
+            // Cancelled or failed: the pictures saved so far are not left in the output folder.
+            savedSoFar.forEach { it.file.delete() }
+            throw error
         } finally {
             temp.delete()
         }

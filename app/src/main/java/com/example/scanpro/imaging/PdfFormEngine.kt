@@ -145,7 +145,7 @@ object PdfFormEngine {
                     form.needAppearances = true
                 }
                 outputFile.parentFile?.mkdirs()
-                document.save(outputFile)
+                outputFile.deleteIfFails { document.save(outputFile) }
                 PdfToolResult(
                     outputFile = outputFile,
                     pageCount = document.numberOfPages,
