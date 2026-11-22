@@ -53,6 +53,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-22, F285 page aspect experiment, Linux cloud container)
+
+- Experiment only, code reverted: `PageAspect` (Zhang and He) measured through `scripts/scan-bench` on 59 page scenes: old rule mean shape error 3.1% (worst 32.9%), estimator 3.3% (worst 32.9%); not adopted. No app build or test was run for this entry.
+
 ## Latest results (2026-11-22, F284 post-capture gate, Linux cloud container)
 
 - `cd scripts/scan-bench && gradle -q run --args="extra colour live"`: new line `post-capture gate (area >= 0.12, cards 0): pages cropped 50/50 (confidence only: 50), cards cropped 9/9 (9), no-page scenes cropped 6/12 (7)`; every other output line identical to before (grey-only mean IoU 0.986, worst 0.58%; colour 0.982, worst 0.74%; extra 0.985, 21/21).
