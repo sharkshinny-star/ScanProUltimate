@@ -1,5 +1,6 @@
 package com.example.scanpro.data
 
+import com.example.scanpro.core.text.takeWhole
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.graphics.createBitmap
@@ -89,7 +90,7 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val second = requireDocument(secondaryId)
         createFromPages(
             sourcePages = first.pages.sortedBy { it.position } + second.pages.sortedBy { it.position },
-            title = "${first.title} + ${second.title}".take(120),
+            title = "${first.title} + ${second.title}".takeWhole(120),
             quality = first.pdfQuality,
             pageSize = first.pdfPageSize,
             searchable = first.searchablePdf,
@@ -300,7 +301,7 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val doc = requireDocument(documentId)
         createFromPages(
             sourcePages = doc.pages.sortedBy { it.position },
-            title = "${doc.title} copy".take(120),
+            title = "${doc.title} copy".takeWhole(120),
             quality = doc.pdfQuality,
             pageSize = doc.pdfPageSize,
             searchable = doc.searchablePdf,

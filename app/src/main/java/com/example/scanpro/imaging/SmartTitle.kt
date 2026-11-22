@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.text.takeWhole
 import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.DocumentKind
 
@@ -65,7 +66,7 @@ object SmartTitle {
 
     private fun shorten(value: String): String {
         if (value.length <= MAX_LENGTH) return value.trim()
-        val cut = value.take(MAX_LENGTH)
+        val cut = value.takeWhole(MAX_LENGTH)
         val space = cut.lastIndexOf(' ')
         return (if (space > MAX_LENGTH / 2) cut.take(space) else cut).trim().trimEnd('–', '-').trim()
     }

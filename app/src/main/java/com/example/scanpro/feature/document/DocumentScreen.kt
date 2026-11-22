@@ -2,6 +2,7 @@
 
 package com.example.scanpro.feature.document
 
+import com.example.scanpro.core.text.takeWhole
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
@@ -1281,7 +1282,7 @@ internal fun DocumentDetailScreen(
         }
     }
 
-    if (renameOpen) TextInputDialog(stringResource(R.string.doc_rename_document), document.title, stringResource(R.string.doc_name), onDismiss = { renameOpen = false }) { onRename(it.take(120)); renameOpen = false }
+    if (renameOpen) TextInputDialog(stringResource(R.string.doc_rename_document), document.title, stringResource(R.string.doc_name), onDismiss = { renameOpen = false }) { onRename(it.takeWhole(120)); renameOpen = false }
     reOcrConfirm?.let { action ->
         ConfirmDialog(
             title = stringResource(R.string.doc_replace_corrected_title),

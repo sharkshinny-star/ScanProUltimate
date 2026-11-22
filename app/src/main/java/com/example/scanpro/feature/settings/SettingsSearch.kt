@@ -1,6 +1,8 @@
 package com.example.scanpro.feature.settings
 
+import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.provider.DocumentsContract
 import android.text.format.DateUtils
 import androidx.annotation.StringRes
@@ -79,7 +81,16 @@ internal class SettingsLocator(val scroll: ScrollState) {
 
 internal val LocalSettingsLocator = staticCompositionLocalOf<SettingsLocator?> { null }
 
-private class SettingEntry(@StringRes val title: Int, @StringRes val subtitle: Int?, @StringRes val section: Int)
+/**
+ * [visible] is false for a setting this phone or build does not show (wallpaper colours before Android 12, a pin button
+ * the launcher cannot take, a policy link the build has no address for): search must not offer a row that is not there.
+ */
+private class SettingEntry(
+    @StringRes val title: Int,
+    @StringRes val subtitle: Int?,
+    @StringRes val section: Int,
+    val visible: (Context) -> Boolean = { true }
+)
 
 /** Every setting people can look for: its name, the line under it, and the section it lives in. */
 private val SETTING_ENTRIES = listOf(
@@ -88,7 +99,7 @@ private val SETTING_ENTRIES = listOf(
     SettingEntry(R.string.settings_recover_library, R.string.settings_recover_library_subtitle, R.string.settings_section_backup),
     SettingEntry(R.string.settings_theme_title, R.string.settings_theme_subtitle, R.string.settings_section_appearance),
     SettingEntry(R.string.settings_palette_title, R.string.settings_palette_subtitle, R.string.settings_section_appearance),
-    SettingEntry(R.string.settings_dynamic_color_title, R.string.settings_dynamic_color_subtitle, R.string.settings_section_appearance),
+    SettingEntry(R.string.settings_dynamic_color_title, R.string.settings_dynamic_color_subtitle, R.string.settings_section_appearance) { Build.VERSION.SDK_INT >= Build.VERSION_CODES.S },
     SettingEntry(R.string.settings_app_language, R.string.settings_app_language_subtitle, R.string.settings_section_appearance),
     SettingEntry(R.string.settings_home_tips_title, R.string.settings_home_tips_subtitle, R.string.settings_section_appearance),
     SettingEntry(R.string.settings_default_mode_title, R.string.settings_default_mode_subtitle, R.string.settings_section_scanning),
@@ -101,12 +112,12 @@ private val SETTING_ENTRIES = listOf(
     SettingEntry(R.string.settings_recycle_bin_open, null, R.string.settings_section_recycle_bin),
     SettingEntry(R.string.settings_trash_retention_title, R.string.settings_trash_retention_subtitle, R.string.settings_section_recycle_bin),
     SettingEntry(R.string.settings_open_by_default_title, R.string.settings_open_by_default_subtitle, R.string.settings_section_shortcuts),
-    SettingEntry(R.string.settings_widget_title, R.string.settings_widget_subtitle, R.string.settings_section_shortcuts),
-    SettingEntry(R.string.settings_scan_shortcut_title, R.string.settings_scan_shortcut_subtitle, R.string.settings_section_shortcuts),
+    SettingEntry(R.string.settings_widget_title, R.string.settings_widget_subtitle, R.string.settings_section_shortcuts) { HomeScreenPins.canPinWidget(it) },
+    SettingEntry(R.string.settings_scan_shortcut_title, R.string.settings_scan_shortcut_subtitle, R.string.settings_section_shortcuts) { HomeScreenPins.canPinShortcut(it) },
     SettingEntry(R.string.settings_app_lock_title, R.string.settings_app_lock_body, R.string.settings_section_privacy),
     SettingEntry(R.string.settings_privacy_title, R.string.settings_privacy_subtitle, R.string.settings_section_privacy),
-    SettingEntry(R.string.settings_privacy_policy, null, R.string.settings_section_privacy),
-    SettingEntry(R.string.settings_terms_of_use, null, R.string.settings_section_privacy),
+    SettingEntry(R.string.settings_privacy_policy, null, R.string.settings_section_privacy) { privacyPolicyUrl().isNotBlank() },
+    SettingEntry(R.string.settings_terms_of_use, null, R.string.settings_section_privacy) { termsUrl().isNotBlank() },
     SettingEntry(R.string.settings_notify_finished_title, R.string.settings_notify_finished_body, R.string.settings_section_notifications),
     SettingEntry(R.string.settings_notify_failures_title, R.string.settings_notify_failures_body, R.string.settings_section_notifications),
     SettingEntry(R.string.settings_notify_trash_title, R.string.settings_notify_trash_body, R.string.settings_section_notifications),
@@ -145,10 +156,11 @@ internal fun searchWords(query: String): List<String> = query.trim().lowercase()
 @Composable
 internal fun rememberSettingHits(query: String): List<SettingHit> {
     val resources = LocalResources.current
-    return remember(query, resources) {
+    val context = LocalContext.current
+    return remember(query, resources, context) {
         val words = searchWords(query)
         if (words.isEmpty()) return@remember emptyList()
-        SETTING_ENTRIES.mapNotNull { entry ->
+        SETTING_ENTRIES.filter { it.visible(context) }.mapNotNull { entry ->
             val title = resources.getString(entry.title)
             val subtitle = entry.subtitle?.let { resources.getString(it) }
             val section = resources.getString(entry.section)

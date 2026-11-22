@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.text.takeWhole
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,7 +42,7 @@ object ScanTitle {
                 else -> match.value
             }
         }
-        return tidy(expanded).ifBlank { fallback }.take(MAX_LENGTH)
+        return tidy(expanded).ifBlank { fallback }.takeWhole(MAX_LENGTH)
     }
 
     /** The `{…}` parts of [pattern] that are not tokens, so Settings can say they will stay as typed. */

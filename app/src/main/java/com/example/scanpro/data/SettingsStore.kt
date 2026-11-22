@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.preferencesOf
 import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -23,18 +24,27 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// A corrupt preferences file is replaced with defaults instead of failing every read (and crashing
-// the app at launch).
+private const val APP_LOCK_KEY_NAME = "app_lock"
+
+/**
+ * What a corrupt preferences file is replaced with, instead of failing every read (and crashing the app at launch):
+ * defaults, except that app lock stays ON. Empty preferences would read as "no lock", and a damaged file would then
+ * open the library with no warning, which the lock's own read-error rule ("stay locked") is there to prevent. Anyone
+ * whose phone has no screen lock is let in and the lock switched off by the unlock screen, so this cannot shut a
+ * person out. (The list of locked folders cannot be recovered from a damaged file.)
+ */
+internal fun settingsAfterCorruption(): Preferences = preferencesOf(booleanPreferencesKey(APP_LOCK_KEY_NAME) to true)
+
 private val Context.scanProSettings by preferencesDataStore(
     name = "scanpro_settings",
-    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() }
+    corruptionHandler = ReplaceFileCorruptionHandler { settingsAfterCorruption() }
 )
 
 @Singleton
 class SettingsStore @Inject constructor(@ApplicationContext private val context: Context) {
     private val keyQuality = stringPreferencesKey("pdf_quality")
     private val keyAutoTitle = booleanPreferencesKey("auto_title")
-    private val keyAppLock = booleanPreferencesKey("app_lock")
+    private val keyAppLock = booleanPreferencesKey(APP_LOCK_KEY_NAME)
 
     /** Preferences that fall back to defaults when the file can't be read, instead of throwing. */
     private val preferences: Flow<Preferences> = context.scanProSettings.data.catch { error ->

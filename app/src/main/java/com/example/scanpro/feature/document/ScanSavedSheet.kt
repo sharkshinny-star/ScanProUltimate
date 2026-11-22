@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.document
 
+import com.example.scanpro.core.text.takeWhole
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -193,7 +194,7 @@ fun ScanSavedSheet(
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it.take(120) },
+                onValueChange = { name = it.takeWhole(120) },
                 label = { Text(stringResource(R.string.doc_name)) },
                 singleLine = true,
                 enabled = !busy,

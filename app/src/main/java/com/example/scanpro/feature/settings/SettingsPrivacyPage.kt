@@ -26,6 +26,11 @@ import com.example.scanpro.BuildConfig
 import com.example.scanpro.R
 import com.example.scanpro.core.ui.SupportLinks
 
+// Set per build from Gradle properties; the constants in SupportLinks are the fallback. Settings search asks too, so it
+// lists the policy and terms only when this build shows them.
+internal fun privacyPolicyUrl(): String = BuildConfig.PRIVACY_POLICY_URL.ifBlank { SupportLinks.PRIVACY_POLICY_URL }
+internal fun termsUrl(): String = BuildConfig.TERMS_URL.ifBlank { SupportLinks.TERMS_OF_USE_URL }
+
 /** Privacy & security: app lock, the privacy facts, and the policy and terms (only when this build has them). */
 @Composable
 internal fun PrivacyPage(appLock: Boolean, onAppLockChange: (Boolean) -> Unit) = SettingsPageColumn {
@@ -40,9 +45,8 @@ internal fun PrivacyPage(appLock: Boolean, onAppLockChange: (Boolean) -> Unit) =
             Toast.makeText(context, linkUnavailable, Toast.LENGTH_SHORT).show()
         }
     }
-    // Set per build from Gradle properties; the constants in SupportLinks are the fallback.
-    val privacyPolicyUrl = BuildConfig.PRIVACY_POLICY_URL.ifBlank { SupportLinks.PRIVACY_POLICY_URL }
-    val termsUrl = BuildConfig.TERMS_URL.ifBlank { SupportLinks.TERMS_OF_USE_URL }
+    val privacyPolicyUrl = privacyPolicyUrl()
+    val termsUrl = termsUrl()
 
     SettingsGroup {
         SettingsSwitchRow(

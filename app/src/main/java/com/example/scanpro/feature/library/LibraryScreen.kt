@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.library
 
+import com.example.scanpro.core.text.takeWhole
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.rememberScrollState
 
@@ -918,7 +919,7 @@ internal fun LibraryScreen(
             confirmLabel = stringResource(R.string.common_rename),
             onDismiss = { renamingDocument = null },
         ) { name ->
-            val clean = name.trim().take(120)
+            val clean = name.trim().takeWhole(120)
             if (clean.isNotEmpty() && clean != title) onRenameDocument(id, clean)
             renamingDocument = null
         }
