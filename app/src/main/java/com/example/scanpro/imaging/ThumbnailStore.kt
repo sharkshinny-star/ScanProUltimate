@@ -66,8 +66,10 @@ object ThumbnailStore {
     private fun write(folder: File, target: File, bitmap: Bitmap, maxDimension: Int) {
         folder.mkdirs()
         // Earlier versions of this page at the same size are stale now.
-        folder.listFiles { file -> file.name.startsWith("$maxDimension-") && file != target }?.forEach { it.delete() }
-        val temp = File(folder, "${target.name}.tmp")
+        // (Another writer's temporary file is not stale: leave it, or its picture is deleted mid-write.)
+        folder.listFiles { file -> file.name.startsWith("$maxDimension-") && file != target && !file.name.endsWith(".tmp") }?.forEach { it.delete() }
+        // A name of its own: two writers of the same page shared one temporary file and could publish a half-written picture.
+        val temp = File(folder, "${target.name}.${System.nanoTime()}.tmp")
         FileOutputStream(temp).buffered().use { out -> check(bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)) }
         if (!temp.renameTo(target)) temp.delete()
     }

@@ -56,9 +56,9 @@ object OpenCvScanProcessor {
         val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT to emptySet()
         return try {
             val detection = DocumentEdgeDetector.detect(bitmap)
-            val quad = detection.quad
-            (if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT) to
-                (PageQuality.issues(detection) + blankIssue(bitmap, quad))
+            // The same gate for the crop and the blank check: a rejected outline must not decide whether the page is blank.
+            val quad = detection.quad?.takeIf { detection.confidence >= 0.34f }
+            (quad ?: CropQuad.DEFAULT) to (PageQuality.issues(detection) + blankIssue(bitmap, quad))
         } finally {
             if (!bitmap.isRecycled) bitmap.recycle()
         }

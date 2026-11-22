@@ -492,9 +492,24 @@ fun CameraScannerScreen(
             scope.launch {
                 // Copy picks into the session folder: the picker's read grant ends with the process,
                 // so pages restored after process death would otherwise be unreadable.
-                val picks = withContext(Dispatchers.IO) {
-                    sessionDir.mkdirs()
-                    uris.take(remaining).map { uri -> copyPick(context, uri, sessionDir) }
+                val made = java.util.Collections.synchronizedList(mutableListOf<PickResult>())
+                val picks = try {
+                    withContext(Dispatchers.IO) {
+                        sessionDir.mkdirs()
+                        uris.take(remaining).map { uri -> copyPick(context, uri, sessionDir).also { made += it } }
+                    }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    // The screen went while the copies were being made (the copying itself runs to the end). They would
+                    // be lost, files and all: a screen turn hands them to the new screen, as late camera photos are;
+                    // leaving the screen deletes them.
+                    val copiedFiles = made.filterIsInstance<PickResult.Copied>().map { it.uri }
+                    val rotating = (context as? android.app.Activity)?.isChangingConfigurations == true
+                    if (rotating) {
+                        lateCaptures.update { it + (sessionId to (it[sessionId].orEmpty() + copiedFiles.map(Uri::toString))) }
+                    } else {
+                        copiedFiles.forEach { uri -> uri.path?.let { File(it).delete() } }
+                    }
+                    throw cancelled
                 }
                 val allCopied = picks.filterIsInstance<PickResult.Copied>().map { it.uri }
                 // Camera shots taken while copying count too: re-check the limit now and drop the extra copies.
@@ -532,7 +547,10 @@ fun CameraScannerScreen(
     val guidanceHold = remember { GuidanceHold(GUIDANCE_HOLD_MS) }
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
-            onDetection = { result, isStable, progress ->
+            onDetection = detect@{ result, isStable, progress ->
+                // A frame that finished just before the camera stopped (review step, QR mode, detection off) arrives after
+                // the outline was cleared: drop it, or it is drawn again and nothing ever replaces it.
+                if (reviewing || barcodeMode || detectMode == DetectMode.NO_DETECT) return@detect
                 // The screen recomposes on this object; it is replaced only when something it shows changed, not every frame.
                 val previousResult = detection
                 if (previousResult == null || (previousResult.quad == null) != (result.quad == null) || previousResult.isDark != result.isDark ||
@@ -554,6 +572,16 @@ fun CameraScannerScreen(
             onAutoCapture = { autoCaptureSignal++ },
             onUnavailable = { cameraError = resources.getString(R.string.scan_error_detector_unavailable) }
         )
+    }
+    // The outline, the lock-on state and the ring belong to the page last seen. When the camera stops looking for one
+    // (the review step, QR mode, detection switched off) they are cleared, so a retake or a return to the camera does
+    // not start with the previous page's outline and tick until the first new frame arrives (or for good, with detection off).
+    LaunchedEffect(reviewing, barcodeMode, detectMode) {
+        outlineTracker.reset()
+        shownQuad = null
+        detection = null
+        stable = false
+        steadiness = 0f
     }
     // Taking a page by hand while the tips show means they have done their job.
 
@@ -817,8 +845,9 @@ fun CameraScannerScreen(
         val id = UUID.randomUUID().toString()
         val raw = File(sessionDir, "raw_$id.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(raw).build()
-        // The folder is made on the camera's own thread rather than here on main.
-        analysisExecutor.execute { sessionDir.mkdirs() }
+        // Made here, before the shutter: queued behind analysis frames it could come too late for CameraX to write the
+        // photo, or be refused outright once the screen's executor was shut down. An existing folder costs nothing.
+        sessionDir.mkdirs()
         capture.takePicture(
             options,
             mainExecutor,
@@ -839,10 +868,12 @@ fun CameraScannerScreen(
                     }
                     // Keep the raw photo: cropping happens in the review step, from the full-size original.
                     val captured = Uri.fromFile(raw)
-                    val replacing = retakeIndex in pages.indices
+                    // Read once: the checks below wait for the page inspector, and Back in that time clears retakeIndex.
+                    val retakeAt = retakeIndex.takeIf { it in pages.indices } ?: -1
+                    val replacing = retakeAt >= 0
                     if (replacing) {
-                        val old = pages[retakeIndex]
-                        pages[retakeIndex] = captured
+                        val old = pages[retakeAt]
+                        pages[retakeAt] = captured
                         quads.remove(old.toString())
                         filters.remove(old.toString())
                         adjustments.remove(old.toString())
@@ -901,14 +932,14 @@ fun CameraScannerScreen(
                         }
                     }
                     status = when {
-                        replacing -> resources.getString(R.string.scan_status_page_retaken, retakeIndex + 1)
+                        replacing -> resources.getString(R.string.scan_status_page_retaken, retakeAt + 1)
                         scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> resources.getString(R.string.scan_status_front_saved)
                         scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> resources.getString(R.string.scan_status_id_ready)
                         else -> resources.getString(R.string.scan_status_page_captured, pages.size)
                     }
                     if (replacing) {
                         // Straight back to the page that was retaken, so it can be checked at once.
-                        reviewIndex = retakeIndex
+                        reviewIndex = retakeAt
                         retakeIndex = -1
                         reviewing = true
                     } else if (retakeOfPage != null) finishScan() else flyIntoCounter(raw)
@@ -916,6 +947,8 @@ fun CameraScannerScreen(
 
                 override fun onError(exception: ImageCaptureException) {
                     capturing = false
+                    // The shot failed, so the page was not captured: let auto-capture try it again.
+                    analyzer.rearm()
                     // A half-written file must not be mistaken for a page later.
                     deleteInBackground(raw)
                     status = when (exception.imageCaptureError) {
@@ -985,9 +1018,16 @@ fun CameraScannerScreen(
     // Saved, so a rotation (no transition) does not wait again.
     var enterSettled by rememberSaveable { mutableStateOf(false) }
     val motionEnabled = com.example.scanpro.core.designsystem.rememberMotionEnabled()
+    // Counts binding requests. CameraX answers each one later on the main thread, and an answer to an out-of-date request
+    // (the review step opened, HD toggled, a retry) must not bind the camera behind the screen that replaced it.
+    val bindGeneration = remember { java.util.concurrent.atomic.AtomicInteger() }
+    // The one observer of the camera's state, so a rebind replaces it instead of piling up another.
+    val cameraStateWatch = remember { CameraStateWatch() }
     LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, retryTrigger, hdCapture) {
+        val generation = bindGeneration.incrementAndGet()
         if (!permissionGranted) return@LaunchedEffect
         if (reviewing) {
+            cameraStateWatch.stop()
             cameraProvider?.unbindAll()
             imageCapture = null
             boundCamera = null
@@ -1002,14 +1042,15 @@ fun CameraScannerScreen(
             enterSettled = true
         }
         future.addListener({
-            // The screen may have been left before the camera provider became ready.
-            if (disposed.get()) return@addListener
+            // The screen may have been left, or this request replaced by a newer one, before the provider became ready.
+            if (disposed.get() || generation != bindGeneration.get()) return@addListener
             runCatching {
                 val provider = future.get()
                 if (disposed.get()) {
                     provider.unbindAll()
                     return@addListener
                 }
+                if (generation != bindGeneration.get()) return@addListener
                 cameraProvider = provider
                 // The same 4:3 field of view for preview, capture and analysis, so what the overlay outlines is what is saved.
                 val selector = ResolutionSelector.Builder()
@@ -1060,7 +1101,7 @@ fun CameraScannerScreen(
                     .also { it.setAnalyzer(analysisExecutor, frameAnalyzer) }
 
                 provider.unbindAll()
-                if (disposed.get()) return@addListener
+                if (disposed.get() || generation != bindGeneration.get()) return@addListener
 
                 // Tablets and Chromebooks may only have a front or external camera; any camera beats none.
                 val cameraSelector = when {
@@ -1078,7 +1119,7 @@ fun CameraScannerScreen(
                 boundUseCases = listOf(preview, capture, analysis)
                 cameraError = null
                 // Errors after binding (another app took the camera, device policy, a fold closing) arrive here.
-                camera.cameraInfo.cameraState.observe(lifecycleOwner) { state ->
+                cameraStateWatch.watch(camera.cameraInfo.cameraState, lifecycleOwner) { state ->
                     val error = state.error
                     cameraError = if (error == null) null else when (error.code) {
                         androidx.camera.core.CameraState.ERROR_CAMERA_IN_USE,
@@ -1153,6 +1194,8 @@ fun CameraScannerScreen(
     DisposableEffect(Unit) {
         onDispose {
             disposed.set(true)
+            bindGeneration.incrementAndGet()
+            cameraStateWatch.stop()
             cameraProvider?.unbindAll()
             analysisExecutor.shutdownNow()
             barcodeAnalyzer.close()
@@ -1170,7 +1213,14 @@ fun CameraScannerScreen(
         lateCaptures.collect { waiting ->
             val late = waiting[sessionId] ?: return@collect
             lateCaptures.update { it - sessionId }
-            late.map(Uri::parse).forEach { uri -> if (!pages.contains(uri) && pages.size < pageLimit) pages.add(uri) }
+            late.map(Uri::parse).forEach { uri ->
+                when {
+                    pages.contains(uri) -> Unit
+                    pages.size < pageLimit -> pages.add(uri)
+                    // No room for it any more: a photo nobody will see must not stay in the session folder.
+                    else -> uri.path?.let { deleteInBackground(File(it)) }
+                }
+            }
         }
     }
 
@@ -2868,3 +2918,31 @@ internal fun scannerSessionRoot(context: android.content.Context) = File(context
 
 /** Raw photos whose shutter finished during a rotation, by scanner session id; the recreated screen adopts them. */
 private val lateCaptures = kotlinx.coroutines.flow.MutableStateFlow<Map<String, List<String>>>(emptyMap())
+
+/**
+ * Holds the single observer of a camera's state. Each bind of the camera used to add another observer to its own
+ * LiveData and none was ever removed, so stale observers of earlier bindings kept writing the screen's error text.
+ */
+private class CameraStateWatch {
+    private var data: androidx.lifecycle.LiveData<androidx.camera.core.CameraState>? = null
+    private var observer: androidx.lifecycle.Observer<androidx.camera.core.CameraState>? = null
+
+    fun watch(
+        source: androidx.lifecycle.LiveData<androidx.camera.core.CameraState>,
+        owner: androidx.lifecycle.LifecycleOwner,
+        onState: (androidx.camera.core.CameraState) -> Unit
+    ) {
+        stop()
+        val next = androidx.lifecycle.Observer<androidx.camera.core.CameraState> { onState(it) }
+        data = source
+        observer = next
+        source.observe(owner, next)
+    }
+
+    fun stop() {
+        val old = observer
+        if (old != null) data?.removeObserver(old)
+        data = null
+        observer = null
+    }
+}

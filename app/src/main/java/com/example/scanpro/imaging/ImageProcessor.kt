@@ -68,8 +68,10 @@ object ImageProcessor {
         val maxDimension = renderLimit(longSide(source.absolutePath), filter)
         try {
             renderPageAt(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension)
-        } catch (memory: OutOfMemoryError) {
-            // A page the device can't hold at full size is still saved, at half the resolution, rather than lost.
+        } catch (memory: Throwable) {
+            // A page the device can't hold at full size is still saved, at half the resolution, rather than lost. A native
+            // OpenCV allocation that fails throws CvException, not OutOfMemoryError, and needs the same retry.
+            if (memory !is OutOfMemoryError && memory !is org.opencv.core.CvException) throw memory
             renderPageAt(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension / 2)
         }
     }
@@ -935,8 +937,18 @@ object ImageProcessor {
 
     private fun saveJpeg(bitmap: Bitmap, file: File, quality: Int) {
         file.parentFile?.mkdirs()
-        FileOutputStream(file).buffered(COPY_BUFFER).use { output ->
-            userRequire(bitmap.compress(Bitmap.CompressFormat.JPEG, quality, output), R.string.err_could_not_save_image, file.name)
+        // Written beside the page and moved into place, so a crash or a dead battery mid-write never leaves the page's own
+        // picture truncated (the database still points at it).
+        val staged = File(file.parentFile, file.name + ".tmp")
+        try {
+            FileOutputStream(staged).buffered(COPY_BUFFER).use { output ->
+                userRequire(bitmap.compress(Bitmap.CompressFormat.JPEG, quality, output), R.string.err_could_not_save_image, file.name)
+            }
+            if (!staged.renameTo(file)) {
+                staged.copyTo(file, overwrite = true)
+            }
+        } finally {
+            staged.delete()
         }
     }
 }
