@@ -121,9 +121,11 @@ internal fun RedactBoxesEditor(
     }
     val preview = opened
     val pageCount = preview?.pageCount ?: 0
-    val bitmap by produceState<Bitmap?>(null, preview, pageIndex) {
-        value = preview?.let { withContext(Dispatchers.IO) { runCatching { it.render(pageIndex, 1100) }.getOrNull() } }
+    // Kept with its page and used only while that page is shown, so boxes are never drawn or dragged on another page's image.
+    val rendered by produceState<Pair<Int, Bitmap?>?>(null, preview, pageIndex) {
+        value = preview?.let { pageIndex to withContext(Dispatchers.IO) { runCatching { it.render(pageIndex, 1100) }.getOrNull() } }
     }
+    val bitmap = rendered?.takeIf { it.first == pageIndex }?.second
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -144,7 +146,7 @@ internal fun RedactBoxesEditor(
                                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.tools_redact_box_remove))
                                 }
                             } else if (boxes.isNotEmpty()) {
-                                IconButton(onClick = { boxes.removeAt(boxes.size - 1); selected = null }) {
+                                IconButton(onClick = { val removed = boxes.removeAt(boxes.size - 1); selected = null; pageIndex = removed.page.coerceIn(0, pageCount - 1) }) {
                                     Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.tools_redact_box_undo))
                                 }
                             }

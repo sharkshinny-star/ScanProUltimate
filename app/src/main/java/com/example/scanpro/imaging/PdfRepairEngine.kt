@@ -94,6 +94,10 @@ object PdfRepairEngine {
                                 userError(R.string.tools_err_repair_failed)
                             }
                         }
+                    } catch (error: Throwable) {
+                        // Cancelled or failed after the structure was rewritten: no result-looking file is left behind.
+                        outputFile.delete()
+                        throw error
                     } finally {
                         staged.delete()
                     }

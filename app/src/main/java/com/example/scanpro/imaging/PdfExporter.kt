@@ -218,7 +218,7 @@ object PdfExporter {
                 }
                 pdf.finishPage(page)
             }
-            FileOutputStream(destination).buffered(COPY_BUFFER).use { output -> pdf.writeTo(output) }
+            destination.deleteIfFails { FileOutputStream(destination).buffered(COPY_BUFFER).use { output -> pdf.writeTo(output) } }
         } finally {
             pdf.close()
         }

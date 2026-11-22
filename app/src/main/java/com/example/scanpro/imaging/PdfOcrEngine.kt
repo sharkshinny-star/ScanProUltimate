@@ -89,7 +89,7 @@ object PdfOcrEngine {
                 }
                 onProgress(needsText.size, needsText.size, AppStrings.get(R.string.tools_progress_creating_pdf))
                 outputFile.parentFile?.mkdirs()
-                document.save(outputFile)
+                outputFile.deleteIfFails { document.save(outputFile) }
                 PdfOcrOutcome(outputFile, total, searchable, total - needsText.size, empty, input.length())
             }
         } finally {

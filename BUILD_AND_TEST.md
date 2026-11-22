@@ -53,9 +53,13 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
-## Latest results (2026-11-22, F255 OCR cancellation and per-page text count, Linux cloud container)
+## Latest results (2026-11-22, F255, Linux cloud container)
 
-- Not run: no Android SDK in the cloud container. F255 is uncompiled and untested; `ConvertToolChecksTest` (per-page counts) is the existing test for the refactor.
+Not run: `./gradlew --offline :app:compileDebugKotlin` failed because the cloud container cannot resolve the Android Gradle plugin offline. The F255 changes (Sign PDF stamp target, Edit text box clamp, F256 Organise pages close confirmation, F257 tools sweep, F258 Edit PDF text, F259 partial-output cleanup, F261 Crop/Redact page image, F260 re-protect (one new unit test written, not run), a wide change across eight engine files that most needs a local compile) are uncompiled and untested; build and run unit tests locally.
+
+## Latest results (2026-11-22, F262 OCR cancellation and per-page text count, Linux cloud container)
+
+- Not run: no Android SDK in the cloud container. F262 is uncompiled and untested; `ConvertToolChecksTest` (per-page counts) is the existing test for the refactor.
 
 ## Latest results (2026-11-22, F254 Make searchable non-Latin text layer, Linux cloud container)
 

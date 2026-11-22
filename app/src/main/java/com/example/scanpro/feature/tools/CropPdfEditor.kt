@@ -108,15 +108,18 @@ internal fun ManualCropSection(
         awaitDispose { opened.close() }
     }
     val index = pageIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
-    // The previous page stays on screen until the next one is drawn, so moving between pages does not flash.
-    val page by produceState<Bitmap?>(null, session, index) {
+    // Each picture and size is kept with the page it belongs to and used only while that page is shown: the previous
+    // page's image under the new page's crop frame let a quick drag work from the wrong page's shape and size.
+    val rendered by produceState<Pair<Int, Bitmap>?>(null, session, index) {
         val open = session ?: return@produceState
-        value = withContext(Dispatchers.IO) { open.render(index, EDITOR_PAGE_WIDTH) }
+        value = withContext(Dispatchers.IO) { open.render(index, EDITOR_PAGE_WIDTH) }?.let { index to it }
     }
-    val pageSize by produceState<Pair<Int, Int>?>(null, session, index) {
+    val page = rendered?.takeIf { it.first == index }?.second
+    val measured by produceState<Triple<Int, Int, Int>?>(null, session, index) {
         val open = session ?: return@produceState
-        value = withContext(Dispatchers.IO) { open.pageSizePoints(index) }
+        value = withContext(Dispatchers.IO) { open.pageSizePoints(index) }?.let { Triple(index, it.first, it.second) }
     }
+    val pageSize = measured?.takeIf { it.first == index }?.let { it.second to it.third }
     var previewing by rememberSaveable { mutableStateOf(false) }
 
     // In All pages a drag changes the crop every page shares; in This page it gives this page a crop of its own.

@@ -138,20 +138,22 @@ class SignPdfViewModel @Inject constructor(
 
     /** A signature drawn just now; kept in the library for next time when [keep] is true. */
     fun addDrawnSignature(signature: Bitmap, keep: Boolean) {
+        val target = _state.value.target()
         viewModelScope.launch(Dispatchers.IO) {
             val stamp = newStampFile()
             ImageProcessor.saveSignature(signature, stamp)
             if (keep) library.save(signature)
-            addPlacement(stamp, SIGNATURE_WIDTH)
+            addPlacement(stamp, SIGNATURE_WIDTH, target)
         }
     }
 
     /** A signature from the library, copied so deleting it from the library later cannot break this session. */
     fun addSavedSignature(saved: File) {
+        val target = _state.value.target()
         viewModelScope.launch(Dispatchers.IO) {
             val stamp = newStampFile()
             saved.copyTo(stamp, overwrite = true)
-            addPlacement(stamp, SIGNATURE_WIDTH)
+            addPlacement(stamp, SIGNATURE_WIDTH, target)
         }
     }
 
@@ -159,6 +161,7 @@ class SignPdfViewModel @Inject constructor(
     fun addText(text: String, color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color(0xFF111111), typeface: android.graphics.Typeface? = android.graphics.Typeface.DEFAULT) {
         val clean = text.replace('\n', ' ').trim().take(MAX_TEXT_LENGTH)
         if (clean.isEmpty()) return
+        val target = _state.value.target()
         viewModelScope.launch(Dispatchers.IO) {
             val stamp = newStampFile()
             val bitmap = textBitmap(clean, color.toArgb(), typeface)
@@ -167,15 +170,28 @@ class SignPdfViewModel @Inject constructor(
             } finally {
                 bitmap.recycle()
             }
-            addPlacement(stamp, TEXT_WIDTH)
+            addPlacement(stamp, TEXT_WIDTH, target)
         }
     }
 
-    private fun addPlacement(file: File, widthFraction: Float) {
+    /** The page and working copy a stamp was asked for, so a slow build cannot land on another page or session. */
+    private data class StampTarget(val file: File?, val page: Int)
+
+    private fun SignUiState.target() = StampTarget(file, page)
+
+    /** Adds the stamp to the page it was requested for; if the tool was closed or reopened meanwhile, deletes it. */
+    private fun addPlacement(file: File, widthFraction: Float, target: StampTarget) {
+        var added = false
         _state.update { s ->
-            val placed = SignPlacement(s.page, file, 0.5f, 0.8f, widthFraction, 0f)
-            s.copy(placements = s.placements + placed, selected = s.placements.size)
+            added = false
+            if (!s.visible || target.file == null || s.file != target.file) s
+            else {
+                added = true
+                val placed = SignPlacement(target.page, file, 0.5f, 0.8f, widthFraction, 0f)
+                s.copy(placements = s.placements + placed, selected = s.placements.size)
+            }
         }
+        if (!added) file.delete()
     }
 
     fun select(index: Int) {

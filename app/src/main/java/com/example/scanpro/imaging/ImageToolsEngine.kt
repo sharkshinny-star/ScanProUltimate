@@ -361,8 +361,10 @@ object ImageToolsEngine {
         val prepared = prepareForFormat(bitmap, format)
         if ((prepared !== bitmap) && !bitmap.isRecycled) bitmap.recycle()
 
-        FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
-            encodeToStream(prepared, format, quality, out)
+        outputFile.deleteIfFails {
+            FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
+                encodeToStream(prepared, format, quality, out)
+            }
         }
         prepared.recycle()
     }
@@ -408,8 +410,10 @@ object ImageToolsEngine {
         }
 
         val bytes = fitted ?: smallest
-        if (bytes != null) FileOutputStream(outputFile).buffered(COPY_BUFFER).use { it.write(bytes) }
-        else sourceFile.copyTo(outputFile, overwrite = true)
+        outputFile.deleteIfFails {
+            if (bytes != null) FileOutputStream(outputFile).buffered(COPY_BUFFER).use { it.write(bytes) }
+            else sourceFile.copyTo(outputFile, overwrite = true)
+        }
         return fitted != null
     }
 
@@ -536,8 +540,10 @@ object ImageToolsEngine {
             val prepared = prepareForFormat(scaled, config.outputFormat)
             if ((prepared !== scaled) && !scaled.isRecycled) scaled.recycle()
 
-            FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
-                encodeToStream(prepared, config.outputFormat, config.qualityPercent, out)
+            outputFile.deleteIfFails {
+                FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
+                    encodeToStream(prepared, config.outputFormat, config.qualityPercent, out)
+                }
             }
             prepared.recycle()
 
@@ -575,12 +581,12 @@ object ImageToolsEngine {
     ): PdfToolResult = withContext(BackgroundWork.tools) {
         outputFile.parentFile?.mkdirs()
         val tempFile = PdfToolsEngine.copyUriToTemp(context, inputUri, "crop_in_${UUID.randomUUID()}.tmp")
+        val stagingOut = File(outputFile.parentFile, "staged_${UUID.randomUUID()}.jpg")
         try {
             val originalSize = tempFile.length()
             userRequire(originalSize > 0, R.string.tools_err_image_unreadable, 1)
             onProgress(1, 2, AppStrings.get(R.string.tools_progress_cropping_img))
 
-            val stagingOut = File(outputFile.parentFile, "staged_${UUID.randomUUID()}.jpg")
             ImageProcessor.cropSourceToNewFile(tempFile, stagingOut, quad)
             userRequire(stagingOut.exists() && stagingOut.length() > 0, R.string.tools_err_crop_img)
 
@@ -589,8 +595,10 @@ object ImageToolsEngine {
                     ?: userError(R.string.tools_err_image_undecodable, 1)
                 val prepared = prepareForFormat(bmp, format)
                 if (prepared !== bmp && !bmp.isRecycled) bmp.recycle()
-                FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
-                    encodeToStream(prepared, format, 100, out)
+                outputFile.deleteIfFails {
+                    FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
+                        encodeToStream(prepared, format, 100, out)
+                    }
                 }
                 prepared.recycle()
                 stagingOut.delete()
@@ -612,6 +620,7 @@ object ImageToolsEngine {
             )
         } finally {
             tempFile.delete()
+            stagingOut.delete() // also when the crop failed part-way
         }
     }
 

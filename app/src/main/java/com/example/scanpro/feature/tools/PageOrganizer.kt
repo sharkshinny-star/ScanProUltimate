@@ -295,8 +295,12 @@ internal fun PdfPageOrganizerSheet(
 
     // Closing with deletes, moves or rotations that were not applied asks first.
     var confirmClose by rememberSaveable { mutableStateOf(false) }
-    val requestClose = { if (undoStack.isNotEmpty()) confirmClose = true else onClose() }
-    BackHandler(enabled = undoStack.isNotEmpty()) { confirmClose = true }
+    // The undo history is lost when the phone turns but the pages are kept, so edits are also judged by the pages
+    // themselves; otherwise closing after a turn of the screen would throw the changes away without asking.
+    val hasEdits = undoStack.isNotEmpty() ||
+        pages.withIndex().any { (i, p) -> p.index != i || p.rotation % 360 != 0 || p.selected != defaultSelected }
+    val requestClose = { if (hasEdits) confirmClose = true else onClose() }
+    BackHandler(enabled = hasEdits) { confirmClose = true }
     if (confirmClose) {
         com.example.scanpro.feature.document.DiscardEditsDialog(
             onKeepEditing = { confirmClose = false },
@@ -409,7 +413,7 @@ internal fun PdfPageOrganizerSheet(
                             selected = mode,
                             onSelect = { target ->
                                 if (target != mode) {
-                                    if (undoStack.isNotEmpty()) pendingMode = target else switchMode(target)
+                                    if (hasEdits) pendingMode = target else switchMode(target)
                                 }
                             },
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)

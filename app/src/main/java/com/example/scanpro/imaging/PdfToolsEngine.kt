@@ -386,7 +386,7 @@ object PdfToolsEngine {
             userRequire(totalPagesMerged > 0, R.string.tools_err_merge_no_pages)
 
             onProgress(inputUris.size, inputUris.size, AppStrings.get(R.string.tools_progress_saving_merged))
-            mergedDoc.save(outputFile)
+            outputFile.deleteIfFails { mergedDoc.save(outputFile) }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = totalPagesMerged,
@@ -427,12 +427,12 @@ object PdfToolsEngine {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(i + 1, totalPages, AppStrings.get(R.string.tools_progress_splitting_page, i + 1, totalPages))
                             val outFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.pdf")
+                            outputFiles.add(outFile) // listed before it is written, so a failed or cancelled run removes it
                             PDDocument().use { singleDoc ->
                                 singleDoc.addImportedPage(doc.getPage(i))
                                 singleDoc.dropLinksToMissingPages()
                                 singleDoc.save(outFile)
                             }
-                            outputFiles.add(outFile)
                         }
                     }
                     SplitMode.EVERY_N_PAGES -> {
@@ -444,12 +444,12 @@ object PdfToolsEngine {
                             val end = (pageIndex + chunkSize).coerceAtMost(totalPages)
                             onProgress(chunkIndex, ((totalPages + chunkSize) - 1) / chunkSize, AppStrings.get(R.string.tools_progress_splitting_chunk, chunkIndex))
                             val outFile = File(outputDir, "$base part $chunkIndex pages ${pageIndex + 1} to $end.pdf")
+                            outputFiles.add(outFile) // listed before it is written, so a failed or cancelled run removes it
                             PDDocument().use { chunkDoc ->
                                 for (i in pageIndex until end) chunkDoc.addImportedPage(doc.getPage(i))
                                 chunkDoc.dropLinksToMissingPages()
                                 chunkDoc.save(outFile)
                             }
-                            outputFiles.add(outFile)
                             chunkIndex++
                             pageIndex = end
                         }
@@ -461,6 +461,7 @@ object PdfToolsEngine {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(idx + 1, ranges.size, AppStrings.get(R.string.tools_progress_extracting_range, idx + 1, ranges.size))
                             val outFile = File(outputDir, "$base range ${idx + 1} pages ${range.first} to ${range.last}.pdf")
+                            outputFiles.add(outFile) // listed before it is written, so a failed or cancelled run removes it
                             PDDocument().use { rangeDoc ->
                                 for (pageNum in range) {
                                     if ((pageNum in 1..totalPages)) rangeDoc.addImportedPage(doc.getPage(pageNum - 1))
@@ -468,12 +469,15 @@ object PdfToolsEngine {
                                 rangeDoc.dropLinksToMissingPages()
                                 rangeDoc.save(outFile)
                             }
-                            outputFiles.add(outFile)
                         }
                     }
                 }
             }
             return@withContext outputFiles
+        } catch (error: Throwable) {
+            // Failed or cancelled: no part of a half-finished split is left in the output folder.
+            outputFiles.forEach { it.delete() }
+            throw error
         } finally {
             tempFile.delete()
         }
@@ -506,7 +510,7 @@ object PdfToolsEngine {
                 // Pages chosen from a different file (or one that changed) must not produce an empty PDF.
                 userRequire(added > 0, R.string.tools_err_extract_none)
                 extractedDoc.dropLinksToMissingPages()
-                extractedDoc.save(outputFile)
+                outputFile.deleteIfFails { extractedDoc.save(outputFile) }
             } }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
@@ -544,7 +548,7 @@ object PdfToolsEngine {
                         page.rotation = Math.floorMod(page.rotation + addDegrees, 360)
                     }
                 }
-                doc.save(outputFile)
+                outputFile.deleteIfFails { doc.save(outputFile) }
             }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
@@ -588,7 +592,7 @@ object PdfToolsEngine {
                 }
                 userRequire(added > 0, R.string.tools_err_keep_one_page)
                 newDoc.dropLinksToMissingPages()
-                newDoc.save(outputFile)
+                outputFile.deleteIfFails { newDoc.save(outputFile) }
             } }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
@@ -723,6 +727,7 @@ object PdfToolsEngine {
                                 page.render(canvas, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
                                 val imgFile = File(outputDir, PdfToImagesMath.fileName(base, i + 1, totalPages, format.extension))
+                                imageFiles.add(imgFile) // listed before it is written, so a failed run removes it too
                                 FileOutputStream(imgFile).buffered().use { out ->
                                     if (format == ImageExportFormat.JPEG) {
                                         canvas.compress(Bitmap.CompressFormat.JPEG, PdfToImagesMath.JPEG_QUALITY, out)
@@ -737,7 +742,6 @@ object PdfToolsEngine {
                                         }
                                     }
                                 }
-                                imageFiles.add(imgFile)
                             }
                         }
                     }
@@ -746,6 +750,9 @@ object PdfToolsEngine {
                 userError(R.string.tools_err_password_protected, cause = securityEx)
             }
             return@withContext imageFiles
+        } catch (error: Throwable) {
+            imageFiles.forEach { it.delete() }
+            throw error
         } finally {
             bitmap?.recycle()
             tempFile.delete()
@@ -766,7 +773,7 @@ object PdfToolsEngine {
             }
             // The page count comes back from the write itself: reopening and parsing the finished file just to count
             // its pages used to cost a second full read of a large PDF (F172).
-            val pageCount = PdfSecurity.protect(tempFile, outputFile, password)
+            val pageCount = outputFile.deleteIfFails { PdfSecurity.protect(tempFile, outputFile, password) }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = pageCount,
@@ -789,7 +796,7 @@ object PdfToolsEngine {
         try {
             val originalSize = tempFile.length()
             val before = PdfSecurity.protection(tempFile)
-            val pageCount = PdfSecurity.unlock(tempFile, outputFile, password)
+            val pageCount = outputFile.deleteIfFails { PdfSecurity.unlock(tempFile, outputFile, password) }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = pageCount,
@@ -954,7 +961,7 @@ object PdfToolsEngine {
                     }
                 }
 
-                doc.save(outputFile)
+                outputFile.deleteIfFails { doc.save(outputFile) }
                 totalPages to watermarkedCount
             }
 
@@ -1075,7 +1082,7 @@ object PdfToolsEngine {
                     numberedCount++
                 }
 
-                doc.save(outputFile)
+                outputFile.deleteIfFails { doc.save(outputFile) }
                 totalPages to numberedCount
             }
 
@@ -1118,7 +1125,7 @@ object PdfToolsEngine {
                 val wordCount = if (text.isBlank()) 0 else text.split("\\s+".toRegex()).count { it.isNotBlank() }
                 Triple(totalPages, text, wordCount)
             }
-            outputFile.writeText(text, Charsets.UTF_8)
+            outputFile.deleteIfFails { outputFile.writeText(text, Charsets.UTF_8) }
             val outputSize = outputFile.length()
 
             onProgress(2, 2, AppStrings.get(R.string.tools_progress_extracting_text))

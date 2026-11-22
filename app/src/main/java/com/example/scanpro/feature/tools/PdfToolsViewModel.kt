@@ -41,6 +41,7 @@ import com.example.scanpro.data.OcrScript
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfToolResult
+import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.PdfToolsEngine
 import com.example.scanpro.imaging.SignPdfEngine
 import com.example.scanpro.imaging.SignPlacement
@@ -276,7 +277,9 @@ class PdfToolsViewModel @Inject constructor(
                 // The result moves out of the one-day cache into Your results inside keepAlive: a large output is still
                 // being copied after the progress reaches 100%, and that copy must survive the user switching apps too.
                 val result = operations.keepAlive(label) {
-                    withContext(BackgroundWork.tools) { work()?.let { it.copy(outputFile = results.keep(it.outputFile)) } }
+                    withContext(BackgroundWork.tools) {
+                        work()?.let { restoreProtection(it) }?.let { it.copy(outputFile = results.keep(it.outputFile)) }
+                    }
                 }
                 // The result is already kept; the card now plays its finish before the result screen takes over.
                 if (result != null) playFinish(shownAt)
@@ -637,9 +640,47 @@ class PdfToolsViewModel @Inject constructor(
 
     private fun workingCopyDir() = File(context.cacheDir, WORKING_COPY_DIR)
 
+    /**
+     * The password typed to open the protected PDF behind [workingCopy], kept in memory only until that copy is released
+     * (result kept, another file picked, tool closed), so a PDF made from the copy can be locked again with it.
+     */
+    private var reprotectPassword: String? = null
+
     private fun releaseWorkingCopy() {
         workingCopy?.delete()
         workingCopy = null
+        reprotectPassword = null
+    }
+
+    /** Forgets the unlocked copy when a tool that does not use it starts, so its password is never applied to other files. */
+    fun forgetUnlockedSource() = releaseWorkingCopy()
+
+    /**
+     * A PDF made from an unlocked working copy is locked again with the password the user typed, so a protected file does
+     * not quietly turn into an open one. If that fails the result is discarded rather than saved without protection.
+     * (A file with only an owner password, which opens freely, has none typed: its restrictions cannot be rebuilt.)
+     */
+    private fun restoreProtection(result: PdfToolResult): PdfToolResult {
+        val password = reprotectPassword ?: return result
+        val file = result.outputFile
+        if (workingCopy == null || !file.name.endsWith(".pdf", ignoreCase = true)) return result
+        val staged = File(file.parentFile, file.name + ".protecting")
+        return try {
+            PdfSecurity.protect(file, staged, password, enforceMinimum = false)
+            staged.copyTo(file, overwrite = true)
+            result.copy(
+                outputSizeBytes = file.length(),
+                message = listOf(result.message, context.getString(R.string.msg_tools_reprotected)).filter { it.isNotBlank() }.joinToString(" ")
+            )
+        } catch (cancelled: CancellationException) {
+            file.delete()
+            throw cancelled
+        } catch (error: Exception) {
+            file.delete()
+            userError(R.string.msg_tools_reprotect_failed, cause = error)
+        } finally {
+            staged.delete()
+        }
     }
 
     override fun onCleared() {
@@ -693,6 +734,7 @@ class PdfToolsViewModel @Inject constructor(
                 }
                 if (PdfToolsEngine.decryptCopy(context, uri, password, copy)) {
                     workingCopy = copy
+                    reprotectPassword = password
                     _toolReady.value = ToolTarget(tool, Uri.fromFile(copy))
                 } else {
                     askToolPassword(tool, uri, wrongPassword = true)

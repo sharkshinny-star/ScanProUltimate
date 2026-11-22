@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="msg_tools_reprotected">முடிவு அதே கடவுச்சொல்லால் பாதுகாக்கப்பட்டுள்ளது.</string>
+    <string name="msg_tools_reprotect_failed">முடிவை மீண்டும் பாதுகாக்க முடியவில்லை, எனவே பாதுகாப்பு இல்லாமல் சேமிக்கப்படவில்லை.</string>
+</resources>

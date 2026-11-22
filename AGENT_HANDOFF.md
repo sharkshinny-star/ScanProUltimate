@@ -21,7 +21,7 @@ update the affected files in the same commit as the change. `CLAUDE.md` repeats 
 
 <!-- coderabbit-ai-generated-section:v1:093fd3c15d217e67f138472fb2443e3b03985140cda8424b98fd73d31cbdb770 -->
 
-Last updated: 2026-11-20 (PR 18 repair: explicit canonical containment for shared ZIP entries; six standalone ResultShareTest tests pass; Gradle sharing tests (6/6) and app lint passed).
+Last updated: 2026-11-22 (F261: Crop and Redact editors no longer draw a page's frame or boxes on the previous page's image, uncompiled; F260: results made from an unlocked copy of a protected PDF are locked again with the typed password, memory only, uncompiled; F259: partial-output cleanup across the tool engines via `File.deleteIfFails`, uncompiled; F258: four Edit PDF text fixes, uncompiled, three review findings unfixed in AUDIT_FINDINGS F258; F257: five tool fixes from a full tools review, uncompiled; unfixed review findings listed in AUDIT_FINDINGS F257; F256: Organise pages asks before discarding edits after a screen turn, uncompiled; F255: Sign PDF stamp lands on the page it was requested for and is dropped if the tool closed; Edit text box clamped on the page at both edges; NOT compiled or tested, cloud Gradle offline). Earlier: 2026-11-20 (PR 18 repair: explicit canonical containment for shared ZIP entries; six standalone ResultShareTest tests pass; Gradle sharing tests (6/6) and app lint passed).
 
 <!-- /coderabbit-ai-generated:v1 -->
 
@@ -52,7 +52,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 <!-- coderabbit-ai-generated-section:v1:82b475149fcb0f97bb594bc8515f8cfc354e7620ddf00579ea17499760915d7a -->
 
-- F255 (2026-11-22): "Run OCR again" honours Stop; the per-page text count no longer fails for every page after a bad one. Uncompiled and unrun (no SDK in the cloud container). Open: non-Latin scans saved before the model downloads have no text and no message.
+- F262 (2026-11-22): "Run OCR again" honours Stop; the per-page text count no longer fails for every page after a bad one. Uncompiled and unrun (no SDK in the cloud container). Open: non-Latin scans saved before the model downloads have no text and no message.
 - F254 (2026-11-22): Make searchable keeps Devanagari, Chinese, Japanese and Korean words (`UnicodeTextFont`, ToUnicode map, no font file). Uncompiled and unrun (no SDK in the cloud container); needs a Hindi and a Chinese page on a phone.
 - F253 (2026-11-22): viewer page cache sized from the memory limit (unmeasured, device check), Next/Previous match by page on screen, zero-page PDF shows an error. Uncompiled and unrun (no SDK in the cloud container).
 - F252 (2026-11-22): viewer search finds phrases that wrap onto the next line; viewer temp-file list is thread-safe. Uncompiled and unrun (no SDK in the cloud container).
