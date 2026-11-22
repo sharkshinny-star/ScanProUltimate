@@ -83,16 +83,25 @@ object PageTextRules {
         found.isNotEmpty()
     }.getOrDefault(false)
 
-    /** Visible characters of the text layer on each page of [document], in one pass. */
+    /**
+     * Visible characters of the text layer on each page of [document]. Pages are read one at a time, so a page PDFBox
+     * cannot read counts as having no text and leaves every other page's count alone (read in one pass, a failure
+     * partway left all the later pages at zero, and Make searchable then read pages that already had text).
+     */
     fun visibleCharsPerPage(document: PDDocument): IntArray {
         val counts = IntArray(document.numberOfPages)
+        var page = 0
         val stripper = object : PDFTextStripper() {
             override fun writeString(text: String, textPositions: MutableList<TextPosition>) {
-                val index = currentPageNo - 1
-                if (index in counts.indices) counts[index] += countVisible(text)
+                counts[page] += countVisible(text)
             }
         }
-        runCatching { stripper.writeText(document, DiscardingWriter) }
+        for (index in counts.indices) {
+            page = index
+            stripper.startPage = index + 1
+            stripper.endPage = index + 1
+            runCatching { stripper.writeText(document, DiscardingWriter) }
+        }
         return counts
     }
 

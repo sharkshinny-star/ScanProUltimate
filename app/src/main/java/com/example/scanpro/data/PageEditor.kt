@@ -313,9 +313,20 @@ internal class PageEditor(private val store: DocumentStore) {
         val pages = doc.pages.map { page ->
             coroutineContext.ensureActive()
             // Re-running recognition is an explicit request to read the pages again, so it replaces corrections.
-            runCatching { ocr.recognizeDetailed(File(page.imagePath), selected) }
-                .map { page.copy(ocrText = it.text, ocrWords = it.words, ocrEdited = false) }
-                .getOrElse { failed++; page }
+            // Not runCatching: that would swallow a cancellation (Stop), counting it as a failed page and saving anyway.
+            val read = try {
+                ocr.recognizeDetailed(File(page.imagePath), selected)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
+            }
+            if (read == null) {
+                failed++
+                page
+            } else {
+                page.copy(ocrText = read.text, ocrWords = read.words, ocrEdited = false)
+            }
         }
         saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now())).also { history.record(doc.id, doc.pages) }
         failed
