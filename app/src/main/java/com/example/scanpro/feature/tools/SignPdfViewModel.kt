@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -40,10 +41,14 @@ data class SignUiState(
     val passwordFor: Uri? = null,
     val wrongPassword: Boolean = false,
     val failed: Boolean = false,
+    /** With [failed]: the phone is full, which is what the screen should say instead of a general failure. */
+    val noSpace: Boolean = false,
     val file: File? = null,
     val sourceName: String = "",
     val pageCount: Int = 0,
     val wasProtected: Boolean = false,
+    /** The file already carries a digital signature, which the saved copy will no longer validate (F215). */
+    val digitallySigned: Boolean = false,
     val page: Int = 0,
     val placements: List<SignPlacement> = emptyList(),
     /** Index into [placements] of the stamp being edited, or -1. */
@@ -91,19 +96,21 @@ class SignPdfViewModel @Inject constructor(
                     throw error
                 }
                 val name = withContext(Dispatchers.IO) { PdfToolsEngine.sourceBaseName(context, uri) }
+                val signed = withContext(Dispatchers.IO) { SignPdfEngine.hasDigitalSignature(copy.file) }
                 _state.value = SignUiState(
                     visible = true,
                     file = copy.file,
                     sourceName = name,
                     pageCount = pages,
-                    wasProtected = copy.wasProtected
+                    wasProtected = copy.wasProtected,
+                    digitallySigned = signed
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: InvalidPasswordException) {
                 _state.value = SignUiState(visible = true, passwordFor = uri, wrongPassword = true)
-            } catch (_: Exception) {
-                _state.value = SignUiState(visible = true, failed = true)
+            } catch (error: Exception) {
+                _state.value = SignUiState(visible = true, failed = true, noSpace = com.example.scanpro.core.text.isOutOfSpace(error))
             }
         }
     }
@@ -133,44 +140,60 @@ class SignPdfViewModel @Inject constructor(
 
     /** A signature drawn just now; kept in the library for next time when [keep] is true. */
     fun addDrawnSignature(signature: Bitmap, keep: Boolean) {
+        val target = _state.value.target()
         viewModelScope.launch(Dispatchers.IO) {
             val stamp = newStampFile()
             ImageProcessor.saveSignature(signature, stamp)
             if (keep) library.save(signature)
-            addPlacement(stamp, SIGNATURE_WIDTH)
+            addPlacement(stamp, SIGNATURE_WIDTH, target)
         }
     }
 
     /** A signature from the library, copied so deleting it from the library later cannot break this session. */
     fun addSavedSignature(saved: File) {
+        val target = _state.value.target()
         viewModelScope.launch(Dispatchers.IO) {
             val stamp = newStampFile()
             saved.copyTo(stamp, overwrite = true)
-            addPlacement(stamp, SIGNATURE_WIDTH)
+            addPlacement(stamp, SIGNATURE_WIDTH, target)
         }
     }
 
     /** A typed stamp, such as a date, drawn to a transparent picture so any script the phone can show is kept. */
-    fun addText(text: String) {
+    fun addText(text: String, color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color(0xFF111111), typeface: android.graphics.Typeface? = android.graphics.Typeface.DEFAULT) {
         val clean = text.replace('\n', ' ').trim().take(MAX_TEXT_LENGTH)
         if (clean.isEmpty()) return
+        val target = _state.value.target()
         viewModelScope.launch(Dispatchers.IO) {
             val stamp = newStampFile()
-            val bitmap = textBitmap(clean)
+            val bitmap = textBitmap(clean, color.toArgb(), typeface)
             try {
                 ImageProcessor.saveSignature(bitmap, stamp)
             } finally {
                 bitmap.recycle()
             }
-            addPlacement(stamp, TEXT_WIDTH)
+            addPlacement(stamp, TEXT_WIDTH, target)
         }
     }
 
-    private fun addPlacement(file: File, widthFraction: Float) {
+    /** The page and working copy a stamp was asked for, so a slow build cannot land on another page or session. */
+    private data class StampTarget(val file: File?, val page: Int)
+
+    private fun SignUiState.target() = StampTarget(file, page)
+
+    /** Adds the stamp to the page it was requested for; if the tool was closed or reopened meanwhile, deletes it. */
+    private fun addPlacement(file: File, widthFraction: Float, target: StampTarget) {
+        var added = false
         _state.update { s ->
-            val placed = SignPlacement(s.page, file, 0.5f, 0.8f, widthFraction, 0f)
-            s.copy(placements = s.placements + placed, selected = s.placements.size)
+            added = false
+            if (!s.visible || target.file == null || s.file != target.file) s
+            else {
+                added = true
+                val placed = SignPlacement(target.page, file, 0.5f, 0.8f, widthFraction, 0f)
+                s.copy(placements = s.placements + placed, selected = s.placements.size)
+            }
         }
+        if (!added) file.delete()
     }
 
     fun select(index: Int) {
@@ -205,6 +228,7 @@ class SignPdfViewModel @Inject constructor(
     /** Page [index] of the working copy at [width] pixels wide, or null when it cannot be drawn. */
     suspend fun renderPage(file: File, index: Int, width: Int): Bitmap? = withContext(Dispatchers.IO) {
         try {
+            file.setLastModified(System.currentTimeMillis())
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
                 PdfRenderer(pfd).use { renderer ->
                     renderer.openPage(index).use { page ->
@@ -227,24 +251,24 @@ class SignPdfViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) { library.delete(file) }
     }
 
-    private fun textBitmap(text: String): Bitmap {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF111111.toInt()
+    private fun textBitmap(text: String, colorArgb: Int, tf: android.graphics.Typeface?): Bitmap {
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorArgb
             textSize = TEXT_SIZE
+            typeface = tf ?: android.graphics.Typeface.DEFAULT
         }
         val padding = TEXT_PADDING
         val metrics = paint.fontMetrics
-        val width = ceil(paint.measureText(text)).toInt() + padding * 2
-        val height = ceil(metrics.descent - metrics.ascent).toInt() + padding * 2
-        val bitmap = createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1))
-        Canvas(bitmap).drawText(text, padding.toFloat(), padding - metrics.ascent, paint)
+        val width = kotlin.math.ceil(paint.measureText(text)).toInt() + padding * 2
+        val height = kotlin.math.ceil(metrics.descent - metrics.ascent).toInt() + padding * 2
+        val bitmap = androidx.core.graphics.createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1))
+        android.graphics.Canvas(bitmap).drawText(text, padding.toFloat(), padding - metrics.ascent, paint)
         return bitmap
     }
 
     override fun onCleared() {
         // The session is app-private cache; drop it with the screen's owner rather than leave pages around.
         deleteWorkingFiles(_state.value.file)
-        super.onCleared()
     }
 
     companion object {

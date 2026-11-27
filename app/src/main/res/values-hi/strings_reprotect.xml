@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="msg_tools_reprotected">नतीजा उसी पासवर्ड से सुरक्षित है।</string>
+    <string name="msg_tools_reprotect_failed">नतीजे को दोबारा सुरक्षित नहीं किया जा सका, इसलिए उसे बिना सुरक्षा के सहेजा नहीं गया।</string>
+</resources>

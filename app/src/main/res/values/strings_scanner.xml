@@ -16,7 +16,7 @@
 
     <!-- Welcome screen (first launch) -->
     <string name="ui_welcome_title">Scan, clean, share.</string>
-    <string name="ui_welcome_tagline">Private by design: no account, nothing uploaded, works offline.</string>
+    <string name="ui_welcome_tagline">Private by design: no account, documents stay on your phone, works offline.</string>
     <string name="ui_welcome_point_scan">Scan anything</string>
     <string name="ui_welcome_point_clean">Clean up and make searchable</string>
     <string name="ui_welcome_point_share">Sign and share</string>
@@ -166,6 +166,9 @@
     <string name="scan_detection_mode">Auto capture</string>
     <!-- Camera ⋮ menu switches -->
     <string name="scan_detect_edges">Detect page edges</string>
+    <string name="scan_hd_capture">HD capture</string>
+    <string name="scan_hd_on">HD capture on: sharper pages, a little slower</string>
+    <string name="scan_hd_off">HD capture off</string>
     <string name="scan_show_grid">Grid</string>
     <string name="scan_show_level">Spirit level</string>
     <string name="scan_more_options">More options</string>
@@ -177,9 +180,19 @@
     <string name="scan_exposure">Exposure</string>
     <string name="scan_id_front_only">Front only</string>
     <string name="scan_id_both_sides">Both sides</string>
+    <string name="scan_id_passport">Passport</string>
+    <string name="scan_id_passport_page">Photo page</string>
+    <string name="scan_id_side_step">%1$s · %2$d of %3$d</string>
     <string name="scan_book_one_page">One page</string>
     <string name="scan_book_two_pages">Two pages</string>
     <string name="scan_book_two_pages_rtl">Two pages, right first</string>
+    <string name="scan_book_intro_title">Scanning a book</string>
+    <string name="scan_book_intro_body">Scan the left and right pages of an open book as one. ScanPro splits them into two pages: A is saved first, then B. Choose “Two pages, right first” for right-to-left books.</string>
+    <string name="scan_idcard_intro_title">Scanning an ID card</string>
+    <string name="scan_idcard_intro_body">Place the card flat on a plain, contrasting surface and fill the frame. Scan the front, then the back. ScanPro puts both sides on one page, front above back. Avoid glare and keep your fingers off the edges.</string>
+    <string name="scan_doc_intro_title">Scanning a document</string>
+    <string name="scan_doc_intro_body">Lay the page flat in good light and keep the phone steady. ScanPro finds the edges, straightens the page and cleans it up. Tap the shutter, or leave auto capture on and hold still. Add more pages, then tap Done.</string>
+    <string name="scan_book_intro_start">Start now</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">Spread split into pages %1$d and %2$d</string>
     <string name="scan_take_photo">Take photo</string>
     <string name="scan_import_photos">Import photos</string>
@@ -228,10 +241,6 @@
     <string name="scan_error_camera_stopped">The camera stopped working. Try again or use the compatibility scanner.</string>
     <string name="scan_flash_state">Flash: %1$s</string>
     <string name="scan_zoom_level">Zoom %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">%1$d page in batch</item>
-        <item quantity="other">%1$d pages in batch</item>
-    </plurals>
     <string name="scan_flash_off">off</string>
     <string name="scan_flash_auto">auto</string>
     <string name="scan_flash_on">on</string>
@@ -274,11 +283,13 @@
     <string name="scan_review_folder_label">Folder</string>
     <string name="scan_review_folder_dialog_title">Save in a folder</string>
     <string name="scan_review_adjust">Adjust</string>
+    <string name="scan_review_reorder">Reorder</string>
     <!-- Page quality: live glare hint and the review notice (scanner/PageQuality.kt) -->
     <string name="scan_guidance_glare">Glare on the page · tilt the phone a little</string>
     <string name="scan_quality_blurry">This page looks blurred: small text may be hard to read</string>
     <string name="scan_quality_glare">Glare is hiding part of this page</string>
     <string name="scan_quality_dark">This page looks too dark</string>
+    <string name="scan_quality_blank">This page looks blank</string>
     <string name="scan_quality_retake">Retake</string>
     <string name="scan_quality_page_flagged">Page %1$d, may need a retake</string>
     <!-- Captured strip: R30 quick delete -->

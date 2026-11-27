@@ -2,6 +2,7 @@ package com.example.scanpro.data
 
 import com.example.scanpro.R
 import com.example.scanpro.core.text.userRequire
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -93,9 +94,16 @@ internal class DocumentCatalog(private val store: DocumentStore) {
             .forEach { doc -> db.saveDocumentMetadata(doc.copy(folderName = target, updatedAt = now())) }
     }
 
+    /** Stars or unstars [id] straight in the database: no pages are read, and a document that already has that value is untouched. */
+    suspend fun setFavorite(id: String, favorite: Boolean) = withContext(Dispatchers.IO) { db.setFavorite(id, favorite) }
+
+    /** Starring is not an edit, so the modified time stays as it was (see [DocumentDatabase]'s favourite query). */
     suspend fun toggleFavorite(id: String) = mutateDocument(id) { doc ->
-        doc.copy(isFavorite = !doc.isFavorite, updatedAt = now())
+        doc.copy(isFavorite = !doc.isFavorite)
     }
+
+    /** The ids among [ids] that are still active documents, for a screen holding a selection. */
+    suspend fun existingIds(ids: Set<String>): Set<String> = withContext(Dispatchers.IO) { db.activeIds(ids) }
 
     // PDF settings mark the PDF stale and rebuild it on the next export, like page edits do, so changing
     // three settings in a row costs one rebuild rather than three blocking ones.
@@ -126,4 +134,28 @@ internal class DocumentCatalog(private val store: DocumentStore) {
     suspend fun documentsNeedingPdf(): List<String> = withContext(Dispatchers.IO) {
         db.loadAll().filterNot { it.hasCurrentPdf() }.map { it.id }
     }
+
+    /** A PDF holding more than this per page was written the old, lossless way; a JPEG page is a few hundred kB. */
+    private val ScanDocument.isOversized: Boolean
+        get() = pageCount > 0 && File(pdfPath).let { it.isFile && it.length() > pageCount * OVERSIZED_BYTES_PER_PAGE }
+
+    /** How many PDFs are far larger than needed, and a cautious estimate of what rebuilding them would free. */
+    suspend fun oversizedPdfs(): OversizedPdfs = withContext(Dispatchers.IO) {
+        val oversized = db.loadAll().filter { it.isOversized }
+        val freeable = oversized.sumOf { (File(it.pdfPath).length() - it.pageCount * EXPECTED_BYTES_PER_PAGE).coerceAtLeast(0L) }
+        OversizedPdfs(oversized.size, freeable)
+    }
+
+    /** Rebuilds every oversized PDF compactly (never making one larger); returns the bytes freed. */
+    suspend fun compactPdfs(): Long = withContext(Dispatchers.IO) {
+        db.loadAll().filter { it.isOversized }.sumOf { store.compactPdf(it.id) }
+    }
+
+    private companion object {
+        const val OVERSIZED_BYTES_PER_PAGE = 2_000_000L
+        const val EXPECTED_BYTES_PER_PAGE = 800_000L
+    }
 }
+
+/** PDFs that rebuilding would shrink: how many, and roughly how many bytes would be freed. */
+data class OversizedPdfs(val count: Int, val estimatedBytes: Long)

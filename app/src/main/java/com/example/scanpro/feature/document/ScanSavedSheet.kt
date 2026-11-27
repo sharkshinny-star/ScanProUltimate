@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.document
 
+import com.example.scanpro.core.text.takeWhole
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,7 +27,11 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
@@ -105,6 +110,8 @@ fun ScanSavedSheet(
     onSaveToDevice: (title: String) -> Unit,
     onSaveToDrive: (title: String) -> Unit,
     onPrint: (title: String) -> Unit,
+    /** Writes the recognised text to a Word file and shares it (Adobe Scan and iLovePDF both offer Word in one tap); null hides the row. */
+    onShareWord: ((title: String) -> Unit)? = null,
     onDismiss: () -> Unit,
     /** A business card or a bill found in the text; null for anything else (or before the text is read). */
     highlight: ScanHighlight? = null,
@@ -144,12 +151,13 @@ fun ScanSavedSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 640.dp)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .navigationBarsPadding()
                 // The name field must stay above the keyboard.
                 .imePadding()
         ) {
+          // The options scroll; Scan another and Done are pinned below them so the way out is always on screen.
+          Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PageThumbnail(
                     path = document.pages.minByOrNull { it.position }?.imagePath,
@@ -186,7 +194,7 @@ fun ScanSavedSheet(
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it.take(120) },
+                onValueChange = { name = it.takeWhole(120) },
                 label = { Text(stringResource(R.string.doc_name)) },
                 singleLine = true,
                 enabled = !busy,
@@ -221,24 +229,60 @@ fun ScanSavedSheet(
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                 QuickAction(Icons.Default.PictureAsPdf, stringResource(R.string.doc_share_as_pdf), primary = true, enabled = !busy, modifier = Modifier.weight(1f), onClick = then(onSharePdf))
-                if (onCopy != null) {
-                    QuickAction(Icons.Default.ContentCopy, stringResource(R.string.doc_saved_copy_text), enabled = text.isNotBlank(), modifier = Modifier.weight(1f)) { onCopy(text) }
+                // Offered once there is text to copy. A page with no words never gets it, so it is not shown greyed
+                // with a line explaining why; it appears when the text has been read.
+                if (onCopy != null && text.isNotBlank()) {
+                    QuickAction(Icons.Default.ContentCopy, stringResource(R.string.doc_saved_copy_text), modifier = Modifier.weight(1f)) { onCopy(text) }
                 }
                 if (onAddPages != null) {
                     QuickAction(Icons.Default.AddAPhoto, stringResource(R.string.doc_saved_add_pages), enabled = !busy, modifier = Modifier.weight(1f), onClick = then { onAddPages() })
                 }
             }
 
+            // Folded away by default: five always-open rows made the moment after a scan read as a wall of
+            // options, when most people only share the PDF or tap Done. One tap unfolds them, with the sheet's
+            // size easing rather than jumping.
             Spacer(Modifier.height(16.dp))
-            Text(
-                stringResource(R.string.doc_saved_more),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
-            )
+            var moreOpen by rememberSaveable(document.id) { mutableStateOf(false) }
+            val turn by androidx.compose.animation.core.animateFloatAsState(if (moreOpen) 180f else 0f, label = "moreChevron")
+            Surface(
+                onClick = { moreOpen = !moreOpen },
+                shape = RoundedCornerShape(14.dp),
+                color = androidx.compose.ui.graphics.Color.Transparent,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(Modifier.padding(start = 4.dp, top = 6.dp, bottom = 6.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.doc_saved_more),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.graphicsLayer { rotationZ = turn }
+                    )
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = moreOpen,
+                enter = androidx.compose.animation.expandVertically(spring(dampingRatio = 0.85f, stiffness = 420f)) + androidx.compose.animation.fadeIn(tween(160)),
+                exit = androidx.compose.animation.shrinkVertically(tween(180)) + androidx.compose.animation.fadeOut(tween(120))
+            ) {
             Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     SheetAction(Icons.Default.Image, TileTone.Sky, stringResource(R.string.doc_share_as_jpg), stringResource(R.string.doc_share_as_jpg_hint), !busy, then(onShareJpg))
+                    if (onShareWord != null && text.isNotBlank()) {
+                        InsetDivider()
+                        // Editable text is the recognised words, so the row is there only once they are.
+                        SheetAction(
+                            Icons.Default.Description, TileTone.Indigo, stringResource(R.string.doc_share_as_word),
+                            stringResource(R.string.doc_share_as_word_hint),
+                            !busy, then(onShareWord)
+                        )
+                    }
                     InsetDivider()
                     SheetAction(Icons.Default.AddToDrive, TileTone.Amber, stringResource(R.string.doc_save_to_google_drive), stringResource(R.string.doc_save_to_google_drive_hint), !busy, then(onSaveToDrive))
                     InsetDivider()
@@ -247,7 +291,9 @@ fun ScanSavedSheet(
                     SheetAction(Icons.Default.Print, TileTone.Slate, stringResource(R.string.doc_print), null, !busy, then(onPrint))
                 }
             }
-            Spacer(Modifier.height(12.dp))
+            }
+          }
+            Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End)) {
                 if (onScanAnother != null) {
                     OutlinedButton(onClick = then { onScanAnother() }, enabled = !busy) { Text(stringResource(R.string.scan_code_scan_another)) }

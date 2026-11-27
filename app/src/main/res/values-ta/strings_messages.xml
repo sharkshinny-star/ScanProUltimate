@@ -123,7 +123,9 @@
     <string name="msg_tools_compressing">PDF சுருக்கப்படுகிறது…</string>
     <string name="msg_tools_compression_failed">சுருக்க முடியவில்லை</string>
     <string name="msg_tools_compressed_by">%1$d%% சுருக்கப்பட்டது (%2$s → %3$s)</string>
+    <string name="msg_tools_compress_no_gain">ஏற்கெனவே சிறியதாக உள்ளது: இதைவிடச் சிறிய பதிப்பு சாத்தியமில்லை (%1$s)</string>
     <string name="msg_tools_compressed_not_searchable">. பக்கங்கள் படங்களாக மாற்றப்பட்டதால், உரையை இனி தேர்ந்தெடுக்கவோ தேடவோ முடியாது.</string>
+    <string name="msg_tools_compress_missed_target">. %1$s ஐ அடைய முடியவில்லை, இதைவிடச் சிறியதாகாது. பெரிய இலக்கை முயலுங்கள்.</string>
     <string name="msg_tools_exporting_pages">பக்கங்கள் ஏற்றுமதி செய்யப்படுகின்றன…</string>
     <string name="msg_tools_export_failed">ஏற்றுமதி தோல்வியடைந்தது</string>
     <plurals name="msg_tools_exported_page_images">
@@ -150,7 +152,6 @@
     <string name="msg_tools_merge_failed">PDF-களை இணைக்க முடியவில்லை</string>
     <string name="msg_tools_reading_form_fields">படிவப் புலங்கள் படிக்கப்படுகின்றன…</string>
     <string name="msg_tools_read_form_failed">இந்த PDF-இன் படிவத்தைப் படிக்க முடியவில்லை</string>
-    <string name="msg_tools_no_fillable_fields">இந்த PDF-இல் நிரப்பக்கூடிய புலங்கள் இல்லை. இதை உங்கள் ஆவணங்களில் இறக்குமதி செய்து, பக்கத்தில் உரை சேர் மூலம் அதில் டைப் செய்யுங்கள்.</string>
     <string name="msg_tools_filling_form">படிவம் நிரப்பப்படுகிறது…</string>
     <string name="msg_tools_save_form_failed">நிரப்பிய படிவத்தைச் சேமிக்க முடியவில்லை</string>
     <string name="msg_tools_making_searchable">PDF தேடக்கூடியதாக்கப்படுகிறது…</string>
@@ -194,4 +195,6 @@
     <string name="msg_scan_photos_unavailable">முடிக்காத ஸ்கேனின் ஃபோட்டோக்கள் இப்போது கிடைக்கவில்லை</string>
     <string name="msg_tools_out_of_memory">இந்த PDF-க்குப் போதுமான மெமரி இல்லை. சிறிய ஃபைல் அல்லது குறைவான பக்கங்களுடன் முயலுங்கள்.</string>
     <string name="msg_tools_form_nothing_changed">இன்னும் எதுவும் மாற்றப்படவில்லை</string>
+    <string name="msg_tools_repairing">PDF சரிசெய்யப்படுகிறது…</string>
+    <string name="msg_tools_repair_failed">PDF-ஐ சரிசெய்ய முடியவில்லை</string>
 </resources>

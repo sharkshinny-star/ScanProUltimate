@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="msg_tools_reprotected">ఫలితం అదే పాస్‌వర్డ్‌తో రక్షించబడింది.</string>
+    <string name="msg_tools_reprotect_failed">ఫలితాన్ని మళ్లీ రక్షించలేకపోయాము, కాబట్టి రక్షణ లేకుండా సేవ్ చేయలేదు.</string>
+</resources>

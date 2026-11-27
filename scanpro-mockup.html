@@ -461,7 +461,7 @@ function initCrop(){
 
 /* detail overlay */
 function detailHTML(o){
-  var d=docById(o.id),pagesH='',body='';
+  var d=docById(o.id),body='';
   if(o.tab==='pages'){
     var order=o.order||(o.order=Array.from({length:Math.min(d.pages,6)},function(_,i){return i}));
     body='<div class="tools">'+[['Sign','pen'],['Text','pen'],['Highlight','pen'],['Redact','pen'],['Watermark','pen']].map(function(t){return '<button class="chip" data-act="markup" data-m="'+t[0]+'">'+ic('pen').replace('<svg','<svg width="14" height="14" style="fill:none;stroke:currentColor;stroke-width:2"')+t[0]+'</button>'}).join('')+'</div>'+

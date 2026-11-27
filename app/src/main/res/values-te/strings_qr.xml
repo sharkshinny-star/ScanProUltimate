@@ -7,7 +7,7 @@
     <string name="qr_history_title">స్కాన్ చరిత్ర</string>
     <string name="qr_history_save_switch">స్కాన్ చరిత్రను సేవ్ చేయండి</string>
     <string name="qr_history_search">చరిత్రలో వెతకండి</string>
-    <string name="qr_history_privacy">చరిత్ర ఈ పరికరంలోనే ఉంటుంది, ఎప్పుడూ అప్‌లోడ్ కాదు. దీనిలో Wi-Fi పాస్‌వర్డ్‌లు, ఇతర వ్యక్తిగత వివరాలు ఉండవచ్చు, కాబట్టి పని అయ్యాక దీన్ని తొలగించండి.</string>
+    <string name="qr_history_privacy">చరిత్ర ఈ పరికరంలో ఎన్‌క్రిప్ట్ చేసి ఉంచబడుతుంది, ఎప్పుడూ అప్‌లోడ్ చేయబడదు. ఇందులో వ్యక్తిగత వివరాలు ఉండవచ్చు, వేరే ఫోన్‌కు బదిలీ చేయలేరు.</string>
     <string name="qr_history_clear_all">అన్నీ తొలగించండి</string>
     <string name="qr_history_clear_title">స్కాన్ చరిత్ర మొత్తం తొలగించాలా?</string>
     <string name="qr_history_clear_message">ఇష్టమైనవి సహా సేవ్ చేసిన అన్ని స్కాన్‌లు ఈ పరికరం నుండి తొలగించబడతాయి. దీన్ని తిరిగి తీసుకురాలేరు.</string>
@@ -52,4 +52,6 @@
     <string name="qr_share_title">QR కోడ్</string>
     <string name="qr_save_document">డాక్యుమెంట్‌గా సేవ్ చేయండి</string>
     <string name="qr_save_failed">కోడ్‌ను సేవ్ చేయలేకపోయాము</string>
+    <string name="qr_history_storage_error">స్కాన్ చరిత్రను సురక్షితంగా తెరవడం లేదా సేవ్ చేయడం కుదరలేదు. మీరు సేవ్ చేసిన డేటాను కాపాడటానికి కొత్త ఎంట్రీలు ఆపివేయబడ్డాయి. క్లియర్ చేస్తే చరిత్ర శాశ్వతంగా రీసెట్ అవుతుంది.</string>
+    <string name="qr_history_clear_locked_warning">ఈ చరిత్రను తెరవలేము. క్లియర్ చేస్తే సేవ్ చేసిన ఎంట్రీలు శాశ్వతంగా మారిపోతాయి, వాటిని తిరిగి పొందలేకపోవచ్చు. అయినా క్లియర్ చేయాలా?</string>
 </resources>

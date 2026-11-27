@@ -117,7 +117,7 @@ fun MarkupEditorDialog(
                 Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     val image = base
                     if (image == null) {
-                        androidx.compose.material3.CircularProgressIndicator(color = Blue)
+                        com.example.scanpro.core.designsystem.FileLoadingAnimation(onDark = true)
                     } else {
                         val latestItems by rememberUpdatedState(items.toList())
                         val latestSelected by rememberUpdatedState(selectedId)

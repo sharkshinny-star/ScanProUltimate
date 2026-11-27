@@ -1,5 +1,7 @@
 package com.example.scanpro.feature.tools
 
+import com.example.scanpro.core.text.outOfSpaceMessageRes
+import com.example.scanpro.core.concurrent.BackgroundWork
 import kotlinx.coroutines.withContext
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.imaging.HtmlToPdf
@@ -19,7 +21,11 @@ import com.example.scanpro.imaging.CompressPdfEngine
 import com.example.scanpro.imaging.CompressionPreset
 import com.example.scanpro.imaging.FormField
 import com.example.scanpro.imaging.FormFieldRules
+import com.example.scanpro.imaging.ImageCompressConfig
 import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.ImageMetadata
+import com.example.scanpro.imaging.ImageResizeConfig
+import com.example.scanpro.imaging.ImageToolsEngine
 import com.example.scanpro.imaging.MergePasswordNeededException
 import com.example.scanpro.imaging.InsertPagesEngine
 import com.example.scanpro.imaging.PageInsertion
@@ -29,10 +35,14 @@ import com.example.scanpro.imaging.TextExportFormat
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.PdfFormEngine
 import com.example.scanpro.imaging.PdfOcrEngine
+import com.example.scanpro.data.CropQuad
+import com.example.scanpro.imaging.PageNumbersConfig
+import com.example.scanpro.imaging.WatermarkConfig
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfToolResult
+import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.PdfToolsEngine
 import com.example.scanpro.imaging.SignPdfEngine
 import com.example.scanpro.imaging.SignPlacement
@@ -48,6 +58,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -62,7 +76,30 @@ data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Ma
 }
 
 /** What the Tools screen shows while and after a tool runs. */
-data class ToolProgress(val label: String, val current: Int = 0, val total: Int = 0)
+private const val REPORT_INTERVAL_MS = 66L
+
+data class ToolProgress(
+    val title: String,
+    val subtitle: String? = null,
+    val current: Int = 0,
+    val total: Int = 0,
+    /** 0 while the tool works. Once it has finished: how long, in milliseconds, the card stays to play its finish. */
+    val finishMillis: Int = 0
+)
+
+/**
+ * How long the progress card stays once a tool has finished. Many tools take a fraction of a second, and the card
+ * used to flash by; the owner asked that the animation be seen. So the card is on screen for at least
+ * [MIN_VISIBLE_MS] in all, and even a long task keeps it for [FINISH_MS] at the end, while the ring closes and the tick
+ * is drawn. Nothing is held when the phone's animations are turned off.
+ */
+internal object ToolFinish {
+    const val MIN_VISIBLE_MS = com.example.scanpro.core.designsystem.PROCESSING_LOOP_MS
+    const val FINISH_MS = 700L
+
+    fun holdMillis(visibleForMillis: Long, animationsOn: Boolean): Long =
+        if (!animationsOn) 0L else maxOf(MIN_VISIBLE_MS - visibleForMillis.coerceAtLeast(0L), FINISH_MS)
+}
 
 /**
  * A PDF in a merge that needs its password: file [index] of [uris], shown as [fileName]. [wrongPassword] is true when
@@ -73,8 +110,23 @@ data class MergePasswordRequest(
     val index: Int,
     val fileName: String,
     val wrongPassword: Boolean,
-    val attempt: Int
+    val attempt: Int,
 )
+
+/** A single-file tool ready to open [uri]: the screen shows that tool's options. */
+data class ToolTarget(val tool: String, val uri: Uri)
+
+/** Remove blank pages: the 0-based [blankPages] of [uri]'s [pageCount] pages, waiting for the user's yes. */
+data class BlankPagesFound(val uri: Uri, val pageCount: Int, val blankPages: List<Int>)
+
+/** PDF info and metadata: the details of [uri] being looked at. */
+data class PdfInfoSession(val uri: Uri, val info: com.example.scanpro.imaging.PdfInfo)
+
+/** A file open in File info and metadata, with what was read from it. */
+data class FileInfoSession(val uri: Uri, val meta: com.example.scanpro.imaging.metadata.FileMetadata)
+
+/** Where unlocked working copies of protected PDFs live while a tool uses them; swept at start-up. */
+const val WORKING_COPY_DIR = "tool_input"
 
 /**
  * Runs the PDF tools outside the screen, so rotating the device, resizing a split-screen window or unfolding a
@@ -84,16 +136,26 @@ data class MergePasswordRequest(
 class PdfToolsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val recents: RecentPdfStore,
+    private val results: com.example.scanpro.data.ToolResultsStore,
     private val ocr: OcrEngine,
     private val operations: OperationRunner,
-    private val notifications: AppNotifications
+    private val notifications: AppNotifications,
 ) : ViewModel() {
     /** PDFs picked from the device or a cloud app, newest first, to reopen with one tap. */
     val recentPdfs: StateFlow<List<RecentPdf>> = recents.items
 
+    /** Everything the tools have made, newest first, kept until the user deletes it. */
+    val toolResults: StateFlow<List<com.example.scanpro.data.ToolResultFile>> = results.items
+
+    fun deleteResult(file: File) {
+        viewModelScope.launch(Dispatchers.IO) { results.delete(file) }
+    }
+
     init {
         // A recent file may have been deleted, or its access revoked, since it was opened.
         viewModelScope.launch(Dispatchers.IO) { recents.prune() }
+        // An unlocked working copy left behind when the app was closed while a tool was open.
+        viewModelScope.launch(Dispatchers.IO) { File(context.cacheDir, WORKING_COPY_DIR).deleteRecursively() }
     }
 
     fun rememberPdfs(uris: List<Uri>) {
@@ -123,12 +185,22 @@ class PdfToolsViewModel @Inject constructor(
 
     private val _progress = MutableStateFlow<ToolProgress?>(null)
     val progress: StateFlow<ToolProgress?> = _progress.asStateFlow()
+    /** Only whether a tool is running: changes on start and stop, not on every progress tick. */
+    val toolRunning: StateFlow<Boolean> = _progress
+        .map { it != null }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _result = MutableStateFlow<PdfToolResult?>(null)
     val result: StateFlow<PdfToolResult?> = _result.asStateFlow()
 
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
+
+    /** Why the last tool run could not finish. Held until the user answers it (try again, another file, close). */
+    private val _failure = MutableStateFlow<String?>(null)
+    val failure: StateFlow<String?> = _failure.asStateFlow()
+    fun clearFailure() { _failure.value = null }
 
     /** Set when Unlock PDF is given a file with no open password: there is nothing to unlock. */
     private val _unlockNotice = MutableStateFlow<Pair<Uri, PdfProtection>?>(null)
@@ -154,6 +226,8 @@ class PdfToolsViewModel @Inject constructor(
     fun clearPasswordNeeded() { _passwordNeeded.value = null }
 
     fun cancel() {
+        // Once the work is done and the card is playing its finish, there is nothing left to stop.
+        if (_progress.value?.let { it.finishMillis > 0 } == true) return
         job?.cancel()
     }
 
@@ -170,8 +244,17 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    private fun report(current: Int, total: Int, label: String) {
-        _progress.update { ToolProgress(label, current, total) }
+    private var lastReportAt = 0L
+
+    /**
+     * A tool reports every page (some, every few kilobytes). The overlay cannot show more than about fifteen changes a
+     * second, so in between the report is dropped; the last one (current reaches total) always goes through.
+     */
+    private fun report(current: Int, total: Int, subtitle: String) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (current < total && now - lastReportAt < REPORT_INTERVAL_MS) return
+        lastReportAt = now
+        _progress.update { it?.copy(subtitle = subtitle, current = current, total = total) }
     }
 
     /** One job at a time; a second request while one runs is refused with a message rather than queued silently. */
@@ -184,13 +267,26 @@ class PdfToolsViewModel @Inject constructor(
             return
         }
         _result.value = null
-        _progress.value = ToolProgress(label)
+        _failure.value = null
+        _progress.value = ToolProgress(title = label)
+        val shownAt = android.os.SystemClock.uptimeMillis()
         endedWithQuestion = false
         job = viewModelScope.launch {
             try {
                 // Held alive by the foreground service: a long merge or compression must survive the user switching apps.
-                val result = operations.keepAlive(label) { work() }
+                // Off the main thread: tools resolve file names and touch disk before their engines switch dispatchers.
+                // The result moves out of the one-day cache into Your results inside keepAlive: a large output is still
+                // being copied after the progress reaches 100%, and that copy must survive the user switching apps too.
+                val result = operations.keepAlive(label) {
+                    withContext(BackgroundWork.tools) {
+                        work()?.let { restoreProtection(it) }?.let { it.copy(outputFile = results.keep(it.outputFile)) }
+                    }
+                }
+                // The result is already kept; the card now plays its finish before the result screen takes over.
+                if (result != null) playFinish(shownAt)
                 _result.value = result
+                // The unlocked copy a tool read from has served its purpose once the result is kept.
+                if (result != null) releaseWorkingCopy()
                 if (!endedWithQuestion) notifications.taskFinished(result?.message)
             } catch (cancelled: CancellationException) {
                 _message.value = context.getString(R.string.msg_tools_operation_cancelled)
@@ -198,38 +294,58 @@ class PdfToolsViewModel @Inject constructor(
             } catch (error: Exception) {
                 // The engines stop with an InterruptedException when cancelled mid-way; report that as a cancel.
                 val cancelledMidWay = error is InterruptedException
-                val text = if (cancelledMidWay) context.getString(R.string.msg_tools_operation_cancelled) else error.localizedMessage ?: failure
-                _message.value = text
-                if (!cancelledMidWay) notifications.taskFailed(text)
+                val text = if (cancelledMidWay) context.getString(R.string.msg_tools_operation_cancelled) else outOfSpaceMessageRes(error)?.let { context.getString(it) } ?: error.localizedMessage ?: failure
+                if (cancelledMidWay) _message.value = text
+                else {
+                    _failure.value = text
+                    notifications.taskFailed(text)
+                }
             } catch (_: OutOfMemoryError) {
                 // A huge page image is a failed tool run, not a reason to lose the app.
-                _message.value = context.getString(R.string.msg_tools_out_of_memory)
-                notifications.taskFailed(_message.value)
+                val text = context.getString(R.string.msg_tools_out_of_memory)
+                _failure.value = text
+                notifications.taskFailed(text)
             } finally {
                 _progress.value = null
             }
         }
     }
 
+    /** Keeps the progress card on screen for [ToolFinish.holdMillis], telling it to play its finish meanwhile. */
+    private suspend fun playFinish(shownAt: Long) {
+        val animationsOn = runCatching {
+            android.provider.Settings.Global.getFloat(
+                context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+            ) > 0f
+        }.getOrDefault(true)
+        val hold = ToolFinish.holdMillis(android.os.SystemClock.uptimeMillis() - shownAt, animationsOn)
+        if (hold <= 0L) return
+        _progress.update { it?.copy(finishMillis = hold.toInt()) }
+        kotlinx.coroutines.delay(hold)
+    }
+
     private fun bundled(files: List<File>, prefix: String, @PluralsRes message: Int): suspend () -> PdfToolResult? = {
         if (files.isEmpty()) null
         else PdfToolResult(
-            outputFile = PdfToolsEngine.bundleOutputs(context, files, "${prefix}_${System.currentTimeMillis()}"),
+            outputFile = PdfToolsEngine.bundleOutputs(context, files, "$prefix ${nameStamp()}"),
             pageCount = files.size,
             originalSizeBytes = 0,
             outputSizeBytes = files.sumOf { it.length() },
-            message = context.resources.getQuantityString(message, files.size, files.size)
+            message = context.resources.getQuantityString(message, files.size, files.size),
         )
     }
 
-    private fun named(uri: Uri, suffix: String, extension: String = "pdf"): java.io.File =
+    /** A readable, file-safe time for output names (the zip title used to show a raw millisecond count). */
+    private fun nameStamp(): String = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm-ss", java.util.Locale.US).format(java.util.Date())
+
+    private fun named(uri: Uri, suffix: String, extension: String = "pdf"): File =
         PdfToolsEngine.outputLocation(context, "${PdfToolsEngine.sourceBaseName(context, uri)} $suffix.$extension")
 
     /** Runs [work] in a fresh folder that is removed again if the tool fails or is cancelled part-way. */
-    private suspend fun <T> inScratchDir(name: String, work: suspend (java.io.File) -> T): T {
+    private suspend fun <T> inScratchDir(name: String, work: suspend (File) -> T): T {
         val dir = PdfToolsEngine.outputLocation(context, name).apply { mkdirs() }
-        try {
-            return work(dir)
+        return try {
+            work(dir)
         } catch (error: Throwable) {
             dir.deleteRecursively()
             throw error
@@ -243,8 +359,11 @@ class PdfToolsViewModel @Inject constructor(
             pageCount = res.pageCount,
             originalSizeBytes = res.originalSizeBytes,
             outputSizeBytes = res.compressedSizeBytes,
-            message = context.getString(R.string.msg_tools_compressed_by, res.savingsPercentage, formatBytes(context, res.originalSizeBytes), formatBytes(context, res.compressedSizeBytes)) +
-                if (res.isSearchablePreserved) "" else context.getString(R.string.msg_tools_compressed_not_searchable)
+            message = (if (res.compressedSizeBytes >= res.originalSizeBytes) context.getString(R.string.msg_tools_compress_no_gain, formatBytes(context, res.originalSizeBytes))
+                else context.getString(R.string.msg_tools_compressed_by, res.savingsPercentage, formatBytes(context, res.originalSizeBytes), formatBytes(context, res.compressedSizeBytes))) +
+                (if (res.isSearchablePreserved) "" else context.getString(R.string.msg_tools_compressed_not_searchable)) +
+                if (res.missedTarget && customTargetBytes != null) context.getString(R.string.msg_tools_compress_missed_target, formatBytes(context, customTargetBytes)) else "",
+            comparesSize = true
         )
     }
 
@@ -269,6 +388,10 @@ class PdfToolsViewModel @Inject constructor(
         PdfToolsEngine.protectPdf(context, uri, password, named(uri, "protected"))
     }
 
+    fun repair(uri: Uri) = launchTool(R.string.msg_tools_repairing, R.string.msg_tools_repair_failed) {
+        com.example.scanpro.imaging.PdfRepairEngine.repairPdf(context, uri, named(uri, "repaired"), ::report)
+    }
+
     fun unlock(uri: Uri, password: String) = launchTool(R.string.msg_tools_unlocking, R.string.msg_tools_unlock_failed) {
         try {
             PdfToolsEngine.unlockPdf(context, uri, password, named(uri, "unlocked"))
@@ -276,6 +399,8 @@ class PdfToolsViewModel @Inject constructor(
             // Ask again for the same file, with the error in the dialog (a snackbar would sit behind it).
             _wrongPassword.value = true
             _passwordNeeded.value = uri
+            endedWithQuestion = true
+            notifications.taskFailed(context.getString(R.string.tools_wrong_password_try_again))
             null
         }
     }
@@ -283,8 +408,15 @@ class PdfToolsViewModel @Inject constructor(
     /** Checks how a PDF is protected before asking for a password it may not have. */
     fun inspectForUnlock(uri: Uri) = launchTool(R.string.msg_tools_checking_protection, R.string.msg_tools_read_failed) {
         when (val protection = PdfToolsEngine.inspectProtection(context, uri)) {
-            PdfProtection.PASSWORD_REQUIRED -> _passwordNeeded.value = uri
-            else -> _unlockNotice.value = uri to protection
+            PdfProtection.PASSWORD_REQUIRED -> {
+                _passwordNeeded.value = uri
+                endedWithQuestion = true
+                notifications.taskFailed(context.getString(R.string.tools_password_unlock_prompt))
+            }
+            else -> {
+                _unlockNotice.value = uri to protection
+                endedWithQuestion = true
+            }
         }
         null
     }
@@ -358,7 +490,7 @@ class PdfToolsViewModel @Inject constructor(
     fun submitMergePassword(password: String) {
         val request = _mergePassword.value ?: return
         _mergePassword.value = null
-        mergePasswords = mergePasswords + (request.uris[request.index] to password)
+        mergePasswords += (request.uris[request.index] to password)
         // The run that asked ends right after asking; let it finish before the next one starts.
         val previous = job
         viewModelScope.launch {
@@ -379,9 +511,10 @@ class PdfToolsViewModel @Inject constructor(
     fun openForm(uri: Uri) = launchTool(R.string.msg_tools_reading_form_fields, R.string.msg_tools_read_form_failed) {
         val fields = PdfFormEngine.readFields(context, uri)
         if (fields.isEmpty()) {
-            _message.value = context.getString(R.string.msg_tools_no_fillable_fields)
+            // Not a dead end: the screen offers to type on the same PDF with Sign (F146).
+            _formWithoutFields.value = uri
         } else {
-            _form.value = FormSession(uri, fields, fields.associateBy({ it.name }, { it.value }))
+            _form.value = FormSession(uri, fields, fields.associateBy({ it.name }) { it.value })
         }
         null
     }
@@ -390,7 +523,16 @@ class PdfToolsViewModel @Inject constructor(
         _form.update { session -> session?.copy(values = session.values + (name to value)) }
     }
 
-    fun closeForm() { _form.value = null }
+    fun closeForm() {
+        _form.value = null
+        releaseWorkingCopy()
+    }
+
+    private val _formWithoutFields = MutableStateFlow<Uri?>(null)
+    /** A PDF picked for Fill that has no form fields; the screen offers to type on it instead. */
+    val formWithoutFields: StateFlow<Uri?> = _formWithoutFields.asStateFlow()
+
+    fun dismissFormWithoutFields() { _formWithoutFields.value = null }
 
     fun saveForm(flatten: Boolean) {
         val session = _form.value ?: return
@@ -425,11 +567,15 @@ class PdfToolsViewModel @Inject constructor(
         )
         val output = outcome.outputFile
         if (output == null) {
-            _message.value = if (outcome.alreadyHadText == outcome.pageCount) {
+            val text = if (outcome.alreadyHadText == outcome.pageCount) {
                 context.getString(R.string.msg_tools_already_searchable)
             } else {
                 context.getString(R.string.msg_tools_no_readable_text)
             }
+            _message.value = text
+            // Say what happened, not a bare "Done", to someone who switched apps during a long OCR run.
+            endedWithQuestion = true
+            notifications.taskFinished(text)
             null
         } else {
             val made = context.resources.getQuantityString(R.plurals.msg_tools_made_pages_searchable, outcome.madeSearchable, outcome.madeSearchable)
@@ -453,15 +599,13 @@ class PdfToolsViewModel @Inject constructor(
     private var sourcePasswordRetry: ((String) -> Unit)? = null
     private var sourcePasswordQuestions = 0
 
-    private suspend fun askSourcePassword(locked: PdfPasswordNeededException, forInsert: Boolean, retry: (String) -> Unit) {
+    private suspend fun askSourcePassword(locked: PdfPasswordNeededException, purpose: PasswordPurpose, retry: (String) -> Unit) {
         val name = withContext(Dispatchers.IO) { displayName(locked.uri) }
         sourcePasswordRetry = retry
-        _sourcePassword.value = SourcePasswordRequest(name, locked.wrongPassword, ++sourcePasswordQuestions, forInsert)
+        _sourcePassword.value = SourcePasswordRequest(name, locked.wrongPassword, ++sourcePasswordQuestions, purpose)
         endedWithQuestion = true
         // Instead of "Done", for a user who switched to another app while the file was read.
-        notifications.taskFailed(
-            context.getString(if (forInsert) R.string.tools_source_password_prompt_insert else R.string.tools_source_password_prompt_text, name)
-        )
+        notifications.taskFailed(context.getString(purpose.prompt, name))
     }
 
     /** The password for the file [sourcePassword] asked about: the tool runs again with it. It is kept in memory only. */
@@ -481,6 +625,129 @@ class PdfToolsViewModel @Inject constructor(
     fun cancelSourcePassword() {
         _sourcePassword.value = null
         sourcePasswordRetry = null
+    }
+
+    private val _toolReady = MutableStateFlow<ToolTarget?>(null)
+    /** Set when a single-file tool may open its options: on the picked file, or on an unlocked copy of it. */
+    val toolReady: StateFlow<ToolTarget?> = _toolReady.asStateFlow()
+    fun clearToolReady() { _toolReady.value = null }
+
+    /**
+     * The decrypted copy of a protected PDF that the current tool works on, in the app's private cache. It is deleted
+     * when the tool's result is kept, when another file is picked, when the form is closed, when the Tools screen goes
+     * away, and at the next start if the app was closed in between. The password itself is never kept.
+     */
+    private var workingCopy: File? = null
+
+    private fun workingCopyDir() = File(context.cacheDir, WORKING_COPY_DIR)
+
+    /**
+     * The password typed to open the protected PDF behind [workingCopy], kept in memory only until that copy is released
+     * (result kept, another file picked, tool closed), so a PDF made from the copy can be locked again with it.
+     */
+    private var reprotectPassword: String? = null
+
+    private fun releaseWorkingCopy() {
+        workingCopy?.delete()
+        workingCopy = null
+        reprotectPassword = null
+    }
+
+    /** Forgets the unlocked copy when a tool that does not use it starts, so its password is never applied to other files. */
+    fun forgetUnlockedSource() = releaseWorkingCopy()
+
+    /**
+     * A PDF made from an unlocked working copy is locked again with the password the user typed, so a protected file does
+     * not quietly turn into an open one. If that fails the result is discarded rather than saved without protection.
+     * (A file with only an owner password, which opens freely, has none typed: its restrictions cannot be rebuilt.)
+     */
+    private fun restoreProtection(result: PdfToolResult): PdfToolResult {
+        val password = reprotectPassword ?: return result
+        val file = result.outputFile
+        if (workingCopy == null || !file.name.endsWith(".pdf", ignoreCase = true)) return result
+        val staged = File(file.parentFile, file.name + ".protecting")
+        return try {
+            PdfSecurity.protect(file, staged, password, enforceMinimum = false)
+            staged.copyTo(file, overwrite = true)
+            result.copy(
+                outputSizeBytes = file.length(),
+                message = listOf(result.message, context.getString(R.string.msg_tools_reprotected)).filter { it.isNotBlank() }.joinToString(" ")
+            )
+        } catch (cancelled: CancellationException) {
+            file.delete()
+            throw cancelled
+        } catch (error: Exception) {
+            file.delete()
+            userError(R.string.msg_tools_reprotect_failed, cause = error)
+        } finally {
+            staged.delete()
+        }
+    }
+
+    override fun onCleared() {
+        releaseWorkingCopy()
+    }
+
+    /**
+     * First step of every tool that reads one PDF's pages. A file that opens freely goes straight to its options; one
+     * that needs a password is asked about once, here, so Compress, Split, Organise, Fill form, Watermark and the rest
+     * work on protected files instead of each failing with "unlock it first".
+     */
+    fun prepareTool(tool: String, uri: Uri) {
+        if (job?.isActive == true) {
+            _message.value = context.getString(R.string.msg_tools_still_working)
+            return
+        }
+        // "Try again" after a failure runs the tool on the working copy itself: keep it then.
+        if (workingCopy?.let(Uri::fromFile) != uri) releaseWorkingCopy()
+        cancelSourcePassword()
+        _failure.value = null
+        val label = context.getString(R.string.msg_tools_checking_protection)
+        job = viewModelScope.launch {
+            // Most files are answered in milliseconds: the progress card only appears for a slow one.
+            val reveal = launch { kotlinx.coroutines.delay(400); _progress.value = ToolProgress(title = label) }
+            try {
+                if (PdfToolsEngine.needsOpenPassword(context, uri)) askToolPassword(tool, uri, wrongPassword = false)
+                else _toolReady.value = ToolTarget(tool, uri)
+            } finally {
+                reveal.cancel()
+                _progress.value = null
+            }
+        }
+    }
+
+    private suspend fun askToolPassword(tool: String, uri: Uri, wrongPassword: Boolean) =
+        askSourcePassword(PdfPasswordNeededException(uri, wrongPassword), PasswordPurpose.OPEN) { typed -> unlockForTool(tool, uri, typed) }
+
+    /** Writes an unlocked working copy of [uri] with [password] and opens [tool] on it; a wrong password asks again. */
+    private fun unlockForTool(tool: String, uri: Uri, password: String) {
+        if (job?.isActive == true) {
+            _message.value = context.getString(R.string.msg_tools_still_working)
+            return
+        }
+        _progress.value = ToolProgress(title = context.getString(R.string.msg_tools_unlocking))
+        job = viewModelScope.launch {
+            try {
+                val copy = withContext(Dispatchers.IO) {
+                    val dir = workingCopyDir().apply { mkdirs() }
+                    // Named after the original, so the tool's results are too ("Invoice compressed.pdf").
+                    PdfToolsEngine.uniqueFile(dir, PdfToolsEngine.sourceBaseName(context, uri) + ".pdf")
+                }
+                if (PdfToolsEngine.decryptCopy(context, uri, password, copy)) {
+                    workingCopy = copy
+                    reprotectPassword = password
+                    _toolReady.value = ToolTarget(tool, Uri.fromFile(copy))
+                } else {
+                    askToolPassword(tool, uri, wrongPassword = true)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                _failure.value = outOfSpaceMessageRes(error)?.let { context.getString(it) } ?: error.localizedMessage ?: context.getString(R.string.msg_tools_unlock_failed)
+            } finally {
+                _progress.value = null
+            }
+        }
     }
 
     fun pdfToText(uri: Uri, format: TextExportFormat, script: OcrScript, password: String? = null) {
@@ -509,7 +776,7 @@ class PdfToolsViewModel @Inject constructor(
                     message = parts.joinToString(" ")
                 )
             } catch (locked: PdfPasswordNeededException) {
-                askSourcePassword(locked, forInsert = false) { typed -> pdfToText(uri, format, script, typed) }
+                askSourcePassword(locked, PasswordPurpose.TEXT) { typed -> pdfToText(uri, format, script, typed) }
                 null
             }
         }
@@ -521,23 +788,30 @@ class PdfToolsViewModel @Inject constructor(
             try {
                 InsertPagesEngine.insertPages(context, baseUri, specs, insertion, named(baseUri, "inserted"), password, ::report)
             } catch (locked: PdfPasswordNeededException) {
-                askSourcePassword(locked, forInsert = true) { typed -> insertPages(baseUri, specs, insertion, typed) }
+                askSourcePassword(locked, PasswordPurpose.INSERT) { typed -> insertPages(baseUri, specs, insertion, typed) }
                 null
             }
         }
     }
 
-    fun imagesToPdf(uris: List<Uri>, pageSize: PdfPageSize = PdfPageSize.AUTO, quality: PdfQuality = PdfQuality.BALANCED) =
+    fun imagesToPdf(
+        uris: List<Uri>,
+        pageSize: PdfPageSize = PdfPageSize.AUTO,
+        quality: PdfQuality = PdfQuality.BALANCED,
+        margin: com.example.scanpro.imaging.ImageMargin = com.example.scanpro.imaging.ImageMargin.SMALL
+    ) =
         launchTool(context.resources.getQuantityString(R.plurals.msg_tools_converting_images, uris.size, uris.size), context.getString(R.string.msg_tools_convert_images_failed)) {
             val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm", java.util.Locale.getDefault()).format(java.util.Date())
             try {
                 PdfToolsEngine.imagesToPdf(
                     context, uris, pageSize, quality,
-                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report
+                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report,
+                    margin.points
                 )
             } finally {
                 withContext(Dispatchers.IO) {
-                    uris.mapNotNull { it.path?.let(::File)?.parentFile }
+                    uris.asSequence()
+                        .mapNotNull { it.path?.let(::File)?.parentFile }
                         .filter { it.name.startsWith("img2pdf_order_") }
                         .distinct()
                         .forEach { it.deleteRecursively() }
@@ -568,7 +842,8 @@ class PdfToolsViewModel @Inject constructor(
             fileEmpty = context.getString(R.string.tools_office_note_file_empty),
             fileTooLong = context.getString(R.string.tools_office_note_too_long),
             workbookTruncated = { cells -> context.getString(R.string.tools_office_note_workbook_truncated, cells) },
-            fileTruncated = { cells -> context.getString(R.string.tools_office_note_file_truncated, cells) }
+            fileTruncated = { cells -> context.getString(R.string.tools_office_note_file_truncated, cells) },
+            slidesTruncated = { slides -> context.getString(R.string.office_note_slides_truncated, slides) },
         )
         val html = withContext(Dispatchers.IO) {
             try {
@@ -595,9 +870,270 @@ class PdfToolsViewModel @Inject constructor(
         val sourceSize = runCatching {
             resolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
         }.getOrNull() ?: 0L
+        // A PDF the phone's own viewer cannot open, or one with no pages, is not a result (F211): it used to be kept
+        // and reported as "Converted: 0 pages".
+        if (pages <= 0) {
+            output.delete()
+            userError(R.string.office_err_empty_result)
+        }
         PdfToolResult(output, pages, sourceSize, output.length(), context.resources.getQuantityString(R.plurals.msg_tools_office_done, pages, pages))
     }
 
     /** A picked file's name, for the ordering step before Merge and Images to PDF. */
     fun displayName(uri: Uri): String = PdfToolsEngine.sourceBaseName(context, uri, context.getString(R.string.tools_file_fallback_name))
+
+    fun compressImage(uri: Uri, config: ImageCompressConfig) =
+        launchTool(R.string.tools_progress_compressing_img, R.string.tools_err_compress_img) {
+            val out = named(uri, "compressed", config.outputFormat.extension)
+            ImageToolsEngine.compressImage(context, uri, config, out, ::report)
+        }
+
+    fun convertImage(uris: List<Uri>, targetFormat: ImageExportFormat, quality: Int = 100) =
+        launchTool(R.string.tools_progress_converting_img, R.string.tools_err_convert_img) {
+            val base = if (uris.size == 1) named(uris.first(), "converted", targetFormat.extension)
+            else PdfToolsEngine.outputLocation(context, "converted ${nameStamp()}.${targetFormat.extension}")
+            ImageToolsEngine.convertImage(context, uris, targetFormat, quality, base, ::report)
+        }
+
+    fun resizeImage(uri: Uri, config: ImageResizeConfig) =
+        launchTool(R.string.tools_progress_resizing_img, R.string.tools_err_resize_img) {
+            val out = named(uri, "resized_${config.targetWidth}x${config.targetHeight}", config.outputFormat.extension)
+            ImageToolsEngine.resizeImage(context, uri, config, out, ::report)
+        }
+
+    fun cropImage(uri: Uri, quad: CropQuad, format: ImageExportFormat = ImageExportFormat.JPEG) =
+        launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
+            val out = named(uri, "cropped", format.extension)
+            ImageToolsEngine.cropImage(context, uri, quad, out, format, ::report)
+        }
+
+    /** Crop image: a straight cut with turn and mirror, kept in the picture's own format (a PNG keeps its transparency). */
+    /** A picture cropped for the dialog that asked for it ([target], see the screen's crop return); [uri] is null if the crop failed. */
+    data class PrecropOutcome(val target: String, val uri: Uri?, val noSpace: Boolean = false)
+
+    private val _precrop = MutableStateFlow<PrecropOutcome?>(null)
+    val precrop: StateFlow<PrecropOutcome?> = _precrop.asStateFlow()
+    fun consumePrecrop() { _precrop.value = null }
+
+    /**
+     * Crops the staged picture at [stagedPath] for a dialog to carry on with. Run here, not in the screen's own scope:
+     * turning the phone cancels that scope, which dropped the crop, never reopened the dialog and left both files behind.
+     * The staged copy is always removed; the result waits in [precrop] until the screen has taken it.
+     */
+    fun precropImage(stagedPath: String, spec: com.example.scanpro.imaging.ImageCropSpec, target: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val staged = java.io.File(stagedPath)
+            val format = ImageToolsEngine.formatOf(stagedPath) ?: ImageExportFormat.JPEG
+            val dest = java.io.File(context.cacheDir, "precrop_${java.util.UUID.randomUUID()}.${format.extension}")
+            var done = false
+            var phoneFull = false
+            try {
+                ImageToolsEngine.cropToFile(staged, dest, spec, format)
+                done = dest.exists() && dest.length() > 0
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                // reported below as a failed crop, or as a full phone
+                phoneFull = outOfSpaceMessageRes(error) != null
+            } finally {
+                staged.delete()
+                if (!done) dest.delete()
+            }
+            _precrop.value = PrecropOutcome(target, if (done) Uri.fromFile(dest) else null, noSpace = phoneFull)
+        }
+    }
+
+    fun cropImageRect(uri: Uri, spec: com.example.scanpro.imaging.ImageCropSpec) =
+        launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
+            ImageToolsEngine.cropImageRect(context, uri, spec, java.io.File(context.cacheDir, "exports"), null, ::report)
+        }
+
+    fun watermarkPdf(uri: Uri, config: WatermarkConfig) =
+        launchTool(R.string.tools_progress_watermarking, R.string.tools_err_watermark) {
+            val out = named(uri, "watermarked", "pdf")
+            PdfToolsEngine.watermarkPdf(context, uri, config, out, ::report)
+        }
+
+    fun addPageNumbers(uri: Uri, config: PageNumbersConfig) =
+        launchTool(R.string.tools_progress_page_numbers, R.string.tools_err_page_numbers) {
+            val out = named(uri, "numbered", "pdf")
+            PdfToolsEngine.addPageNumbers(context, uri, config, out, ::report)
+        }
+
+    fun extractText(uri: Uri) =
+        launchTool(R.string.tools_progress_extracting_text, R.string.tools_err_pdf2text) {
+            val out = named(uri, "extracted_text", "txt")
+            PdfToolsEngine.extractText(context, uri, out, ::report)
+        }
+
+    suspend fun inspectImage(uri: Uri): ImageMetadata? = withContext(Dispatchers.IO) {
+        ImageToolsEngine.inspectImage(context, uri)
+    }
+
+    // ---- Remove blank pages, Greyscale, Flatten, Extract images, PDF info and metadata ----
+
+    private val _blankPages = MutableStateFlow<BlankPagesFound?>(null)
+    /** What the blank-page check found, waiting for the user to confirm the removal. */
+    val blankPages: StateFlow<BlankPagesFound?> = _blankPages.asStateFlow()
+    fun clearBlankPages() { _blankPages.value = null }
+
+    fun findBlankPages(uri: Uri) = launchTool(R.string.tools_blank_progress_scanning, R.string.tools_blank_err_failed) {
+        val scan = com.example.scanpro.imaging.PdfCleanupTools.findBlankPages(context, uri, ::report)
+        _blankPages.value = BlankPagesFound(uri, scan.pageCount, scan.blankPages)
+        // A question, not a result: the working copy stays for the removal that may follow.
+        endedWithQuestion = true
+        null
+    }
+
+    fun removeBlankPages(found: BlankPagesFound) {
+        _blankPages.value = null
+        launchTool(R.string.tools_blank_progress_removing, R.string.tools_blank_err_failed) {
+            com.example.scanpro.imaging.PdfCleanupTools.removePages(
+                context, found.uri, found.blankPages.toSet(), named(found.uri, "no blank pages"), ::report
+            )
+        }
+    }
+
+    fun greyscale(uri: Uri) = launchTool(R.string.tools_grey_progress, R.string.tools_grey_err_failed) {
+        com.example.scanpro.imaging.PdfCleanupTools.greyscale(context, uri, named(uri, "greyscale"), ::report)
+    }
+
+    fun nup(uri: Uri, perSheet: Int) = launchTool(R.string.tools_nup_progress, R.string.tools_nup_err_failed) {
+        com.example.scanpro.imaging.PdfNupTools.nup(context, uri, perSheet, named(uri, "$perSheet-up"), ::report)
+    }
+
+    fun headerFooter(uri: Uri, config: com.example.scanpro.imaging.PdfHeaderFooterTools.HeaderFooterConfig) =
+        launchTool(R.string.tools_hf_progress, R.string.tools_hf_err_failed) {
+            com.example.scanpro.imaging.PdfHeaderFooterTools.headerFooter(context, uri, config, named(uri, "header footer"), ::report)
+        }
+
+    fun redactBoxes(uri: Uri, boxes: List<com.example.scanpro.imaging.PdfRedactTools.DrawnBox>) =
+        launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
+            com.example.scanpro.imaging.PdfRedactTools.redactBoxes(context, uri, boxes, named(uri, "redacted"), ::report)
+        }
+
+    fun cropPdf(uri: Uri, options: com.example.scanpro.imaging.PdfCropTools.CropOptions) =
+        launchTool(R.string.tools_crop_pdf_progress, R.string.tools_crop_pdf_err_failed) {
+            com.example.scanpro.imaging.PdfCropTools.cropPdf(context, uri, options, named(uri, "cropped"), ::report)
+        }
+
+    /** Crop chosen by hand: one crop for all pages, or a crop of its own on some (F241). */
+    fun cropPdfPlan(uri: Uri, plan: com.example.scanpro.imaging.CropPlan) =
+        launchTool(R.string.tools_crop_pdf_progress, R.string.tools_crop_pdf_err_failed) {
+            com.example.scanpro.imaging.PdfCropTools.cropPdfPlan(context, uri, plan, named(uri, "cropped"), ::report)
+        }
+
+    fun redact(uri: Uri, terms: List<String>, matchCase: Boolean) =
+        launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
+            // A file name holding a redacted word would give it away: such a copy is named by the time instead.
+            val base = PdfToolsEngine.sourceBaseName(context, uri)
+            val out = if (terms.any { it.isNotBlank() && base.contains(it.trim(), ignoreCase = true) }) {
+                PdfToolsEngine.outputLocation(context, "redacted ${nameStamp()}.pdf")
+            } else {
+                named(uri, "redacted")
+            }
+            com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, out, ::report)
+        }
+
+    /** Edit PDF text (F193): writes a copy of [uri] with [edits] applied, called [name] when one is given. */
+    internal fun editPdfText(uri: Uri, edits: List<com.example.scanpro.imaging.PdfTextEditor.Edit>, name: String = "") =
+        launchTool(R.string.tools_edit_progress, R.string.tools_edit_err_failed) {
+            val chosen = name.trim().removeSuffix(".pdf").trim()
+            val output = if (chosen.isEmpty()) named(uri, "edited")
+            else PdfToolsEngine.outputLocation(context, com.example.scanpro.data.fileSafeName(chosen) + ".pdf")
+            com.example.scanpro.imaging.PdfTextEditTool.save(context, uri, edits, output)
+        }
+
+    fun invertColors(uri: Uri) = launchTool(R.string.tools_invert_progress, R.string.tools_invert_err_failed) {
+        com.example.scanpro.imaging.PdfCleanupTools.invertColors(context, uri, named(uri, "inverted"), ::report)
+    }
+
+    fun flatten(uri: Uri) = launchTool(R.string.tools_flatten_progress, R.string.tools_flatten_err_failed) {
+        com.example.scanpro.imaging.PdfCleanupTools.flatten(context, uri, named(uri, "flattened"), ::report)
+    }
+
+    fun extractImages(uri: Uri) = launchTool(R.string.tools_ximg_progress, R.string.tools_ximg_err_failed) {
+        val base = PdfToolsEngine.sourceBaseName(context, uri)
+        inScratchDir("$base images") { dir ->
+            var skipped = 0
+            val files = com.example.scanpro.imaging.PdfCleanupTools.extractImages(context, uri, dir, ::report) { skipped = it }
+            bundled(files, "$base images", R.plurals.tools_ximg_done)()?.let { result ->
+                if (skipped == 0) result
+                else result.copy(message = result.message + " " + context.resources.getQuantityString(R.plurals.ximg_skipped, skipped, skipped))
+            }
+        }
+    }
+
+    /**
+     * Saves only the pictures the person ticked in the picker. They were already extracted to [previewDir] for the
+     * picker, so nothing is read from the PDF again: the chosen ones are copied into a fresh folder (the result
+     * bundle deletes its inputs), then the whole preview folder goes.
+     */
+    fun saveChosenImages(uri: Uri, previewDir: File, chosen: List<File>) = launchTool(R.string.tools_ximg_progress, R.string.tools_ximg_err_failed) {
+        val base = PdfToolsEngine.sourceBaseName(context, uri)
+        inScratchDir("$base images") { dir ->
+            val copies = chosen.filter { it.isFile }.map { it.copyTo(File(dir, it.name), overwrite = true) }
+            previewDir.deleteRecursively()
+            bundled(copies, "$base images", R.plurals.tools_ximg_done)()
+        }
+    }
+
+    private val _fileInfo = MutableStateFlow<FileInfoSession?>(null)
+    /** The file open in File info and metadata (F243). */
+    val fileInfo: StateFlow<FileInfoSession?> = _fileInfo.asStateFlow()
+    fun closeFileInfo() { _fileInfo.value = null }
+
+    fun openFileInfo(uri: Uri) = launchTool(R.string.meta_progress_reading, R.string.meta_err_read) {
+        _fileInfo.value = FileInfoSession(uri, com.example.scanpro.imaging.metadata.FileMetadataEngine.read(context, uri))
+        endedWithQuestion = true
+        null
+    }
+
+    /** Saves a copy of the open file with [edit] applied; the original is never changed. */
+    fun saveFileInfo(session: FileInfoSession, edit: com.example.scanpro.imaging.metadata.MetadataEdit) {
+        _fileInfo.value = null
+        launchTool(R.string.meta_progress_saving, R.string.meta_err_save) {
+            val meta = session.meta
+            // The copy keeps the file's own extension, so it opens in the same apps.
+            // The name comes from another app's provider, so only letters and digits are kept: no "/" can reach the path.
+            val ext = meta.fileName.substringAfterLast('.', "").filter { it.isLetterOrDigit() }.takeIf { it.isNotBlank() && it.length <= 8 }
+                ?: meta.format.extension.filter { it.isLetterOrDigit() }.ifBlank { "bin" }
+            val suffix = when {
+                edit.removeAll -> "no metadata"
+                edit.removeLocation -> "no location"
+                edit.removePersonal -> "no personal details"
+                else -> "edited"
+            }
+            com.example.scanpro.imaging.metadata.FileMetadataEngine.write(context, session.uri, meta, edit, named(session.uri, suffix, ext))
+        }
+    }
+
+    /** Writes the open file's details as JSON or CSV. */
+    fun exportFileInfo(session: FileInfoSession, json: Boolean) {
+        _fileInfo.value = null
+        launchTool(R.string.meta_progress_exporting, R.string.meta_err_export) {
+            com.example.scanpro.imaging.metadata.FileMetadataEngine.export(session.meta, json, named(session.uri, "details", if (json) "json" else "csv"))
+        }
+    }
+
+    private val _pdfInfo = MutableStateFlow<PdfInfoSession?>(null)
+    /** The details of the PDF open in PDF info and metadata. */
+    val pdfInfo: StateFlow<PdfInfoSession?> = _pdfInfo.asStateFlow()
+    fun closePdfInfo() { _pdfInfo.value = null }
+
+    fun openPdfInfo(uri: Uri) = launchTool(R.string.tools_info_progress, R.string.tools_info_err_failed) {
+        _pdfInfo.value = PdfInfoSession(uri, com.example.scanpro.imaging.PdfMetadataEngine.read(context, uri))
+        endedWithQuestion = true
+        null
+    }
+
+    /** Saves a copy with [edit] applied, or with every detail removed when [removeAll]. */
+    fun saveMetadata(uri: Uri, edit: com.example.scanpro.imaging.PdfMetadataEdit?, removeAll: Boolean) {
+        _pdfInfo.value = null
+        launchTool(R.string.tools_info_saving, R.string.tools_info_save_failed) {
+            com.example.scanpro.imaging.PdfMetadataEngine.write(
+                context, uri, edit, removeAll, named(uri, if (removeAll) "no metadata" else "details")
+            )
+        }
+    }
 }

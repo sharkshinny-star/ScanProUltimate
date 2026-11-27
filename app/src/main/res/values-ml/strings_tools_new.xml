@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_organizer_extract_short_title">പേജുകൾ എടുക്കുക</string>
+
+    <string name="tools_card_blank_pages">ശൂന്യ പേജുകൾ നീക്കുക</string>
+    <string name="tools_tile_blank_pages">ശൂന്യ പേജുകൾ</string>
+    <string name="tools_desc_blank_pages">ശൂന്യ പേജുകൾ കണ്ടെത്തി ഇല്ലാതാക്കുക</string>
+    <string name="tools_card_greyscale">ഗ്രേസ്കെയിൽ PDF</string>
+    <string name="tools_tile_greyscale">ഗ്രേസ്കെയിൽ</string>
+    <string name="tools_desc_greyscale">നിറമുള്ള പേജുകൾ ചാരനിറമാക്കുക</string>
+    <string name="tools_card_flatten">PDF ഫ്ലാറ്റൻ ചെയ്യുക</string>
+    <string name="tools_tile_flatten">ഫ്ലാറ്റൻ</string>
+    <string name="tools_desc_flatten">ഫോം ഉത്തരങ്ങളും കമന്റുകളും പേജിന്റെ ഭാഗമാക്കുക</string>
+    <string name="tools_card_extract_images">ചിത്രങ്ങൾ എടുക്കുക</string>
+    <string name="tools_desc_extract_images">PDF-നുള്ളിലെ ചിത്രങ്ങൾ സേവ് ചെയ്യുക</string>
+    <string name="tools_card_pdf_info">PDF വിവരവും മെറ്റാഡാറ്റയും</string>
+    <string name="tools_tile_pdf_info">വിവരവും മെറ്റാഡാറ്റയും</string>
+    <string name="tools_desc_pdf_info">മറഞ്ഞ വിവരങ്ങൾ കാണുക, മാറ്റുക, നീക്കുക</string>
+
+    <string name="tools_new_progress_page">പേജ് %1$d / %2$d</string>
+
+    <string name="tools_blank_progress_scanning">ശൂന്യ പേജുകൾ തിരയുന്നു…</string>
+    <string name="tools_blank_progress_removing">ശൂന്യ പേജുകൾ നീക്കുന്നു…</string>
+    <string name="tools_blank_err_failed">ഈ PDF-ൽ ശൂന്യ പേജുകൾ പരിശോധിക്കാനായില്ല.</string>
+    <string name="tools_blank_err_all">PDF-ൽ കുറഞ്ഞത് ഒരു പേജ് ഉണ്ടായിരിക്കണം.</string>
+    <string name="tools_blank_none_title">ശൂന്യ പേജുകളില്ല</string>
+    <string name="tools_blank_none_body">ഈ PDF-ലെ എല്ലാ പേജിലും എന്തെങ്കിലും ഉണ്ട്, അതിനാൽ നീക്കാൻ ഒന്നുമില്ല.</string>
+    <string name="tools_blank_found_title">ശൂന്യ പേജുകൾ കണ്ടെത്തി</string>
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%2$d പേജുകളിൽ %1$d എണ്ണം ശൂന്യമായി തോന്നുന്നു: പേജ് %3$s. പുതിയ പകർപ്പിൽ അത് നീക്കും; ഒറിജിനൽ മാറില്ല.</item>
+        <item quantity="other">%2$d പേജുകളിൽ %1$d എണ്ണം ശൂന്യമായി തോന്നുന്നു: പേജുകൾ %3$s. പുതിയ പകർപ്പിൽ അവ നീക്കും; ഒറിജിനൽ മാറില്ല.</item>
+    </plurals>
+    <string name="tools_blank_all_blank">എല്ലാ പേജുകളും ശൂന്യമായി തോന്നുന്നു. PDF-ന് കുറഞ്ഞത് ഒരു പേജ് വേണം, അതിനാൽ ഒന്നും നീക്കാനാവില്ല.</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">%1$d പേജ് നീക്കുക</item>
+        <item quantity="other">%1$d പേജുകൾ നീക്കുക</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">%1$d ശൂന്യ പേജ് നീക്കി</item>
+        <item quantity="other">%1$d ശൂന്യ പേജുകൾ നീക്കി</item>
+    </plurals>
+
+    <string name="tools_grey_confirm_body">ഓരോ പേജും %1$d dpi-ൽ ചാരനിറങ്ങളിൽ വീണ്ടും വരയ്ക്കുന്നു. ടെക്സ്റ്റ് പേജ് ചിത്രത്തിന്റെ ഭാഗമാകും, അതിനാൽ അത് തിരയാനോ പകർത്താനോ പിന്നീട് \"തിരയാവുന്നതാക്കുക\" ഉപയോഗിക്കുക. ഒറിജിനൽ മാറില്ല.</string>
+    <string name="tools_grey_confirm_action">ഗ്രേസ്കെയിലാക്കുക</string>
+    <string name="tools_grey_progress">ഗ്രേസ്കെയിലിലേക്ക് മാറ്റുന്നു…</string>
+    <string name="tools_grey_err_failed">ഈ PDF ഗ്രേസ്കെയിലിലേക്ക് മാറ്റാനായില്ല.</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">%1$d പേജ് ഗ്രേസ്കെയിലിലേക്ക് മാറ്റി</item>
+        <item quantity="other">%1$d പേജുകൾ ഗ്രേസ്കെയിലിലേക്ക് മാറ്റി</item>
+    </plurals>
+
+    <string name="tools_flatten_confirm_body">ഫോം ഫീൽഡുകൾ, കമന്റുകൾ, ഹൈലൈറ്റുകൾ, സ്റ്റാമ്പുകൾ എന്നിവ പേജുകളിൽ തന്നെ വരയ്ക്കുന്നു, അതിനാൽ അവ ഇനി മാറ്റാനോ നീക്കാനോ കഴിയില്ല. ലിങ്കുകൾ പ്രവർത്തിക്കും. ഒറിജിനൽ മാറില്ല.</string>
+    <string name="tools_flatten_confirm_action">ഫ്ലാറ്റൻ ചെയ്യുക</string>
+    <string name="tools_flatten_progress">ഫ്ലാറ്റൻ ചെയ്യുന്നു…</string>
+    <string name="tools_flatten_err_failed">ഈ PDF ഫ്ലാറ്റൻ ചെയ്യാനായില്ല.</string>
+    <string name="tools_flatten_nothing">ഈ PDF-ൽ ഫ്ലാറ്റൻ ചെയ്യാൻ ഫോം ഫീൽഡുകളോ കമന്റുകളോ ഇല്ല.</string>
+    <string name="tools_flatten_done">ഫ്ലാറ്റൻ ചെയ്തു. ഫോം ഫീൽഡുകൾ: %1$d, കമന്റുകളും സ്റ്റാമ്പുകളും: %2$d</string>
+
+    <string name="tools_ximg_progress">ചിത്രങ്ങൾ എടുക്കുന്നു…</string>
+    <string name="tools_ximg_err_failed">ഈ PDF-ൽ നിന്ന് ചിത്രങ്ങൾ എടുക്കാനായില്ല.</string>
+    <string name="tools_ximg_err_none">ഈ PDF-ൽ സേവ് ചെയ്യാവുന്ന ചിത്രങ്ങളില്ല. മുഴുവൻ പേജുകളും ചിത്രങ്ങളായി സേവ് ചെയ്യാൻ \"PDF-ൽ നിന്ന് ചിത്രങ്ങൾ\" ഉപയോഗിക്കുക.</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">%1$d ചിത്രം എടുത്തു</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ എടുത്തു</item>
+    </plurals>
+
+    <string name="tools_info_progress">PDF വിവരങ്ങൾ വായിക്കുന്നു…</string>
+    <string name="tools_info_err_failed">ഈ PDF-ന്റെ വിവരങ്ങൾ വായിക്കാനായില്ല.</string>
+    <string name="tools_info_pages">പേജുകൾ</string>
+    <string name="tools_info_version">PDF പതിപ്പ്</string>
+    <string name="tools_info_size">ഫയൽ വലുപ്പം</string>
+    <string name="tools_info_created">സൃഷ്ടിച്ചത്</string>
+    <string name="tools_info_modified">മാറ്റിയത്</string>
+    <string name="tools_info_creator">സൃഷ്ടിച്ച ആപ്പ്</string>
+    <string name="tools_info_producer">നിർമ്മാതാവ്</string>
+    <string name="tools_info_not_set">സജ്ജമാക്കിയിട്ടില്ല</string>
+    <string name="tools_info_edit_heading">മാറ്റാവുന്ന വിവരങ്ങൾ</string>
+    <string name="tools_info_field_title">ശീർഷകം</string>
+    <string name="tools_info_field_author">രചയിതാവ്</string>
+    <string name="tools_info_field_subject">വിഷയം</string>
+    <string name="tools_info_field_keywords">കീവേഡുകൾ</string>
+    <string name="tools_info_save">പകർപ്പ് സേവ് ചെയ്യുക</string>
+    <string name="tools_info_remove_all">എല്ലാ മെറ്റാഡാറ്റയും നീക്കുക</string>
+    <string name="tools_info_remove_all_hint">സ്വകാര്യതയ്ക്കായി: ശീർഷകം, രചയിതാവ്, ആപ്പുകൾ, തീയതികൾ, മറ്റ് മറഞ്ഞ വിവരങ്ങൾ എന്നിവ പുതിയ പകർപ്പിൽ നീക്കുന്നു.</string>
+    <string name="tools_info_xmp_note">ഈ PDF-ൽ അതിന്റെ വിവരങ്ങളുടെ രണ്ടാമത്തെ (XMP) പകർപ്പും ഉണ്ട്. സേവ് ചെയ്യുമ്പോൾ അത് നീക്കും, അതിനാൽ എല്ലാ റീഡറുകളും ഒരേ വിവരങ്ങൾ കാണിക്കും.</string>
+    <string name="tools_info_saving">വിവരങ്ങൾ സേവ് ചെയ്യുന്നു…</string>
+    <string name="tools_info_save_failed">പുതിയ വിവരങ്ങൾ സേവ് ചെയ്യാനായില്ല.</string>
+    <string name="tools_info_saved">വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്തു</string>
+    <string name="tools_info_removed">എല്ലാ മെറ്റാഡാറ്റയും നീക്കി</string>
+
+    <string name="hint_tool_blank_pages">സ്കാൻ ചെയ്ത PDF-ലെ ശൂന്യ പേജുകൾ കണ്ടെത്തി, പട്ടിക പരിശോധിച്ച ശേഷം നീക്കുക.</string>
+    <string name="hint_tool_greyscale">ചെലവ് കുറഞ്ഞ പ്രിന്റിനോ ചെറിയ ഫയലിനോ നിറമുള്ള PDF ചാരനിറങ്ങളിലേക്ക് മാറ്റുക.</string>
+    <string name="hint_tool_flatten">ഫോം ഉത്തരങ്ങളും കമന്റുകളും സ്റ്റാമ്പുകളും പേജുകളിൽ തന്നെ വരയ്ക്കുക; അവ ഇനി ഫീൽഡോ കമന്റോ ആയി മാറ്റാനാവില്ല. PDF എഡിറ്റർ ഉപയോഗിച്ച് പേജ് തന്നെ ഇപ്പോഴും മാറ്റാം.</string>
+    <string name="hint_tool_extract_images">PDF-നുള്ളിലെ ഓരോ ചിത്രവും പ്രത്യേക ചിത്ര ഫയലായി സേവ് ചെയ്യുക.</string>
+    <string name="hint_tool_pdf_info">PDF-ന്റെ മറഞ്ഞ വിവരങ്ങൾ കാണുക, ശീർഷകമോ രചയിതാവോ മാറ്റുക, അല്ലെങ്കിൽ സ്വകാര്യതയ്ക്കായി എല്ലാം നീക്കുക.</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF പേജുകൾ ക്രോപ്പ് ചെയ്യുക</string>
+    <string name="tools_tile_crop_pdf">പേജ് ക്രോപ്പ്</string>
+    <string name="tools_desc_crop_pdf">മാർജിനുകളോ വെള്ള സ്ഥലമോ നീക്കുക</string>
+    <string name="hint_tool_crop_pdf">ഓരോ പേജിന്റെയും മാർജിനുകൾ മുറിക്കുക: ഉള്ളടക്കത്തിന് ചുറ്റും സ്വയമേവ, അല്ലെങ്കിൽ മില്ലിമീറ്ററിൽ. ടെക്സ്റ്റ് ലെയർ നിലനിൽക്കും.</string>
+    <string name="tools_crop_pdf_body">ഓട്ടോ ഓരോ പേജും ഉള്ളടക്കത്തിന് ചുറ്റും അൽപ്പം ഇടം വിട്ട് മുറിക്കുന്നു; മാർജിനുകൾ നിങ്ങൾ നിശ്ചയിച്ച അളവ് ഓരോ പേജിൽ നിന്നും കാണിക്കുന്നതുപോലെ മുറിക്കുന്നു. ഒന്നും മായ്ക്കുന്നില്ല, അതിനാൽ പിന്നീട് റിപ്പയർ ഉപയോഗിച്ച് പേജുകൾ തിരികെ നൽകാം.</string>
+    <string name="tools_crop_pdf_mode_auto">ഓട്ടോ ട്രിം</string>
+    <string name="tools_crop_pdf_mode_margins">മാർജിനുകൾ</string>
+    <string name="tools_crop_pdf_padding">ഉള്ളടക്കത്തിന് ചുറ്റുമുള്ള ഇടം</string>
+    <string name="tools_crop_pdf_top">മുകളിൽ</string>
+    <string name="tools_crop_pdf_bottom">താഴെ</string>
+    <string name="tools_crop_pdf_left">ഇടത്</string>
+    <string name="tools_crop_pdf_right">വലത്</string>
+    <string name="tools_crop_pdf_mm">%1$d മിമീ</string>
+    <string name="tools_crop_pdf_action">പേജുകൾ ക്രോപ്പ് ചെയ്യുക</string>
+    <string name="tools_crop_pdf_progress">പേജുകൾ ക്രോപ്പ് ചെയ്യുന്നു…</string>
+    <string name="tools_crop_pdf_err_failed">ഈ PDF ക്രോപ്പ് ചെയ്യാനായില്ല.</string>
+    <string name="tools_crop_pdf_err_nothing">ക്രോപ്പ് ചെയ്യാൻ ഒന്നുമില്ല: ഓരോ പേജും ഇതിനകം കഴിയുന്നത്ര ഇറുകിയതാണ്, അല്ലെങ്കിൽ ക്രോപ്പ് ചെയ്താൽ വളരെ കുറച്ചേ ബാക്കിയാകൂ.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d പേജ് ക്രോപ്പ് ചെയ്തു</item>
+        <item quantity="other">%1$d പേജുകൾ ക്രോപ്പ് ചെയ്തു</item>
+    </plurals>
+    <string name="tools_card_redact">ടെക്സ്റ്റ് മറയ്ക്കുക</string>
+    <string name="tools_tile_redact">മറയ്ക്കുക</string>
+    <string name="tools_desc_redact">വാക്കുകൾ എന്നേക്കുമായി കറുപ്പിക്കുക</string>
+    <string name="hint_tool_redact">പേരുകൾ, നമ്പറുകൾ അല്ലെങ്കിൽ ഏതു വാക്കുകളും എവിടെയായാലും കറുപ്പിക്കുക. പൊരുത്തമുള്ള പേജുകൾ ചിത്രങ്ങളാകുന്നു, അതിനാൽ വാക്കുകൾ ശരിക്കും പോകുന്നു, വെറുതെ മൂടുകയല്ല.</string>
+    <string name="tools_redact_body">ഓരോ പൊരുത്തവും കറുപ്പായി വരയ്ക്കുകയും പൊരുത്തമുള്ള ഓരോ പേജും ചിത്രമായി വീണ്ടും വരയ്ക്കുകയും ചെയ്യുന്നു, അതിനാൽ ടെക്സ്റ്റ് വീണ്ടെടുക്കാനാവില്ല. പൊരുത്തമില്ലാത്ത പേജുകൾ അവയുടെ ടെക്സ്റ്റ് നിലനിർത്തുന്നു. ടെക്സ്റ്റ് തിരികെ വേണമെങ്കിൽ പിന്നീട് “തിരയാവുന്നതാക്കുക” ഉപയോഗിക്കുക.</string>
+    <string name="tools_redact_terms_label">കറുപ്പിക്കേണ്ട വാക്കുകൾ</string>
+    <string name="tools_redact_terms_hint">വരിക്ക് ഒന്ന്, അല്ലെങ്കിൽ കോമയിട്ട് വേർതിരിച്ച്</string>
+    <string name="tools_redact_match_case">വലിയ, ചെറിയ അക്ഷരങ്ങൾ പൊരുത്തപ്പെടുത്തുക</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d വാക്ക് തിരയും</item>
+        <item quantity="other">%1$d വാക്കുകൾ തിരയും</item>
+    </plurals>
+    <string name="tools_redact_action">മറയ്ക്കുക</string>
+    <string name="tools_redact_progress">മറയ്ക്കുന്നു…</string>
+    <string name="tools_redact_progress_searching">വാക്കുകൾ തിരയുന്നു…</string>
+    <string name="tools_redact_err_failed">ഈ PDF മറയ്ക്കാനായില്ല.</string>
+    <string name="tools_redact_err_no_matches">ഈ വാക്കുകളൊന്നും ഈ PDF-ന്റെ ടെക്സ്റ്റിൽ കണ്ടെത്തിയില്ല. സ്കാൻ ചെയ്ത പേജിന് ആദ്യം “തിരയാവുന്നതാക്കുക” വേണം.</string>
+    <string name="tools_redact_done">%2$d പേജുകളിൽ %1$d പൊരുത്തങ്ങൾ കറുപ്പിച്ചു</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">ഒരു ഷീറ്റിൽ പല പേജുകൾ (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">ഒരു ഷീറ്റിൽ 2 അല്ലെങ്കിൽ 4 പേജുകൾ</string>
+    <string name="hint_tool_nup">ഓരോ ഷീറ്റിലും രണ്ടോ നാലോ പേജുകൾ, വായനാക്രമത്തിൽ: ഡ്രാഫ്റ്റുകളോ സ്ലൈഡുകളോ ഹാൻഡ്ഔട്ടുകളോ അച്ചടിക്കാൻ.</string>
+    <string name="tools_nup_body">പേജുകൾ ചെറുതാക്കി വായനാക്രമത്തിൽ അടുത്തടുത്ത് വയ്ക്കുന്നു. ടെക്സ്റ്റും ചിത്രങ്ങളും വ്യക്തമായി നിലനിൽക്കും: ഒന്നും വീണ്ടും വരയ്ക്കുന്നില്ല, നീക്കി ചെറുതാക്കുക മാത്രം.</string>
+    <string name="tools_nup_two">ഷീറ്റിന് 2</string>
+    <string name="tools_nup_four">ഷീറ്റിന് 4</string>
+    <string name="tools_nup_action">ഷീറ്റുകൾ ഉണ്ടാക്കുക</string>
+    <string name="tools_nup_progress">ഷീറ്റുകൾ ക്രമീകരിക്കുന്നു…</string>
+    <string name="tools_nup_err_failed">ഈ PDF ക്രമീകരിക്കാനായില്ല.</string>
+    <string name="tools_nup_err_one_page">ഈ PDF-ൽ ഒരു പേജേ ഉള്ളൂ, അടുത്തടുത്ത് വയ്ക്കാൻ ഒന്നുമില്ല.</string>
+    <string name="tools_nup_done">%2$d ഷീറ്റുകളിൽ %1$d പേജുകൾ വെച്ചു</string>
+    <string name="tools_card_header_footer">ഹെഡറും ഫൂട്ടറും</string>
+    <string name="tools_tile_header_footer">ഹെഡർ/ഫൂട്ടർ</string>
+    <string name="tools_desc_header_footer">മുകളിലോ താഴെയോ ടെക്സ്റ്റ്</string>
+    <string name="hint_tool_header_footer">ഓരോ പേജിന്റെയും മുകളിലോ താഴെയോ ഒരു വരി: തലക്കെട്ട്, തീയതി അല്ലെങ്കിൽ ഫയൽ റഫറൻസ്.</string>
+    <string name="tools_hf_body">ടെക്സ്റ്റ് ഓരോ പേജിലും അതു കാണുന്നതുപോലെ ചേർക്കുന്നു; ബാക്കിയെല്ലാം അതേപടി നിൽക്കും. പേജ് നമ്പറിന് {page}, ആകെ പേജുകൾക്ക് {total} എഴുതുക.</string>
+    <string name="tools_hf_header_label">ഹെഡർ (പേജിന്റെ മുകളിൽ)</string>
+    <string name="tools_hf_footer_label">ഫൂട്ടർ (പേജിന്റെ താഴെ)</string>
+    <string name="tools_hf_placeholders_hint">{page} പേജ് നമ്പറാകും, {total} ആകെ പേജുകളുടെ എണ്ണം.</string>
+    <string name="tools_hf_align_left">ഇടത്</string>
+    <string name="tools_hf_align_centre">നടുവിൽ</string>
+    <string name="tools_hf_align_right">വലത്</string>
+    <string name="tools_hf_skip_first">ആദ്യ പേജ് ഒഴിവാക്കുക</string>
+    <string name="tools_hf_action">ടെക്സ്റ്റ് ചേർക്കുക</string>
+    <string name="tools_hf_progress">ടെക്സ്റ്റ് ചേർക്കുന്നു…</string>
+    <string name="tools_hf_err_failed">ഹെഡറോ ഫൂട്ടറോ ചേർക്കാനായില്ല.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d പേജിൽ ടെക്സ്റ്റ് ചേർത്തു</item>
+        <item quantity="other">%1$d പേജുകളിൽ ടെക്സ്റ്റ് ചേർത്തു</item>
+    </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">ഭാഗങ്ങൾ മറയ്ക്കുക</string>
+    <string name="tools_tile_redact_box">ഭാഗം മറയ്ക്കൽ</string>
+    <string name="tools_desc_redact_box">കറുപ്പിക്കാൻ ബോക്സുകൾ വരയ്ക്കുക</string>
+    <string name="hint_tool_redact_box">പേജിലെ എന്തിനുമേലും ബോക്സുകൾ വരയ്ക്കുക: ഫോട്ടോ, ഒപ്പ്, കൈയെഴുത്ത്. ബോക്സുകൾ എന്നേക്കുമായി കറുപ്പാകും.</string>
+    <string name="tools_redact_box_hint">പോകേണ്ടതിന് മുകളിൽ വലിച്ച് ബോക്സ് വരയ്ക്കുക. ബോക്സ് തിരഞ്ഞെടുക്കാൻ തൊടുക, പിന്നെ ചവറ്റുകുട്ട അതു നീക്കും.</string>
+    <string name="tools_redact_box_remove">ഈ ബോക്സ് നീക്കുക</string>
+    <string name="tools_redact_box_undo">അവസാന ബോക്സ് നീക്കുക</string>
+    <string name="tools_redact_box_previous">മുമ്പത്തെ പേജ്</string>
+    <string name="tools_redact_box_next">അടുത്ത പേജ്</string>
+    <string name="tools_redact_box_apply_empty">ആദ്യം ഒരു ബോക്സ് വരയ്ക്കുക</string>
+    <string name="tools_redact_box_apply">%1$d ഭാഗങ്ങൾ മറയ്ക്കുക</string>
+    <string name="tools_redact_box_err_preview">ഈ പേജുകൾ കാണിക്കാനാവില്ല. PDF-ന് പാസ്‌വേഡ് വേണമെങ്കിൽ ആദ്യം അൺലോക്ക് ചെയ്യുക.</string>
+    <string name="tools_redact_box_err_none">ഈ PDF-ന്റെ പേജുകളിൽ ബോക്സുകളൊന്നും വരച്ചിട്ടില്ല.</string>
+    <string name="tools_redact_box_done">%2$d പേജുകളിൽ %1$d ഭാഗങ്ങൾ കറുപ്പിച്ചു</string>
+</resources>

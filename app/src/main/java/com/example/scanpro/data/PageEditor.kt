@@ -176,15 +176,20 @@ internal class PageEditor(private val store: DocumentStore) {
         val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         val colours = withContext(Dispatchers.IO) { sampleColours(File(page.imagePath), left, top, right, bottom) }
         val padX = (bottom - top) * 0.15f
+        // Keep the padded box on the page: clamping only the left edge used to push the right edge past the page.
+        val boxLeft = (left - padX).coerceAtLeast(0f)
+        val boxRight = (right + padX).coerceAtMost(1f)
+        val boxTop = top.coerceIn(0f, 1f)
+        val boxBottom = bottom.coerceIn(boxTop, 1f)
         addAnnotation(
             documentId,
             pageId,
             PageAnnotation(
                 type = AnnotationType.TEXT,
-                x = (left - padX).coerceIn(0f, 1f),
-                y = top.coerceIn(0f, 1f),
-                width = (right - left + 2 * padX).coerceIn(0.01f, 1f),
-                height = (bottom - top).coerceIn(0.005f, 1f),
+                x = boxLeft.coerceAtMost(0.99f),
+                y = boxTop,
+                width = (boxRight - boxLeft).coerceAtLeast(0.01f).coerceAtMost(1f - boxLeft.coerceAtMost(0.99f)),
+                height = (boxBottom - boxTop).coerceAtLeast(0.005f).coerceAtMost((1f - boxTop).coerceAtLeast(0.005f)),
                 text = text.trim().take(400),
                 color = colours.ink,
                 background = colours.paper
@@ -313,9 +318,20 @@ internal class PageEditor(private val store: DocumentStore) {
         val pages = doc.pages.map { page ->
             coroutineContext.ensureActive()
             // Re-running recognition is an explicit request to read the pages again, so it replaces corrections.
-            runCatching { ocr.recognizeDetailed(File(page.imagePath), selected) }
-                .map { page.copy(ocrText = it.text, ocrWords = it.words, ocrEdited = false) }
-                .getOrElse { failed++; page }
+            // Not runCatching: that would swallow a cancellation (Stop), counting it as a failed page and saving anyway.
+            val read = try {
+                ocr.recognizeDetailed(File(page.imagePath), selected)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
+            }
+            if (read == null) {
+                failed++
+                page
+            } else {
+                page.copy(ocrText = read.text, ocrWords = read.words, ocrEdited = false)
+            }
         }
         saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now())).also { history.record(doc.id, doc.pages) }
         failed
@@ -375,12 +391,13 @@ internal class PageEditor(private val store: DocumentStore) {
 
     /**
      * Deletes signature images that neither the document nor any undo step uses. Removing a signature keeps its
-     * image so Undo can bring it back; this runs when the document is closed.
+     * image so Undo can bring it back; this runs when the document is closed. [alsoInUse] holds pages kept outside
+     * the document, such as a removed page still offered for Undo.
      */
-    suspend fun cleanUnusedSignatures(documentId: String) = withContext(Dispatchers.IO) {
+    suspend fun cleanUnusedSignatures(documentId: String, alsoInUse: List<ScanPage> = emptyList()) = withContext(Dispatchers.IO) {
         val doc = db.loadDocument(documentId) ?: return@withContext
         val folder = File(doc.pdfPath).parentFile ?: return@withContext
-        val inUse = (doc.pages + history.retained(documentId))
+        val inUse = (doc.pages + history.retained(documentId) + alsoInUse)
             .flatMap { it.annotations }
             .mapNotNull { it.assetPath.takeIf(String::isNotBlank)?.let { path -> File(path).canonicalPath } }
             .toSet()

@@ -44,6 +44,6 @@ internal object QuadGeometry {
             val b = p[(i + 1) % p.size]
             sum += a.x.toDouble() * b.y - b.x.toDouble() * a.y
         }
-        return (kotlin.math.abs(sum) / 2.0).toFloat().coerceIn(0f, 1f)
+        return (abs(sum) / 2.0).toFloat().coerceIn(0f, 1f)
     }
 }

@@ -1,5 +1,6 @@
 package com.example.scanpro.data
 
+import com.example.scanpro.core.text.takeWhole
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.graphics.createBitmap
@@ -13,6 +14,7 @@ import com.example.scanpro.scanner.OpenCvScanProcessor
 import java.io.File
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
@@ -88,7 +90,7 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val second = requireDocument(secondaryId)
         createFromPages(
             sourcePages = first.pages.sortedBy { it.position } + second.pages.sortedBy { it.position },
-            title = "${first.title} + ${second.title}".take(120),
+            title = "${first.title} + ${second.title}".takeWhole(120),
             quality = first.pdfQuality,
             pageSize = first.pdfPageSize,
             searchable = first.searchablePdf,
@@ -178,7 +180,7 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
                 copyUri(uri, source)
                 // The outline confirmed on the camera's review screen, or one found here, so a photo of a page on a
                 // desk comes in cropped and straight.
-                val crop = crops.getOrNull(offset) ?: runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
+                val crop = crops.getOrNull(offset) ?: runCatching { OpenCvScanProcessor.detectCrop(source, OpenCvScanProcessor.minAreaFor(doc.scanMode)) }.getOrDefault(CropQuad.DEFAULT)
                 newPages[newPages.lastIndex] = renderAndOcr(
                     page.copy(
                         crop = crop,
@@ -283,6 +285,9 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
      * Deletes the files of a removed page once it can no longer be restored. With [pageId], only that
      * page is purged, so a message going away late cannot drop a page removed after it.
      */
+    /** The page removed from [documentId] that Undo can still bring back, if any. */
+    fun pendingRemovedPage(documentId: String): ScanPage? = removedPages[documentId]?.page
+
     fun purgeRemovedPage(documentId: String, pageId: String? = null) {
         val current = removedPages[documentId] ?: return
         if (pageId != null && current.page.id != pageId) return
@@ -296,7 +301,7 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val doc = requireDocument(documentId)
         createFromPages(
             sourcePages = doc.pages.sortedBy { it.position },
-            title = "${doc.title} copy".take(120),
+            title = "${doc.title} copy".takeWhole(120),
             quality = doc.pdfQuality,
             pageSize = doc.pdfPageSize,
             searchable = doc.searchablePdf,
@@ -346,23 +351,36 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val width = if (left) halfWidth else bitmap.width - halfWidth
         val half = Bitmap.createBitmap(bitmap, x, 0, width, bitmap.height)
         val id = UUID.randomUUID().toString()
-        val source = File(sourceDir, "book_$id.jpg")
-        val rendered = File(renderedDir, "book_$id.jpg")
+        // The position is in the name, as for every other page, so a document rebuilt from its folder keeps the halves in place.
+        val source = File(sourceDir, "book_${index.toString().padStart(3, '0')}_$id.jpg")
+        val rendered = File(renderedDir, "book_${index.toString().padStart(3, '0')}_$id.jpg")
         try {
-            ImageProcessor.saveBitmapJpeg(half, source, 98)
-            ImageProcessor.saveBitmapJpeg(half, rendered, 96)
-        } finally {
-            if (half !== bitmap) half.recycle()
+            try {
+                ImageProcessor.saveBitmapJpeg(half, source, 98)
+                ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+            } finally {
+                if (half !== bitmap) half.recycle()
+            }
+            val read = try {
+                ocr.recognizeDetailed(rendered, script)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                OcrResult("", emptyList())
+            }
+            return ScanPage(
+                id = id,
+                documentId = docId,
+                position = index,
+                sourcePath = source.absolutePath,
+                imagePath = rendered.absolutePath,
+                ocrText = read.text,
+                ocrWords = read.words
+            )
+        } catch (error: Throwable) {
+            source.delete()
+            rendered.delete()
+            throw error
         }
-        val read = runCatching { ocr.recognizeDetailed(rendered, script) }.getOrNull() ?: OcrResult("", emptyList())
-        return ScanPage(
-            id = id,
-            documentId = docId,
-            position = index,
-            sourcePath = source.absolutePath,
-            imagePath = rendered.absolutePath,
-            ocrText = read.text,
-            ocrWords = read.words
-        )
     }
 }

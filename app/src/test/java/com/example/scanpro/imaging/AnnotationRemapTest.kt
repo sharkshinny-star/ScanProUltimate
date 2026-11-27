@@ -108,4 +108,43 @@ class AnnotationRemapTest {
         val items = listOf(box(0.1f, 0.2f, 0.3f, 0.1f))
         assertEquals(items, AnnotationRemap.remap(items, CropQuad.DEFAULT, CropQuad.DEFAULT, 0, 1f))
     }
+
+    // When the curved refinement does not converge a box used to stay where it was, over the wrong content (a redaction
+    // then no longer hid what it had). It now moves to the straight-crop estimate, and a redaction also grows a little.
+    private val approximately: (CropMapping, Float, Float) -> CropMapping.Placement? =
+        { _, x, y -> CropMapping.Placement(x, y, approximate = true) }
+
+    @Test
+    fun aRedactionPlacedOnlyApproximatelyMovesAndGrowsByAMargin() {
+        val moved = AnnotationRemap.remap(listOf(box(0.2f, 0.4f, 0.1f, 0.1f)), CropQuad.DEFAULT, rect(0f, 0f, 0.9f, 1f), 0, 0.75f, approximately)
+        assertEquals(1, moved.size)
+        assertEquals(0.18f, moved[0].x, 1e-4f)
+        assertEquals(0.14f, moved[0].width, 1e-4f)
+        assertEquals(0.38f, moved[0].y, 1e-4f)
+        assertEquals(0.14f, moved[0].height, 1e-4f)
+    }
+
+    @Test
+    fun otherMarkUpPlacedApproximatelyMovesButIsNotGrown() {
+        val highlight = box(0.2f, 0.4f, 0.1f, 0.1f).copy(type = AnnotationType.HIGHLIGHT)
+        val moved = AnnotationRemap.remap(listOf(highlight), CropQuad.DEFAULT, rect(0f, 0f, 0.9f, 1f), 0, 0.75f, approximately)
+        assertEquals(0.2f, moved[0].x, 1e-4f)
+        assertEquals(0.1f, moved[0].width, 1e-4f)
+    }
+
+    @Test
+    fun anApproximatelyPlacedBoxOutsideTheNewPageIsDroppedNotKept() {
+        val moved = AnnotationRemap.remap(listOf(box(1.4f, 0.4f, 0.1f, 0.1f)), CropQuad.DEFAULT, rect(0f, 0f, 0.5f, 1f), 0, 0.75f, approximately)
+        assertTrue(moved.isEmpty())
+    }
+
+    @Test
+    fun placeIsExactAndNotApproximateWhenTheMappingConverges() {
+        val mapping = CropMapping(rect(0.1f, 0.1f, 0.9f, 0.8f), 0.75f)
+        val (x, y) = mapping.toSource(0.3f, 0.6f)!!
+        val placed = mapping.place(x, y)!!
+        assertEquals(0.3f, placed.u, 1e-3f)
+        assertEquals(0.6f, placed.v, 1e-3f)
+        assertEquals(false, placed.approximate)
+    }
 }

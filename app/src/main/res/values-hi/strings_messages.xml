@@ -123,7 +123,9 @@
     <string name="msg_tools_compressing">PDF कंप्रेस हो रही है…</string>
     <string name="msg_tools_compression_failed">कंप्रेस नहीं हो सका</string>
     <string name="msg_tools_compressed_by">%1$d%% छोटी हुई (%2$s → %3$s)</string>
+    <string name="msg_tools_compress_no_gain">पहले से ही सबसे छोटी है: इससे छोटा संस्करण संभव नहीं था (%1$s)</string>
     <string name="msg_tools_compressed_not_searchable">। पेज इमेज में बदल दिए गए, इसलिए टेक्स्ट अब चुना या खोजा नहीं जा सकता।</string>
+    <string name="msg_tools_compress_missed_target">। %1$s तक नहीं पहुँच सका, इससे छोटा नहीं हो सकता। बड़ा लक्ष्य आज़माएँ।</string>
     <string name="msg_tools_exporting_pages">पेज एक्सपोर्ट हो रहे हैं…</string>
     <string name="msg_tools_export_failed">एक्सपोर्ट नहीं हो सका</string>
     <plurals name="msg_tools_exported_page_images">
@@ -150,7 +152,6 @@
     <string name="msg_tools_merge_failed">PDF जोड़ी नहीं जा सकीं</string>
     <string name="msg_tools_reading_form_fields">फ़ॉर्म के फ़ील्ड पढ़े जा रहे हैं…</string>
     <string name="msg_tools_read_form_failed">इस PDF का फ़ॉर्म पढ़ा नहीं जा सका</string>
-    <string name="msg_tools_no_fillable_fields">इस PDF में भरने लायक कोई फ़ील्ड नहीं है। इसे अपने डॉक्यूमेंट में इंपोर्ट करें और उस पर लिखने के लिए टेक्स्ट जोड़ें का इस्तेमाल करें।</string>
     <string name="msg_tools_filling_form">फ़ॉर्म भरा जा रहा है…</string>
     <string name="msg_tools_save_form_failed">भरा हुआ फ़ॉर्म सेव नहीं हो सका</string>
     <string name="msg_tools_making_searchable">PDF को खोजने लायक बनाया जा रहा है…</string>
@@ -194,4 +195,6 @@
     <string name="msg_scan_photos_unavailable">अधूरे स्कैन की फ़ोटो अब उपलब्ध नहीं हैं</string>
     <string name="msg_tools_out_of_memory">इस PDF के लिए मेमोरी कम है। छोटी फ़ाइल या कम पेज आज़माएं।</string>
     <string name="msg_tools_form_nothing_changed">अभी तक कुछ नहीं बदला गया</string>
+    <string name="msg_tools_repairing">PDF ठीक की जा रही है…</string>
+    <string name="msg_tools_repair_failed">PDF ठीक नहीं की जा सकी</string>
 </resources>

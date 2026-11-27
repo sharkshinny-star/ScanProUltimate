@@ -1,5 +1,6 @@
 package com.example.scanpro.work
 
+import com.example.scanpro.core.text.outOfSpaceMessageRes
 import com.example.scanpro.core.text.AppStrings
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -92,7 +93,7 @@ class ImportScanWorker @AssistedInject constructor(
             notifications.taskFailed(context.getString(R.string.notify_scan_failed), MainActivity.ACTION_OPEN_KEPT_SCANS)
             operations.showMessage(
                 UiMessage(
-                    context.getString(R.string.msg_could_not_save_scan, error.message ?: context.getString(R.string.msg_unknown_error)),
+                    context.getString(R.string.msg_could_not_save_scan, outOfSpaceMessageRes(error)?.let { context.getString(it) } ?: error.message ?: context.getString(R.string.msg_unknown_error)),
                     actionLabel = context.getString(R.string.common_retry),
                     onAction = { enqueue(context, input) }
                 )
@@ -100,7 +101,7 @@ class ImportScanWorker @AssistedInject constructor(
             return Result.success()
         }
 
-        settings.recordCompletedScan()
+        com.example.scanpro.data.FeedbackPrompts.recordCompletedScan(applicationContext)
         // Text scans copy their text instead; every other scan offers share/save straight away.
         if (mode == ScanMode.TEXT) copyRecognizedText(document) else operations.offerScanSaved(document.id)
         // Opens the document only if the user is still on a top-level screen; see ScanProApp.
@@ -186,6 +187,21 @@ class ImportScanWorker @AssistedInject constructor(
             .apply { folder?.trim()?.takeIf { it.isNotEmpty() }?.let { putString(KEY_FOLDER, it) } }
             .build()
 
+        /**
+         * Keeps a camera session whose photos could not be added to an existing document (Add page, Retake) under
+         * "Unsaved scans", so they can still be saved as a scan, shared or discarded instead of being lost.
+         * [error] is the reason shown there; null when the user stopped the job.
+         */
+        fun keepUnsaved(input: ImportRequest, error: Throwable?) {
+            val sessionDir = sessionDirOf(input)?.takeIf { it.parentFile?.name == SESSION_ROOT && it.isDirectory } ?: return
+            runCatching {
+                File(sessionDir, SESSION_IMPORT_REQUEST).writeText(input.toJson())
+                if (error != null) File(sessionDir, SESSION_IMPORT_FAILED).writeText(AppStrings.storable(error))
+                // Last, so "Unsaved scans" never lists a session without its request.
+                File(sessionDir, SESSION_PENDING_IMPORT).createNewFile()
+            }
+        }
+
         /** One piece of work per session folder, so a repeated request for the same scan never imports it twice. */
         fun enqueue(context: Context, input: ImportRequest) {
             val sessionDir = sessionDirOf(input)
@@ -202,7 +218,7 @@ class ImportScanWorker @AssistedInject constructor(
             // WorkManager refuses input over 10 KB, which a batch of about 60 pages passes (a path, crop, filter and
             // sliders per page). Then the work gets only the path of the request saved above.
             val workInput = input.toWorkData()
-                ?: if (inSession) androidx.work.workDataOf(KEY_REQUEST_FILE to File(sessionDir, SESSION_IMPORT_REQUEST).absolutePath)
+                ?: if (inSession) workDataOf(KEY_REQUEST_FILE to File(sessionDir, SESSION_IMPORT_REQUEST).absolutePath)
                 else error("Scan import request too large and not in a scanner session")
             val request = OneTimeWorkRequestBuilder<ImportScanWorker>()
                 .setInputData(workInput)

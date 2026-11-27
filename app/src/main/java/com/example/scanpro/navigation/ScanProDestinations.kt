@@ -47,6 +47,9 @@ object ScanProDestinations {
     fun pdfViewer(uri: android.net.Uri, title: String) =
         "pdf_viewer?$PDF_URI_ARG=${android.net.Uri.encode(uri.toString())}&$PDF_TITLE_ARG=${android.net.Uri.encode(title)}"
 
+    /** Files > Files on this phone (needs All files access, asked for on the screen itself). */
+    const val PHONE_PDFS = "phone_pdfs"
+
     /** Tabs shown in the bottom bar. Search is opened from the top bar instead of being a tab. */
     val topLevel = listOf(HOME, FILES, TOOLS, SETTINGS)
 }

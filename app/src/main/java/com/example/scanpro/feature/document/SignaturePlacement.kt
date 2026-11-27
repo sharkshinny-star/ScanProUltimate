@@ -20,7 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -102,7 +102,7 @@ fun SignaturePlacementDialog(
                 val pageImage = page
                 val sig = signature
                 if (pageImage == null || sig == null) {
-                    CircularProgressIndicator()
+                    FileLoadingAnimation(onDark = true)
                     return@BoxWithConstraints
                 }
                 val density = LocalDensity.current

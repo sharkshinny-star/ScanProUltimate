@@ -49,7 +49,11 @@ class LibraryRecoveryTest : RepositoryTestBase() {
         val doc = load(id)!!
         assertEquals(listOf(a, b, c), doc.order())
         assertEquals(listOf(0, 1, 2), doc.pages.sortedBy { it.position }.map { it.position })
-        assertTrue(doc.page(1).sourcePath.endsWith("source_001_$b"))
+        // The source is a copy of the rendered picture (it carries the crop, filter and any redaction), not the original photo.
+        val recovered = File(doc.page(1).sourcePath)
+        assertTrue(recovered.name.startsWith("recovered_"))
+        assertEquals(File(doc.page(1).imagePath).readText(), recovered.readText())
+        assertTrue(File(root, "$id/source/source_001_$b").isFile)
         assertTrue(File(doc.page(1).imagePath).isFile)
         assertFalse(doc.isTrashed)
         assertEquals("", doc.ocrText)
@@ -58,12 +62,14 @@ class LibraryRecoveryTest : RepositoryTestBase() {
         assertTrue(repository.documentsNeedingPdf().contains(id))
     }
 
-    @Test fun aPageWithoutItsPhotoUsesTheRenderedImageAsItsSource() = runBlocking {
+    @Test fun aPagesSourceIsACopyOfItsRenderedImageEvenWithoutThePhoto() = runBlocking {
         val a = pageId()
         val id = orphan(listOf("page_000_$a.jpg" to "unused"), withSources = false)
         repository.recoverOrphanedDocuments()
         val page = load(id)!!.pages.single()
-        assertEquals(page.imagePath, page.sourcePath)
+        // Not the same file: a render writes the page's picture and must not read its own output.
+        assertFalse(page.imagePath == page.sourcePath)
+        assertEquals(File(page.imagePath).readText(), File(page.sourcePath).readText())
     }
 
     @Test fun splitHalvesAreRecoveredToo() = runBlocking {
@@ -71,6 +77,33 @@ class LibraryRecoveryTest : RepositoryTestBase() {
         val id = orphan(listOf("book_$left.jpg" to "book_$left.jpg", "book_$right.jpg" to "book_$right.jpg"))
         repository.recoverOrphanedDocuments()
         assertEquals(setOf(left, right), load(id)!!.pages.map { it.id }.toSet())
+    }
+
+    @Test fun splitHalvesKeepTheirPlaceAmongTheOtherPages() = runBlocking {
+        val a = pageId(); val left = pageId(); val right = pageId(); val c = pageId()
+        // Written out of order on purpose; the halves carry their position in the name like every other page.
+        val id = orphan(
+            listOf(
+                "page_003_$c.jpg" to "source_003_$c.jpg",
+                "book_002_$right.jpg" to "book_002_$right.jpg",
+                "page_000_$a.jpg" to "source_000_$a.jpg",
+                "book_001_$left.jpg" to "book_001_$left.jpg"
+            )
+        )
+        repository.recoverOrphanedDocuments()
+        assertEquals(listOf(a, left, right, c), load(id)!!.order())
+    }
+
+    @Test fun aFolderFromAnImportThatWasCutShortIsRecoveredButSaysSo() = runBlocking {
+        val cutShort = orphan(listOf("page_000_${pageId()}.jpg" to "s"))
+        File(root, "$cutShort/.importing").createNewFile()
+        val whole = orphan(listOf("page_000_${pageId()}.jpg" to "s"))
+
+        assertEquals(2, repository.recoverOrphanedDocuments())
+
+        // Its pages are the user's, so it comes back, but not passed off as a complete document.
+        assertTrue(load(cutShort)!!.title.contains("import incomplete"))
+        assertFalse(load(whole)!!.title.contains("import incomplete"))
     }
 
     @Test fun documentsThatAlreadyHaveARecordAreLeftAlone() = runBlocking {

@@ -4,6 +4,10 @@ import kotlinx.coroutines.flow.combine
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.CancellationException
+import com.example.scanpro.core.ui.copyFileToUri
+import android.provider.DocumentsContract
 import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -94,7 +98,14 @@ class DocumentViewModel @Inject constructor(
         .map { it == id }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), operations.scanSaved.value == id)
 
-    fun dismissScanSaved() = operations.clearScanSaved(id)
+    /**
+     * The "Scan saved" sheet closed. If the feedback schedule is due, "Rate your experience" follows once the user is
+     * back on a calm screen (ScanProApp decides when; an action that opened the camera keeps it waiting).
+     */
+    fun dismissScanSaved() {
+        operations.clearScanSaved(id)
+        if (com.example.scanpro.data.FeedbackPrompts.isDue(context)) operations.requestFeedbackPrompt()
+    }
 
     /** Whether this document has edits to undo or redo in this session. */
     val undoState: StateFlow<UndoState> = repository.undoState
@@ -314,6 +325,23 @@ class DocumentViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Saves the document's PDF to [destination], which the system picker has already created. Runs entirely in the
+     * operation queue, so leaving the screen or rotating while the PDF is rebuilt can't leave an empty file behind.
+     */
+    fun savePdfTo(destination: Uri) {
+        operations.enqueue(context.getString(R.string.msg_preparing_pdf), null) {
+            val saved = savePdfCopy(
+                ensurePdf = { repository.ensurePdf(id).pdfPath },
+                copy = { path -> withContext(Dispatchers.IO) { copyFileToUri(context, path, destination) } },
+                deleteDestination = {
+                    withContext(Dispatchers.IO) { runCatching { DocumentsContract.deleteDocument(context.contentResolver, destination) } }
+                }
+            )
+            if (!saved) throw IllegalStateException(context.getString(R.string.doc_could_not_save_pdf))
+        }
+    }
+
     override fun onCleared() {
         // Leaving without closing the "Scan saved" sheet: don't offer it again next time this document opens.
         operations.clearScanSaved(id)
@@ -333,3 +361,25 @@ class DocumentViewModel @Inject constructor(
 
 private const val XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 private const val DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+/**
+ * Rebuilds the PDF if needed ([ensurePdf] gives its path) and copies it out ([copy]). If that fails, or the job is
+ * stopped, [deleteDestination] removes the file the picker already created, so no empty "saved" PDF is left behind.
+ * Returns false when the PDF could not be saved.
+ */
+internal suspend fun savePdfCopy(
+    ensurePdf: suspend () -> String,
+    copy: suspend (pdfPath: String) -> Boolean,
+    deleteDestination: suspend () -> Unit
+): Boolean {
+    val saved = try {
+        copy(ensurePdf())
+    } catch (cancelled: CancellationException) {
+        withContext(NonCancellable) { deleteDestination() }
+        throw cancelled
+    } catch (error: Exception) {
+        false
+    }
+    if (!saved) deleteDestination()
+    return saved
+}

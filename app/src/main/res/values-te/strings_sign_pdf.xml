@@ -32,4 +32,5 @@
     <string name="msg_sign_progress" tools:ignore="PluralsCandidate">పేజీ %1$d / %2$d పై సంతకం చేస్తున్నాం</string>
     <string name="msg_sign_failed">PDF పై సంతకం చేయలేకపోయాం</string>
     <string name="msg_sign_done" tools:ignore="PluralsCandidate">సంతకం చేసిన కాపీ సేవ్ అయింది. జోడించినవి: %1$d</string>
+    <string name="sign_existing_digital_signature">ఈ PDFలో ఇప్పటికే డిజిటల్ సంతకం ఉంది. ఇక్కడ సేవ్ చేసే కాపీ ఆ సంతకం తనిఖీలో ఇక చెల్లదు. అసలు ఫైల్ మారదు.</string>
 </resources>

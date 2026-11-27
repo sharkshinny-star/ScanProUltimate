@@ -14,8 +14,21 @@ object BookSpread {
     data class Halves(val leftStart: Int, val leftWidth: Int, val rightStart: Int, val rightWidth: Int)
 
     fun halves(width: Int, fraction: Float = 0.5f): Halves {
-        val split = (width * fraction.coerceIn(0.2f, 0.8f)).roundToInt().coerceIn(1, width - 1)
+        val split = (width * fraction.coerceIn(0.2f, 0.8f)).roundToInt().coerceIn(1, maxOf(1, width - 1))
         return Halves(0, split, split, width - split)
+    }
+
+    /**
+     * Book mode's layouts in the camera: 0 one page per shot, 1 two pages with the left saved first (A | B), 2 two pages
+     * with the right saved first (B | A).
+     */
+    fun leftFirst(layout: Int): Boolean = layout != 2
+
+    /** The swap button: A | B becomes B | A and back; one page per shot stays as it is. */
+    fun swapped(layout: Int): Int = when (layout) {
+        1 -> 2
+        2 -> 1
+        else -> layout
     }
 
     /** The halves in reading order. */

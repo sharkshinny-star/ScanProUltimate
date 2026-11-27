@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_err_resize_too_large">இந்த அளவு இந்த தொலைபேசிக்கு மிகப் பெரியது. படத்தை 24 மெகாபிக்சலுக்குள் வைத்திருங்கள், எடுத்துக்காட்டாக 6000 × 4000.</string>
+</resources>

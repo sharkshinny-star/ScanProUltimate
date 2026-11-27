@@ -1,0 +1,1099 @@
+package com.example.scanpro.imaging
+
+import com.example.scanpro.core.concurrent.BackgroundWork
+import com.example.scanpro.core.text.userRequire
+import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.text.UserFacingPluralException
+import com.example.scanpro.core.text.UserFacingException
+import com.example.scanpro.core.text.AppStrings
+import com.example.scanpro.core.ui.formatBytes
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.pdf.PdfRenderer
+import android.net.Uri
+import android.os.ParcelFileDescriptor
+import androidx.core.graphics.createBitmap
+import com.example.scanpro.data.PdfPageSize
+import com.example.scanpro.data.PdfQuality
+import com.example.scanpro.data.ScanPage
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.PDPage
+import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import com.tom_roush.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
+import com.tom_roush.pdfbox.text.PDFTextStripper
+import com.tom_roush.pdfbox.util.Matrix
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
+import androidx.annotation.StringRes
+import com.example.scanpro.R
+
+data class PdfToolResult(
+    val outputFile: File,
+    val pageCount: Int,
+    val originalSizeBytes: Long,
+    val outputSizeBytes: Long,
+    val message: String,
+    /** True only for the compress tools: the result card then shows the saving ('80% smaller'). Other tools show just [message]. */
+    val comparesSize: Boolean = false,
+)
+
+enum class SplitMode(@StringRes val labelRes: Int, @StringRes val descriptionRes: Int) {
+    SINGLE_PAGES(R.string.tools_split_mode_single, R.string.tools_split_mode_single_desc),
+    PAGE_RANGES(R.string.tools_split_mode_ranges, R.string.tools_split_mode_ranges_desc),
+    EVERY_N_PAGES(R.string.tools_split_mode_chunks, R.string.tools_split_mode_chunks_desc)
+}
+
+data class PageSpec(
+    val originalIndex: Int,
+    val rotationDegrees: Int = 0,
+)
+
+enum class ImageExportFormat(val extension: String) {
+    JPEG("jpg"),
+    PNG("png"),
+    WEBP("webp")
+}
+
+/** How a PDF is protected, as far as opening and editing it goes. */
+enum class PdfProtection { NONE, PASSWORD_REQUIRED, RESTRICTED_ONLY }
+
+data class WatermarkConfig(
+    val text: String,
+    val isDiagonal: Boolean = true,
+    val colorRgb: Int = 0x666666,
+    val opacityPercent: Int = 25,
+    val fontSizePt: Float = 48f,
+    val pageRange: String = "",
+    /** Counter-clockwise angle as the page is seen; when null it is 45 degrees if [isDiagonal], otherwise 0. */
+    val angleDegrees: Float? = null,
+    /** Where the text is centred, as a fraction of the page as seen: 0,0 is the top-left corner and 1,1 the bottom-right. */
+    val centerX: Float = 0.5f,
+    val centerY: Float = 0.5f,
+    /** Repeat the text across the whole page, in rows turned to [angleDegrees], instead of one stamp. */
+    val tiled: Boolean = false
+) {
+    val effectiveAngle: Float get() = angleDegrees ?: if (isDiagonal) 45f else 0f
+}
+
+/**
+ * Where a watermark goes on a page. Everything here is worked out in the page as it is *seen* (top-left origin, after
+ * the page's own /Rotate), then mapped back into the page's stored coordinates, so a page turned on its side gets an
+ * upright watermark in the right place.
+ */
+internal object WatermarkGeometry {
+    /** One piece of text: its centre in page coordinates, and the angle to draw it at in page coordinates (radians, anticlockwise). */
+    class Stamp(val x: Float, val y: Float, val angleRad: Double)
+
+    /** [seenX]/[seenY] are in points from the top-left of the page as seen; [width]/[height] are the stored page box. */
+    fun toPage(seenX: Float, seenY: Float, width: Float, height: Float, rotation: Int): Pair<Float, Float> = when (((rotation % 360) + 360) % 360) {
+        90 -> seenY to seenX
+        180 -> (width - seenX) to seenY
+        270 -> (width - seenY) to (height - seenX)
+        else -> seenX to (height - seenY)
+    }
+
+    fun seenSize(width: Float, height: Float, rotation: Int): Pair<Float, Float> =
+        if (((rotation % 360) + 360) % 360 % 180 == 90) height to width else width to height
+
+    /** The stamps for one page: one in the chosen spot, or a staggered grid across the page when [tiled]. */
+    fun stamps(config: WatermarkConfig, textWidth: Float, fontSize: Float, width: Float, height: Float, rotation: Int): List<Stamp> {
+        val (seenW, seenH) = seenSize(width, height, rotation)
+        val seenAngle = Math.toRadians(config.effectiveAngle.toDouble())
+        val pageAngle = seenAngle + Math.toRadians((((rotation % 360) + 360) % 360).toDouble())
+        val cx = config.centerX.coerceIn(0f, 1f) * seenW
+        val cy = config.centerY.coerceIn(0f, 1f) * seenH
+        if (!config.tiled) {
+            val (px, py) = toPage(cx, cy, width, height, rotation)
+            return listOf(Stamp(px, py, pageAngle))
+        }
+        // Rows run along the text's own direction, so a diagonal mark tiles diagonally.
+        val stepAlong = textWidth * 1.35f + fontSize
+        val stepAcross = fontSize * 3.4f
+        val reach = Math.hypot(seenW.toDouble(), seenH.toDouble()).toFloat()
+        val cos = Math.cos(seenAngle).toFloat()
+        val sin = Math.sin(seenAngle).toFloat()
+        val out = ArrayList<Stamp>()
+        val rows = (reach / stepAcross).toInt() + 1
+        val cols = (reach / stepAlong).toInt() + 1
+        for (j in -rows..rows) {
+            val stagger = if (j % 2 != 0) stepAlong / 2f else 0f
+            for (i in -cols..cols) {
+                val along = i * stepAlong + stagger
+                val across = j * stepAcross
+                // Seen coordinates have y pointing down, so an anticlockwise angle flips the sine term.
+                val sx = cx + along * cos + across * sin
+                val sy = cy - along * sin + across * cos
+                if (sx < -textWidth || sx > seenW + textWidth || sy < -fontSize * 2 || sy > seenH + fontSize * 2) continue
+                val (px, py) = toPage(sx, sy, width, height, rotation)
+                out.add(Stamp(px, py, pageAngle))
+            }
+        }
+        return out
+    }
+}
+
+/**
+ * Where a page number goes. Like [WatermarkGeometry], the spot is chosen on the page as it is *seen* (after /Rotate), so
+ * "bottom centre" is the bottom edge the reader sees and the number reads upright, then mapped to stored coordinates.
+ */
+internal object PageNumberGeometry {
+    /**
+     * The start of the number's baseline in page coordinates, relative to the visible box's lower-left corner, and the
+     * text angle (radians, anticlockwise). [width]/[height] are the stored visible box.
+     */
+    fun place(
+        position: PageNumberPosition,
+        textWidth: Float,
+        fontSize: Float,
+        margin: Float,
+        width: Float,
+        height: Float,
+        rotation: Int
+    ): WatermarkGeometry.Stamp {
+        val (seenW, seenH) = WatermarkGeometry.seenSize(width, height, rotation)
+        val seenX = when (position) {
+            PageNumberPosition.BOTTOM_LEFT -> margin
+            PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.TOP_CENTER -> (seenW - textWidth) / 2f
+            PageNumberPosition.BOTTOM_RIGHT, PageNumberPosition.TOP_RIGHT -> seenW - margin - textWidth
+        }
+        // Seen y points down; this is the baseline.
+        val seenY = when (position) {
+            PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.BOTTOM_RIGHT -> seenH - margin
+            PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> margin + fontSize
+        }
+        val (px, py) = WatermarkGeometry.toPage(seenX, seenY, width, height, rotation)
+        return WatermarkGeometry.Stamp(px, py, Math.toRadians((((rotation % 360) + 360) % 360).toDouble()))
+    }
+}
+
+enum class PageNumberPosition {
+    BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT
+}
+
+enum class PageNumberFormat {
+    PAGE_N_OF_M,
+    N_SLASH_M,
+    DASH,
+    SIMPLE
+}
+
+data class PageNumbersConfig(
+    val position: PageNumberPosition = PageNumberPosition.BOTTOM_CENTER,
+    val format: PageNumberFormat = PageNumberFormat.PAGE_N_OF_M,
+    val skipFirstPage: Boolean = false,
+    val marginPt: Float = 36f,
+    val fontSizePt: Float = 11f
+)
+
+/**
+ * Merge reached file [index] (0-based), [uri], which needs a password to open: none was given for it, or
+ * [wrongPassword] is true because the one given did not work. The Tools screen asks for it and merges again.
+ * Anywhere else it reads as the usual "unlock it first" message.
+ */
+class MergePasswordNeededException(val index: Int, val uri: Uri, val wrongPassword: Boolean, cause: Throwable? = null) :
+    UserFacingException(R.string.tools_err_password_protected, cause = cause)
+
+object PdfToolsEngine {
+
+    /**
+     * Tells whether a PDF needs a password to open (PASSWORD_REQUIRED), opens freely but has editing or
+     * copying restrictions (RESTRICTED_ONLY), or has no protection at all (NONE).
+     */
+    suspend fun inspectProtection(context: Context, inputUri: Uri): PdfProtection = withContext(BackgroundWork.tools) {
+        val tempFile = copyUriToTemp(context, inputUri, "inspect_${UUID.randomUUID()}.pdf")
+        try {
+            PdfSecurity.protection(tempFile)
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Where tool results go: under cache/exports/, the only cache folder the FileProvider shares,
+     * and which DocumentRepository clears of anything older than a day.
+     */
+    fun outputLocation(context: Context, name: String): File {
+        val dir = File(context.cacheDir, "exports").also { it.mkdirs() }
+        // A second run on the same file gets " (2)", not a silently replaced result.
+        return uniqueFile(dir, name)
+    }
+
+    /** [name] in [dir], or "name (2).ext" and so on when a file of that name is already there. */
+    fun uniqueFile(dir: File, name: String): File {
+        val plain = File(dir, name)
+        if (!plain.exists()) return plain
+        val base = name.substringBeforeLast('.')
+        val extension = name.substringAfterLast('.', "").let { if (it.isEmpty()) "" else ".$it" }
+        var n = 2
+        while (File(dir, "$base ($n)$extension").exists()) n++
+        return File(dir, "$base ($n)$extension")
+    }
+
+    /**
+     * True when [uri] can't be opened without its password. The system renderer answers in milliseconds for a file it
+     * can open; anything else (a protected file, or a provider that gives no seekable file) is settled by PDFBox, whose
+     * answer does not depend on the Android version. A file neither can read is left to the tool, which explains it.
+     */
+    suspend fun needsOpenPassword(context: Context, uri: Uri): Boolean = withContext(BackgroundWork.tools) {
+        val opens = runCatching {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { PdfRenderer(it).close(); true }
+        }.getOrNull() == true
+        !opens && runCatching { inspectProtection(context, uri) == PdfProtection.PASSWORD_REQUIRED }.getOrDefault(false)
+    }
+
+    /**
+     * Writes [uri] without its protection to [destination], opened with [password]. False when the password is wrong;
+     * nothing is left behind then.
+     */
+    suspend fun decryptCopy(context: Context, uri: Uri, password: String, destination: File): Boolean = withContext(BackgroundWork.tools) {
+        val tempFile = copyUriToTemp(context, uri, "open_in_${UUID.randomUUID()}.pdf")
+        try {
+            PdfSecurity.unlock(tempFile, destination, password)
+            true
+        } catch (wrong: InvalidPasswordException) {
+            destination.delete()
+            false
+        } catch (error: Throwable) {
+            destination.delete()
+            throw error
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /** The picked file's own name without its extension, safe for a file name, or [fallback]. */
+    fun sourceBaseName(context: Context, uri: Uri, fallback: String = "PDF"): String {
+        val shown = runCatching {
+            context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        }.getOrNull() ?: uri.lastPathSegment
+        val base = shown.orEmpty().substringAfterLast('/').substringBeforeLast('.').trim()
+        return com.example.scanpro.data.fileSafeName(base.ifBlank { fallback })
+    }
+
+    /**
+     * Merges [inputUris] in order. A file that needs a password to open is opened with its entry in [passwords]; when
+     * it has none, or that one is wrong, the merge stops with [MergePasswordNeededException] so the user can be asked.
+     * The merged PDF itself has no password.
+     */
+    suspend fun mergePdfs(
+        context: Context,
+        inputUris: List<Uri>,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        passwords: Map<Uri, String> = emptyMap()
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        userRequire(inputUris.size >= 2, R.string.tools_err_merge_two)
+        outputFile.parentFile?.mkdirs()
+
+        val mergedDoc = PDDocument()
+        // Pages added from a source document still read from it when the merged file is saved, so the
+        // sources (and the files behind them) must stay open until after the save. Closing each one as
+        // soon as its pages were copied is what produced "COSStream has been closed".
+        val sources = mutableListOf<PDDocument>()
+        val tempFiles = mutableListOf<File>()
+        var totalPagesMerged = 0
+        var originalSizeSum = 0L
+
+        try {
+            inputUris.forEachIndexed { index, uri ->
+                if (!coroutineContext.isActive) throw InterruptedException("Merge operation cancelled")
+                onProgress(index + 1, inputUris.size, AppStrings.get(R.string.tools_progress_merging, index + 1, inputUris.size))
+
+                val tempFile = copyUriToTemp(context, uri, "merge_in_${UUID.randomUUID()}.pdf")
+                tempFiles += tempFile
+                originalSizeSum += tempFile.length()
+                val password = passwords[uri]
+                val doc = try {
+                    openPdf(tempFile, password.orEmpty())
+                } catch (locked: InvalidPasswordException) {
+                    throw MergePasswordNeededException(index, uri, wrongPassword = password != null, cause = locked)
+                } catch (error: IllegalArgumentException) {
+                    throw UserFacingException(R.string.tools_err_file_reason, index + 1, error.message.orEmpty(), cause = error)
+                } catch (error: Exception) {
+                    throw UserFacingException(R.string.tools_err_file_unreadable, index + 1, cause = error)
+                }
+                sources += doc
+                for (i in 0 until doc.numberOfPages) {
+                    mergedDoc.addImportedPage(doc.getPage(i))
+                    totalPagesMerged++
+                }
+            }
+            userRequire(totalPagesMerged > 0, R.string.tools_err_merge_no_pages)
+
+            onProgress(inputUris.size, inputUris.size, AppStrings.get(R.string.tools_progress_saving_merged))
+            mergedDoc.save(outputFile)
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPagesMerged,
+                originalSizeBytes = originalSizeSum,
+                outputSizeBytes = outputFile.length(),
+                message = AppStrings.plural(R.plurals.tools_result_merged, totalPagesMerged, inputUris.size, totalPagesMerged)
+            )
+        } finally {
+            runCatching { mergedDoc.close() }
+            sources.forEach { runCatching { it.close() } }
+            tempFiles.forEach { it.delete() }
+        }
+    }
+
+    suspend fun splitPdf(
+        context: Context,
+        inputUri: Uri,
+        mode: SplitMode,
+        customRangesText: String = "",
+        everyNPages: Int = 1,
+        outputDir: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): List<File> = withContext(BackgroundWork.tools) {
+        outputDir.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "split_in_${UUID.randomUUID()}.pdf")
+        val outputFiles = mutableListOf<File>()
+        val base = sourceBaseName(context, inputUri)
+
+        try {
+            loadPdf(tempFile).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
+                userRequire(totalPages > 1, R.string.tools_split_single_page_desc)
+
+                when (mode) {
+                    SplitMode.SINGLE_PAGES -> {
+                        for (i in 0 until totalPages) {
+                            if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
+                            onProgress(i + 1, totalPages, AppStrings.get(R.string.tools_progress_splitting_page, i + 1, totalPages))
+                            val outFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.pdf")
+                            PDDocument().use { singleDoc ->
+                                singleDoc.addImportedPage(doc.getPage(i))
+                                singleDoc.dropLinksToMissingPages()
+                                singleDoc.save(outFile)
+                            }
+                            outputFiles.add(outFile)
+                        }
+                    }
+                    SplitMode.EVERY_N_PAGES -> {
+                        val chunkSize = everyNPages.coerceAtLeast(1)
+                        var chunkIndex = 1
+                        var pageIndex = 0
+                        while (pageIndex < totalPages) {
+                            if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
+                            val end = (pageIndex + chunkSize).coerceAtMost(totalPages)
+                            onProgress(chunkIndex, ((totalPages + chunkSize) - 1) / chunkSize, AppStrings.get(R.string.tools_progress_splitting_chunk, chunkIndex))
+                            val outFile = File(outputDir, "$base part $chunkIndex pages ${pageIndex + 1} to $end.pdf")
+                            PDDocument().use { chunkDoc ->
+                                for (i in pageIndex until end) chunkDoc.addImportedPage(doc.getPage(i))
+                                chunkDoc.dropLinksToMissingPages()
+                                chunkDoc.save(outFile)
+                            }
+                            outputFiles.add(outFile)
+                            chunkIndex++
+                            pageIndex = end
+                        }
+                    }
+                    SplitMode.PAGE_RANGES -> {
+                        val ranges = parsePageRanges(customRangesText, totalPages)
+                        userRequire(ranges.isNotEmpty(), R.string.tools_err_no_ranges)
+                        ranges.forEachIndexed { idx, range ->
+                            if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
+                            onProgress(idx + 1, ranges.size, AppStrings.get(R.string.tools_progress_extracting_range, idx + 1, ranges.size))
+                            val outFile = File(outputDir, "$base range ${idx + 1} pages ${range.first} to ${range.last}.pdf")
+                            PDDocument().use { rangeDoc ->
+                                for (pageNum in range) {
+                                    if ((pageNum in 1..totalPages)) rangeDoc.addImportedPage(doc.getPage(pageNum - 1))
+                                }
+                                rangeDoc.dropLinksToMissingPages()
+                                rangeDoc.save(outFile)
+                            }
+                            outputFiles.add(outFile)
+                        }
+                    }
+                }
+            }
+            return@withContext outputFiles
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    suspend fun extractPages(
+        context: Context,
+        inputUri: Uri,
+        selectedPageIndices: List<Int>,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        userRequire(selectedPageIndices.isNotEmpty(), R.string.tools_err_extract_none)
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "extract_in_${UUID.randomUUID()}.pdf")
+
+        try {
+            val originalSize = tempFile.length()
+            var added = 0
+            PDDocument().use { extractedDoc -> loadPdf(tempFile).use { doc ->
+                userRequire(doc.numberOfPages > 1, R.string.tools_extract_single_page_desc)
+                selectedPageIndices.forEachIndexed { index, pageIdx ->
+                    if (!coroutineContext.isActive) throw InterruptedException("Extract operation cancelled")
+                    onProgress(index + 1, selectedPageIndices.size, AppStrings.get(R.string.tools_progress_extracting_page, index + 1, selectedPageIndices.size))
+                    if (pageIdx in 0 until doc.numberOfPages) {
+                        extractedDoc.addImportedPage(doc.getPage(pageIdx))
+                        added++
+                    }
+                }
+                // Pages chosen from a different file (or one that changed) must not produce an empty PDF.
+                userRequire(added > 0, R.string.tools_err_extract_none)
+                extractedDoc.dropLinksToMissingPages()
+                extractedDoc.save(outputFile)
+            } }
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = added,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputFile.length(),
+                message = AppStrings.plural(R.plurals.tools_result_extracted, added, added)
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    suspend fun rotatePages(
+        context: Context,
+        inputUri: Uri,
+        rotationsMap: Map<Int, Int>,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "rotate_in_${UUID.randomUUID()}.pdf")
+
+        try {
+            val originalSize = tempFile.length()
+            var totalPages = 0
+            loadPdf(tempFile).use { doc ->
+                totalPages = doc.numberOfPages
+                for (i in 0 until totalPages) {
+                    if (!coroutineContext.isActive) throw InterruptedException("Rotation operation cancelled")
+                    onProgress(i + 1, totalPages, AppStrings.get(R.string.tools_progress_rotating, i + 1, totalPages))
+                    val addDegrees = rotationsMap[i] ?: 0
+                    if (addDegrees != 0) {
+                        val page = doc.getPage(i)
+                        page.rotation = Math.floorMod(page.rotation + addDegrees, 360)
+                    }
+                }
+                doc.save(outputFile)
+            }
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputFile.length(),
+                message = AppStrings.get(R.string.tools_result_rotated)
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    suspend fun organizePages(
+        context: Context,
+        inputUri: Uri,
+        pageSpecs: List<PageSpec>,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        userRequire(pageSpecs.isNotEmpty(), R.string.tools_err_keep_one_page)
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "organize_in_${UUID.randomUUID()}.pdf")
+
+        try {
+            val originalSize = tempFile.length()
+            var added = 0
+            PDDocument().use { newDoc -> loadPdf(tempFile).use { doc ->
+                userRequire(doc.numberOfPages > 1, R.string.tools_organize_single_page_desc)
+                pageSpecs.forEachIndexed { index, spec ->
+                    if (!coroutineContext.isActive) throw InterruptedException("Organize operation cancelled")
+                    onProgress(index + 1, pageSpecs.size, AppStrings.get(R.string.tools_progress_processing_page, index + 1, pageSpecs.size))
+                    if (spec.originalIndex in 0 until doc.numberOfPages) {
+                        val page = doc.getPage(spec.originalIndex)
+                        if (spec.rotationDegrees != 0) {
+                            page.rotation = Math.floorMod(page.rotation + spec.rotationDegrees, 360)
+                        }
+                        newDoc.addImportedPage(page)
+                        added++
+                    }
+                }
+                userRequire(added > 0, R.string.tools_err_keep_one_page)
+                newDoc.dropLinksToMissingPages()
+                newDoc.save(outputFile)
+            } }
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = added,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputFile.length(),
+                message = AppStrings.plural(R.plurals.tools_result_organized, added, added)
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    suspend fun imagesToPdf(
+        context: Context,
+        imageUris: List<Uri>,
+        pageSize: PdfPageSize = PdfPageSize.AUTO,
+        quality: PdfQuality = PdfQuality.BALANCED,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        userRequire(imageUris.isNotEmpty(), R.string.tools_err_no_images)
+        outputFile.parentFile?.mkdirs()
+
+        val tempDir = File(context.cacheDir, "img2pdf_${UUID.randomUUID()}").apply { mkdirs() }
+        val pages = mutableListOf<ScanPage>()
+        var originalSize = 0L
+
+        try {
+            imageUris.forEachIndexed { index, uri ->
+                if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
+                onProgress(index + 1, imageUris.size, AppStrings.get(R.string.tools_progress_loading_image, index + 1, imageUris.size))
+                // If the URI is already a local file (e.g. from the ordering staging folder), use it directly
+                // to avoid duplicating hundreds of megabytes of image bytes on disk.
+                val localFile = if (uri.scheme == "file") uri.path?.let(::File)?.takeIf { it.exists() && it.isFile } else null
+                val imgFile = localFile ?: File(tempDir, "img_$index").also { target ->
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        FileOutputStream(target).buffered(COPY_BUFFER).use { output -> input.copyTo(output, COPY_BUFFER) }
+                    } ?: userError(R.string.tools_err_image_unreadable, index + 1)
+                }
+                // Only the header is read here: a file that is not a picture is named before any page is drawn.
+                ImageProcessor.imageAspect(imgFile.absolutePath) ?: userError(R.string.tools_err_image_undecodable, index + 1)
+                originalSize += imgFile.length()
+
+                pages.add(
+                    ScanPage(
+                        id = "img2pdf-$index",
+                        documentId = "img2pdf",
+                        position = index,
+                        sourcePath = imgFile.absolutePath,
+                        imagePath = imgFile.absolutePath
+                    )
+                )
+            }
+
+            val creating = AppStrings.get(R.string.tools_progress_creating_pdf)
+            var current = 0
+            PdfExporter.export(
+                pages = pages,
+                destination = outputFile,
+                quality = quality,
+                pageSize = pageSize,
+                searchable = false,
+                pageNumbers = false,
+                // Only the header was checked above: a picture whose pixels can't be read is still named as a picture.
+                decode = { path, max -> PdfExporter.decodePicture(path, max) ?: userError(R.string.tools_err_image_undecodable, current) },
+                beforePage = { number, total ->
+                    current = number
+                    // Decoding is the slow part, so Cancel is honoured between pages here too.
+                    if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
+                    onProgress(number, total, creating)
+                }
+            )
+
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = imageUris.size,
+                // What the user picked, not a copy made along the way.
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputFile.length(),
+                message = AppStrings.plural(R.plurals.tools_result_images_to_pdf, imageUris.size, imageUris.size)
+            )
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    suspend fun pdfToImages(
+        context: Context,
+        inputUri: Uri,
+        format: ImageExportFormat = ImageExportFormat.JPEG,
+        outputDir: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        /** 1-based pages to export; null for every page. */
+        pages: List<Int>? = null,
+        /** Render scale over the PDF's 72 dpi: 2 is about 150 dpi, 2.5 is sharp on screen, 4 is print quality. */
+        scale: Float = 2.5f
+    ): List<File> = withContext(BackgroundWork.tools) {
+        outputDir.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "pdf2img_in_${UUID.randomUUID()}.pdf")
+        val imageFiles = mutableListOf<File>()
+        val base = sourceBaseName(context, inputUri)
+        // Pages of one PDF are mostly the same size: one bitmap is drawn over again instead of a new one per page.
+        var bitmap: Bitmap? = null
+
+        try {
+            // Android's own renderer goes first: it draws files PDFBox cannot parse at all (Repair's last resort depends
+            // on that). PDFBox is asked only when the renderer refuses, to tell a password from a broken file; asking it
+            // first meant parsing every PDF twice.
+            try {
+                ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                    openRenderer(pfd, tempFile).use { renderer ->
+                        val totalPages = renderer.pageCount
+                        val chosen = pages?.asSequence()?.filter { it in 1..totalPages }?.distinct()?.sorted()?.toList() ?: (1..totalPages).toList()
+                        userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
+                        chosen.forEachIndexed { step, pageNumber ->
+                            val i = pageNumber - 1
+                            if (!coroutineContext.isActive) throw InterruptedException("PDF to images operation cancelled")
+                            onProgress(step + 1, chosen.size, AppStrings.get(R.string.tools_progress_exporting_page, pageNumber, format.extension.uppercase()))
+
+                            renderer.openPage(i).use { page ->
+                                // Capped so a poster-sized page can't run out of memory.
+                                val scale = minOf(scale, 4000f / maxOf(page.width, page.height).coerceAtLeast(1))
+                                val width = (page.width * scale).toInt().coerceAtLeast(1)
+                                val height = (page.height * scale).toInt().coerceAtLeast(1)
+                                val canvas = bitmap?.takeIf { it.width == width && it.height == height }
+                                    ?: createBitmap(width, height).also { bitmap?.recycle(); bitmap = it }
+                                // PdfRenderer draws onto what is there: transparent pixels turn black in a JPEG, and a
+                                // reused bitmap still holds the previous page.
+                                canvas.eraseColor(Color.WHITE)
+                                page.render(canvas, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+                                val imgFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.${format.extension}")
+                                FileOutputStream(imgFile).buffered().use { out ->
+                                    if (format == ImageExportFormat.JPEG) {
+                                        canvas.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                                    } else if (format == ImageExportFormat.PNG) {
+                                        canvas.compress(Bitmap.CompressFormat.PNG, 100, out)
+                                    } else {
+                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                                            canvas.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+                                        } else {
+                                            @Suppress("DEPRECATION")
+                                            canvas.compress(Bitmap.CompressFormat.WEBP, 90, out)
+                                        }
+                                    }
+                                }
+                                imageFiles.add(imgFile)
+                            }
+                        }
+                    }
+                }
+            } catch (securityEx: SecurityException) {
+                userError(R.string.tools_err_password_protected, cause = securityEx)
+            }
+            return@withContext imageFiles
+        } finally {
+            bitmap?.recycle()
+            tempFile.delete()
+        }
+    }
+
+    suspend fun protectPdf(
+        context: Context,
+        inputUri: Uri,
+        password: String,
+        outputFile: File
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        val tempFile = copyUriToTemp(context, inputUri, "protect_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
+                userError(R.string.tools_err_already_protected)
+            }
+            PdfSecurity.protect(tempFile, outputFile, password)
+            var pageCount = 0
+            PDDocument.load(outputFile, password).use { pageCount = it.numberOfPages }
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = pageCount,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputFile.length(),
+                message = AppStrings.get(R.string.tools_result_protected)
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    suspend fun unlockPdf(
+        context: Context,
+        inputUri: Uri,
+        password: String,
+        outputFile: File
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        val tempFile = copyUriToTemp(context, inputUri, "unlock_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            val before = PdfSecurity.protection(tempFile)
+            PdfSecurity.unlock(tempFile, outputFile, password)
+            var pageCount = 0
+            PDDocument.load(outputFile).use { pageCount = it.numberOfPages }
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = pageCount,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputFile.length(),
+                message = if (before == PdfProtection.PASSWORD_REQUIRED) AppStrings.get(R.string.tools_result_password_removed)
+                else AppStrings.get(R.string.tools_result_restrictions_removed)
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Adds a page taken from another document. Resources, page size, crop box and rotation may be
+     * inherited from the source's page tree, which does not travel with the page, so they are copied
+     * onto the page itself first. Without this such pages come out blank or the wrong size.
+     */
+    internal fun PDDocument.addImportedPage(page: PDPage) {
+        page.resources = page.resources
+        page.mediaBox = page.mediaBox
+        page.cropBox = page.cropBox
+        page.rotation = page.rotation
+        addPage(page)
+    }
+
+    /**
+     * Pages are added to a new document as they are, links and all. A link (or a form widget's /P) on a kept page that
+     * points at a page left out pulled that page, and through its /Parent the whole source page tree, into the output:
+     * a one-page Split or Extract came out nearly as large as the original. Such references are cut, as PDFBox's own
+     * Splitter does; links between pages that are both kept still work.
+     */
+    internal fun PDDocument.dropLinksToMissingPages() {
+        val kept = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<com.tom_roush.pdfbox.cos.COSBase, Boolean>())
+        pages.forEach { kept.add(it.cosObject) }
+        pages.forEach { page ->
+            val annotations = runCatching { page.annotations }.getOrNull() ?: return@forEach
+            annotations.forEach { annotation ->
+                if (annotation is com.tom_roush.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink) {
+                    val destination = runCatching { annotation.destination }.getOrNull()
+                        ?: (runCatching { annotation.action }.getOrNull() as? com.tom_roush.pdfbox.pdmodel.interactive.action.PDActionGoTo)
+                            ?.let { runCatching { it.destination }.getOrNull() }
+                    if (destination is com.tom_roush.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageDestination) {
+                        val target = destination.cosObject.getObject(0)
+                        if (target is com.tom_roush.pdfbox.cos.COSDictionary && target !in kept) destination.setPage(null)
+                    }
+                }
+                val owner = annotation.cosObject.getDictionaryObject(com.tom_roush.pdfbox.cos.COSName.P)
+                if (owner != null && owner !in kept) annotation.cosObject.removeItem(com.tom_roush.pdfbox.cos.COSName.P)
+            }
+        }
+    }
+
+    /** One file is returned as it is; several are bundled into a single zip so they can be shared together. */
+    suspend fun bundleOutputs(context: Context, files: List<File>, name: String): File = withContext(BackgroundWork.tools) {
+        if (files.size == 1) return@withContext files.first()
+        val zip = outputLocation(context, "$name.zip")
+        ZipOutputStream(FileOutputStream(zip).buffered()).use { out ->
+            // JPEG, PNG, WebP and PDF are compressed already: deflating them again cost time at the very end of a
+            // long run (the progress sat at 100%) and saved almost nothing.
+            out.setLevel(java.util.zip.Deflater.NO_COMPRESSION)
+            files.forEach { file ->
+                currentCoroutineContext().ensureActive()
+                out.putNextEntry(ZipEntry(file.name))
+                file.inputStream().buffered(COPY_BUFFER).use { it.copyTo(out, COPY_BUFFER) }
+                out.closeEntry()
+            }
+        }
+        // The zip is the result; keeping the loose pages beside it would use the space twice.
+        files.forEach { it.delete() }
+        files.firstOrNull()?.parentFile?.takeIf { it != zip.parentFile }?.delete()
+        zip
+    }
+
+    /** Opens a PDF, turning "wrong password" on a protected file into a message that says what to do. */
+    internal fun loadPdf(file: File): PDDocument = try {
+        openPdf(file)
+    } catch (error: InvalidPasswordException) {
+        throw UserFacingException(R.string.tools_err_password_protected, cause = error)
+    }
+
+    /**
+     * Applies a text watermark across selected pages of a PDF document with custom angle, colour, opacity and size.
+     */
+    suspend fun watermarkPdf(
+        context: Context,
+        inputUri: Uri,
+        config: WatermarkConfig,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        userRequire(config.text.isNotBlank(), R.string.tools_err_watermark)
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "wm_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            // use {}: a failure part-way (cancel, a glyph the font lacks) must still close the document.
+            val (totalPages, watermarkedCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+                val targetRanges = if (config.pageRange.isBlank()) listOf(1..totalPages)
+                else parsePageRanges(config.pageRange, totalPages)
+                val targetPages = targetRanges.flatMap { it.toList() }.map { it - 1 }.toSet()
+
+                val font = PDType1Font.HELVETICA_BOLD
+                val fontSize = config.fontSizePt.coerceIn(12f, 120f)
+                // Helvetica writes Latin text only; anything else (an Indian script, emoji) is drawn as a picture (F139).
+                val pictureStamp = if (PdfTextImage.canEncode(font, config.text)) null else PdfTextImage.create(
+                    doc, config.text, fontSize, (config.colorRgb and 0xFFFFFF) or (0xFF shl 24)
+                )
+                val alpha = (config.opacityPercent.coerceIn(5, 100) / 100f)
+                val r = Color.red(config.colorRgb) / 255f
+                val g = Color.green(config.colorRgb) / 255f
+                val b = Color.blue(config.colorRgb) / 255f
+
+                val gState = PDExtendedGraphicsState().apply {
+                    nonStrokingAlphaConstant = alpha
+                }
+
+                var watermarkedCount = 0
+                val label = AppStrings.get(R.string.tools_progress_watermarking)
+                for (i in 0 until totalPages) {
+                    if (!coroutineContext.isActive) throw InterruptedException("Watermark cancelled")
+                    onProgress(i + 1, totalPages, label)
+
+                    if (i in targetPages) {
+                        val page = doc.getPage(i)
+                        val textWidth = pictureStamp?.width ?: ((font.getStringWidth(config.text) / 1000f) * fontSize)
+
+                        val rotation = page.rotation
+                        // The visible box (crop box) is what the reader sees; it need not start at 0,0 on scanned PDFs.
+                        val visible = page.cropBox
+                        val stamps = WatermarkGeometry.stamps(config, textWidth, fontSize, visible.width, visible.height, rotation)
+                        PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                            cs.setGraphicsStateParameters(gState)
+                            cs.setNonStrokingColor(r, g, b)
+                            stamps.forEach { stamp ->
+                                if (pictureStamp != null) {
+                                    // Opacity comes from the graphics state, which applies to pictures as it does to text.
+                                    cs.drawImage(
+                                        pictureStamp.image,
+                                        PdfTextImage.placement(pictureStamp, visible.lowerLeftX + stamp.x, visible.lowerLeftY + stamp.y, stamp.angleRad)
+                                    )
+                                    return@forEach
+                                }
+                                val cos = Math.cos(stamp.angleRad).toFloat()
+                                val sin = Math.sin(stamp.angleRad).toFloat()
+                                // Half the cap height of Helvetica, so the text is centred on the point rather than sitting on it.
+                                val halfCap = fontSize * 0.36f
+                                val tx = visible.lowerLeftX + stamp.x - (textWidth / 2f * cos) + (halfCap * sin)
+                                val ty = visible.lowerLeftY + stamp.y - (textWidth / 2f * sin) - (halfCap * cos)
+                                cs.beginText()
+                                cs.setFont(font, fontSize)
+                                cs.setTextMatrix(Matrix(cos, sin, -sin, cos, tx, ty))
+                                cs.showText(config.text)
+                                cs.endText()
+                            }
+                        }
+                        watermarkedCount++
+                    }
+                }
+
+                doc.save(outputFile)
+                totalPages to watermarkedCount
+            }
+
+            val outputSize = outputFile.length()
+            val msg = AppStrings.get(R.string.tools_watermark_success, watermarkedCount)
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Adds page numbers to pages of a PDF document with position and formatting controls.
+     */
+    suspend fun addPageNumbers(
+        context: Context,
+        inputUri: Uri,
+        config: PageNumbersConfig,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "num_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            val (totalPages, numberedCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+                val font = PDType1Font.HELVETICA
+                val fontSize = config.fontSizePt.coerceIn(8f, 24f)
+                val margin = config.marginPt.coerceIn(12f, 100f)
+
+                var numberedCount = 0
+                val label = AppStrings.get(R.string.tools_progress_page_numbers)
+
+                for (i in 0 until totalPages) {
+                    if (!coroutineContext.isActive) throw InterruptedException("Page numbers cancelled")
+                    onProgress(i + 1, totalPages, label)
+
+                    if (config.skipFirstPage && i == 0) continue
+
+                    val page = doc.getPage(i)
+                    // The visible box: it need not start at 0,0 and can be smaller than the media box on cropped PDFs.
+                    val box = page.cropBox
+
+                    val pageNum = i + 1
+                    val text = when (config.format) {
+                        PageNumberFormat.PAGE_N_OF_M -> "Page $pageNum of $totalPages"
+                        PageNumberFormat.N_SLASH_M -> "$pageNum / $totalPages"
+                        PageNumberFormat.DASH -> "- $pageNum -"
+                        PageNumberFormat.SIMPLE -> "$pageNum"
+                    }
+
+                    val textWidth = (font.getStringWidth(text) / 1000f) * fontSize
+
+                    // Placed on the page as seen, so a page turned with /Rotate gets an upright number on the edge the reader sees.
+                    val spot = PageNumberGeometry.place(config.position, textWidth, fontSize, margin, box.width, box.height, page.rotation)
+                    val cos = Math.cos(spot.angleRad).toFloat()
+                    val sin = Math.sin(spot.angleRad).toFloat()
+
+                    PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                        cs.setNonStrokingColor(0.2f, 0.2f, 0.2f)
+                        cs.beginText()
+                        cs.setFont(font, fontSize)
+                        cs.setTextMatrix(Matrix(cos, sin, -sin, cos, box.lowerLeftX + spot.x, box.lowerLeftY + spot.y))
+                        cs.showText(text)
+                        cs.endText()
+                    }
+                    numberedCount++
+                }
+
+                doc.save(outputFile)
+                totalPages to numberedCount
+            }
+
+            val outputSize = outputFile.length()
+            val msg = AppStrings.get(R.string.tools_page_numbers_success, numberedCount)
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Extracts all selectable text from a PDF document into a UTF-8 text file.
+     */
+    suspend fun extractText(
+        context: Context,
+        inputUri: Uri,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "txt_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            onProgress(1, 2, AppStrings.get(R.string.tools_progress_extracting_text))
+
+            val (totalPages, text, wordCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+                val stripper = PDFTextStripper()
+                val text = stripper.getText(doc).trim()
+                val wordCount = if (text.isBlank()) 0 else text.split("\\s+".toRegex()).count { it.isNotBlank() }
+                Triple(totalPages, text, wordCount)
+            }
+            outputFile.writeText(text, Charsets.UTF_8)
+            val outputSize = outputFile.length()
+
+            onProgress(2, 2, AppStrings.get(R.string.tools_progress_extracting_text))
+            val msg = if (wordCount > 0) {
+                AppStrings.get(R.string.tools_pdf2text_success, wordCount, totalPages, formatBytes(context, outputSize))
+            } else {
+                AppStrings.get(R.string.tools_pdf2text_empty_warning)
+            }
+
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /** Opens a PDF with [password] ("" when there is none); a missing or wrong one throws [InvalidPasswordException]. */
+    internal fun openPdf(file: File, password: String = ""): PDDocument =
+        // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
+        PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
+
+    /**
+     * A PDF that opens without a password can still carry an owner-password encryption dictionary (print or copy
+     * restrictions). PDFBox refuses to save such a document as it is, so every tool that edits one in place
+     * (rotate, fill form, make searchable, compress) would fail at the very end. Dropping the dictionary writes
+     * the file unrestricted, as the Unlock tool does.
+     */
+    internal fun PDDocument.editable(): PDDocument = apply { if (isEncrypted) isAllSecurityToBeRemoved = true }
+
+    /**
+     * Opens [pfd] in the system renderer. Its error for a protected file differs between Android versions (and it may
+     * not open the file at all), so on any failure PDFBox tells a password from a broken file.
+     */
+    internal fun openRenderer(pfd: ParcelFileDescriptor, file: File): PdfRenderer = try {
+        PdfRenderer(pfd)
+    } catch (refused: Throwable) {
+        if (runCatching { PdfSecurity.protection(file) }.getOrNull() == PdfProtection.PASSWORD_REQUIRED) {
+            userError(R.string.tools_err_password_protected, cause = refused)
+        }
+        throw refused
+    }
+
+    /** Larger than the 8 KB default: picked PDFs are often tens of megabytes from a cloud provider. */
+    private const val COPY_BUFFER = 64 * 1024
+
+    internal fun copyUriToTemp(context: Context, uri: Uri, fileName: String): File {
+        val tempFile = File(context.cacheDir, fileName)
+        try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(tempFile).buffered(COPY_BUFFER).use { output -> input.copyTo(output, COPY_BUFFER) }
+            } ?: userError(R.string.tools_err_unreadable_location)
+        } catch (error: Throwable) {
+            // A copy that failed half way must not leave part of the user's file behind in the cache.
+            tempFile.delete()
+            throw error
+        }
+        return tempFile
+    }
+
+    private fun parsePageRanges(rangeStr: String, maxPages: Int): List<IntRange> =
+        PageRanges.parse(rangeStr, maxPages).getOrElse {
+            // PageRanges explains what is wrong in the user's language; anything else gets the general message.
+            if (it is UserFacingException || it is UserFacingPluralException) throw it
+            userError(R.string.tools_err_invalid_ranges, cause = it)
+        }
+}

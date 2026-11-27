@@ -8,10 +8,12 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.scanpro.core.notifications.HydrationSchedule
 import kotlinx.coroutines.flow.Flow
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.preferencesOf
 import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -22,18 +24,27 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// A corrupt preferences file is replaced with defaults instead of failing every read (and crashing
-// the app at launch).
+private const val APP_LOCK_KEY_NAME = "app_lock"
+
+/**
+ * What a corrupt preferences file is replaced with, instead of failing every read (and crashing the app at launch):
+ * defaults, except that app lock stays ON. Empty preferences would read as "no lock", and a damaged file would then
+ * open the library with no warning, which the lock's own read-error rule ("stay locked") is there to prevent. Anyone
+ * whose phone has no screen lock is let in and the lock switched off by the unlock screen, so this cannot shut a
+ * person out. (The list of locked folders cannot be recovered from a damaged file.)
+ */
+internal fun settingsAfterCorruption(): Preferences = preferencesOf(booleanPreferencesKey(APP_LOCK_KEY_NAME) to true)
+
 private val Context.scanProSettings by preferencesDataStore(
     name = "scanpro_settings",
-    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() }
+    corruptionHandler = ReplaceFileCorruptionHandler { settingsAfterCorruption() }
 )
 
 @Singleton
 class SettingsStore @Inject constructor(@ApplicationContext private val context: Context) {
     private val keyQuality = stringPreferencesKey("pdf_quality")
     private val keyAutoTitle = booleanPreferencesKey("auto_title")
-    private val keyAppLock = booleanPreferencesKey("app_lock")
+    private val keyAppLock = booleanPreferencesKey(APP_LOCK_KEY_NAME)
 
     /** Preferences that fall back to defaults when the file can't be read, instead of throwing. */
     private val preferences: Flow<Preferences> = context.scanProSettings.data.catch { error ->
@@ -165,6 +176,18 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         }
     }
 
+    private val keyFreeSpaceDismissed = longPreferencesKey("free_space_dismissed_bytes")
+
+    /**
+     * What the "Free up space" card said it could free when the user closed it, or -1 if it was never closed. The card
+     * stays away until a clearly larger amount can be freed (for example after restoring a backup of old scans).
+     */
+    val freeSpaceDismissedBytes: Flow<Long> = preferences.map { it[keyFreeSpaceDismissed] ?: -1L }.distinctUntilChanged()
+
+    suspend fun setFreeSpaceDismissedBytes(value: Long) {
+        context.scanProSettings.edit { it[keyFreeSpaceDismissed] = value }
+    }
+
     private val keyHomeTips = booleanPreferencesKey("home_tips")
 
     /** The "Did you know?" card on Home. On until closed there or switched off in Settings. */
@@ -239,26 +262,16 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         }
     }
 
-    private val keyCompletedScans = intPreferencesKey("completed_scans")
-    private val keyFeedbackPromptShown = booleanPreferencesKey("feedback_prompt_shown")
-
-    /** Camera scans saved as documents, for deciding when to ask about the experience. */
-    val completedScans: Flow<Int> = preferences.map { it[keyCompletedScans] ?: 0 }
-    /** True once the rating sheet has been shown; it is shown only once. */
-    val feedbackPromptShown: Flow<Boolean> = preferences.map { it[keyFeedbackPromptShown] ?: false }
-
-    suspend fun recordCompletedScan() {
-        context.scanProSettings.edit { it[keyCompletedScans] = (it[keyCompletedScans] ?: 0) + 1 }
-    }
-
-    suspend fun setFeedbackPromptShown() {
-        context.scanProSettings.edit { it[keyFeedbackPromptShown] = true }
-    }
+    // "completed_scans" and "feedback_prompt_shown" were the one-time rating sheet's; FeedbackPrompts replaced them.
 
     private val keyNotifyFinished = booleanPreferencesKey("notify_finished")
     private val keyNotifyFailures = booleanPreferencesKey("notify_failures")
     private val keyNotifyTrash = booleanPreferencesKey("notify_trash")
     private val keyNotifyBackup = booleanPreferencesKey("notify_backup")
+    private val keyHydrationReminders = booleanPreferencesKey("notify_drink_water")
+    private val keyHydrationFirstMinute = intPreferencesKey("drink_water_first_minute")
+    private val keyHydrationLastMinute = intPreferencesKey("drink_water_last_minute")
+    private val keyHydrationEveryMinutes = intPreferencesKey("drink_water_every_minutes")
     private val keyLastBackupAt = longPreferencesKey("last_backup_at")
     private val keyLastBackupReminderAt = longPreferencesKey("last_backup_reminder_at")
 
@@ -270,6 +283,27 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     val notifyTrash: Flow<Boolean> = preferences.map { it[keyNotifyTrash] ?: false }
     /** A reminder when no backup was made for a month. Off until the user asks for it. */
     val notifyBackup: Flow<Boolean> = preferences.map { it[keyNotifyBackup] ?: false }
+    /**
+     * Drink-water reminders through the day ([com.example.scanpro.core.notifications.HydrationSchedule]). On by
+     * default (owner request, 2026-11-16); the switch and the timings are in Settings > Notifications.
+     */
+    val hydrationReminders: Flow<Boolean> = preferences.map { it[keyHydrationReminders] ?: true }
+    suspend fun setHydrationReminders(value: Boolean) { context.scanProSettings.edit { it[keyHydrationReminders] = value } }
+    /** When the reminders fall: the first of the day, the time after which there are none, and the gap between them. */
+    val hydrationTiming: Flow<HydrationSchedule.Timing> = preferences.map {
+        HydrationSchedule.Timing(
+            firstMinute = it[keyHydrationFirstMinute] ?: HydrationSchedule.DEFAULT_FIRST_MINUTE,
+            lastMinute = it[keyHydrationLastMinute] ?: HydrationSchedule.DEFAULT_LAST_MINUTE,
+            everyMinutes = it[keyHydrationEveryMinutes] ?: HydrationSchedule.DEFAULT_EVERY_MINUTES
+        )
+    }.distinctUntilChanged()
+    suspend fun setHydrationTiming(value: HydrationSchedule.Timing) {
+        context.scanProSettings.edit {
+            it[keyHydrationFirstMinute] = value.firstMinute
+            it[keyHydrationLastMinute] = value.lastMinute
+            it[keyHydrationEveryMinutes] = value.everyMinutes
+        }
+    }
     /** When the last backup was written (0 when never), and when the last reminder about it was shown. */
     val lastBackupAt: Flow<Long> = preferences.map { it[keyLastBackupAt] ?: 0L }
     val lastBackupReminderAt: Flow<Long> = preferences.map { it[keyLastBackupReminderAt] ?: 0L }

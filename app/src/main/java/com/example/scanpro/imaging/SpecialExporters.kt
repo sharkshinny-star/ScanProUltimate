@@ -3,6 +3,7 @@ package com.example.scanpro.imaging
 import com.example.scanpro.core.text.userRequire
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.core.text.AppStrings
+import com.example.scanpro.core.ui.COPY_BUFFER
 import com.example.scanpro.R
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -50,7 +51,7 @@ object SpecialExporters {
             page.canvas.drawText(AppStrings.get(R.string.export_id_copy_footer), width / 2f, 805f, label)
             pdf.finishPage(page)
             destination.parentFile?.mkdirs()
-            FileOutputStream(destination).use { pdf.writeTo(it) }
+            FileOutputStream(destination).buffered(COPY_BUFFER).use { pdf.writeTo(it) }
         } finally {
             pdf.close()
         }
@@ -101,7 +102,7 @@ object SpecialExporters {
                 y += height + gap
             }
             destination.parentFile?.mkdirs()
-            FileOutputStream(destination).use { stream ->
+            FileOutputStream(destination).buffered(COPY_BUFFER).use { stream ->
                 userRequire(output.compress(Bitmap.CompressFormat.JPEG, 90, stream), R.string.export_err_long_image_encode)
             }
         } finally {

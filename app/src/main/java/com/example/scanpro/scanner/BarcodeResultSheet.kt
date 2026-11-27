@@ -44,7 +44,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import android.app.SearchManager
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -66,6 +82,8 @@ fun BarcodeResultSheet(code: ScannedCode, onScanAgain: () -> Unit, onDismiss: ()
     val context = LocalContext.current
     val resources = LocalResources.current
     val raw = code.raw
+    // The link waiting for the "Open this link?" preview; nothing is opened until the person confirms it there.
+    var pendingLink by remember { mutableStateOf<LinkReport?>(null) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier
@@ -99,9 +117,11 @@ fun BarcodeResultSheet(code: ScannedCode, onScanAgain: () -> Unit, onDismiss: ()
                 Barcode.TYPE_URL -> {
                     val url = code.url ?: raw
                     val uri = url.toUri()
-                    // Only web links are opened; other schemes in a code could launch unexpected apps.
-                    if (uri.scheme.equals("http", true) || uri.scheme.equals("https", true)) {
-                        Action(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.scan_code_open_link), uri.host) { view(context, uri) }
+                    // Only web links are opened; other schemes in a code could launch unexpected apps. The full address
+                    // and any warning signs are shown first, so a look-alike or shortened link is caught before it opens.
+                    val report = LinkSafety.check(url)
+                    if (report != null && (uri.scheme.equals("http", true) || uri.scheme.equals("https", true))) {
+                        Action(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.scan_code_open_link), report.host) { pendingLink = report }
                     }
                 }
                 Barcode.TYPE_WIFI -> code.wifi?.let { wifi ->
@@ -169,6 +189,12 @@ fun BarcodeResultSheet(code: ScannedCode, onScanAgain: () -> Unit, onDismiss: ()
                     }
                 }
             }
+            if (isProductNumber(code)) {
+                // Only on an explicit tap: the number goes to the phone's own search or browser, never from ScanPro.
+                Action(Icons.Default.Search, stringResource(R.string.qrscan_search_product), stringResource(R.string.qrscan_search_detail)) {
+                    start(context, Intent(Intent.ACTION_WEB_SEARCH).putExtra(SearchManager.QUERY, raw.trim()))
+                }
+            }
             Action(Icons.Default.ContentCopy, stringResource(R.string.scan_code_copy), null) { copy(context, resources.getString(R.string.scan_code_clip_scanned_code), raw, sensitive = code.valueType == Barcode.TYPE_WIFI) }
             Action(Icons.Default.Share, stringResource(R.string.common_share), null) {
                 // The sheet hides a Wi-Fi password (it has its own sensitive copy button), so Share must not send it either.
@@ -178,6 +204,88 @@ fun BarcodeResultSheet(code: ScannedCode, onScanAgain: () -> Unit, onDismiss: ()
             Action(Icons.Default.QrCodeScanner, stringResource(R.string.scan_code_scan_another), null, onScanAgain)
             Spacer(Modifier.height(16.dp))
         }
+    }
+    pendingLink?.let { report ->
+        LinkPreviewDialog(
+            report = report,
+            onOpen = {
+                pendingLink = null
+                view(context, report.url.toUri())
+            },
+            onCopy = {
+                pendingLink = null
+                copy(context, resources.getString(R.string.scan_code_clip_scanned_code), report.url, sensitive = false)
+            },
+            onDismiss = { pendingLink = null }
+        )
+    }
+}
+
+/** True for shop barcodes (EAN, UPC) and ISBNs, whose number is worth looking up. */
+internal fun isProductNumber(code: ScannedCode): Boolean =
+    code.valueType == Barcode.TYPE_PRODUCT || code.valueType == Barcode.TYPE_ISBN ||
+        (code.format in PRODUCT_FORMATS && code.raw.trim().all { it.isDigit() })
+
+private val PRODUCT_FORMATS = setOf(Barcode.FORMAT_EAN_13, Barcode.FORMAT_EAN_8, Barcode.FORMAT_UPC_A, Barcode.FORMAT_UPC_E)
+
+/** "Open this link?": the site in bold, the whole address, and plain-language warnings, before anything opens. */
+@Composable
+internal fun LinkPreviewDialog(report: LinkReport, onOpen: () -> Unit, onCopy: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(if (report.warnings.isEmpty()) Icons.Default.Link else Icons.Default.Warning, contentDescription = null) },
+        title = { Text(stringResource(R.string.qrscan_open_link_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(stringResource(R.string.qrscan_open_link_body, report.host), style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(10.dp))
+                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                    SelectionContainer {
+                        Text(
+                            linkWithHostInBold(report),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.fillMaxWidth().heightIn(max = 160.dp).verticalScroll(rememberScrollState()).padding(10.dp)
+                        )
+                    }
+                }
+                report.warnings.forEach { warning ->
+                    Spacer(Modifier.height(8.dp))
+                    Row {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            when (warning) {
+                                LinkWarning.NOT_ENCRYPTED -> stringResource(R.string.qrscan_warn_not_encrypted)
+                                LinkWarning.IP_ADDRESS -> stringResource(R.string.qrscan_warn_ip)
+                                LinkWarning.LOOKALIKE_LETTERS -> stringResource(R.string.qrscan_warn_lookalike)
+                                LinkWarning.MISLEADING_AT -> stringResource(R.string.qrscan_warn_at, report.host)
+                                LinkWarning.SHORTENED -> stringResource(R.string.qrscan_warn_shortened)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onOpen) { Text(stringResource(R.string.qrscan_open)) } },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onCopy) { Text(stringResource(R.string.qrscan_copy_link)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            }
+        }
+    )
+}
+
+private fun linkWithHostInBold(report: LinkReport) = buildAnnotatedString {
+    val start = report.url.indexOf(report.host, ignoreCase = true)
+    if (start < 0) {
+        append(report.url)
+    } else {
+        append(report.url.substring(0, start))
+        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(report.url.substring(start, start + report.host.length)) }
+        append(report.url.substring(start + report.host.length))
     }
 }
 
@@ -269,7 +377,7 @@ internal fun calendarMillis(time: Barcode.CalendarDateTime?): Long? {
 
 /** Android 11+: the system "Save this network?" request for a scanned Wi-Fi code; null on older versions or odd codes. */
 private fun wifiAddIntent(wifi: WifiCode): Intent? {
-    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return null
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
     val ssid = wifi.ssid.takeIf { it.isNotEmpty() } ?: return null
     val password = wifi.password
     val builder = android.net.wifi.WifiNetworkSuggestion.Builder().setSsid(ssid)

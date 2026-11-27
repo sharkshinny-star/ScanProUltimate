@@ -3,6 +3,8 @@
 <paths>
     <files-path name="documents" path="documents/" />
     <cache-path name="exports" path="exports/" />
+    <!-- Files the PDF and image tools made, kept until the user deletes them (Tools > Your results). -->
+    <files-path name="tool_results" path="tool_results/" />
     <files-path name="crash_reports" path="crash-reports/" />
     <!-- Photos of a scan that could not be saved, shared from "Unsaved scans" only when the user asks. -->
     <files-path name="kept_scans" path="pro_scanner_session/" />

@@ -7,7 +7,7 @@
     <string name="qr_history_title">स्कैन इतिहास</string>
     <string name="qr_history_save_switch">स्कैन इतिहास सहेजें</string>
     <string name="qr_history_search">इतिहास खोजें</string>
-    <string name="qr_history_privacy">इतिहास इसी डिवाइस पर रहता है और कभी अपलोड नहीं होता। इसमें Wi-Fi पासवर्ड और अन्य निजी जानकारी हो सकती है, इसलिए काम पूरा होने पर इसे साफ़ कर दें।</string>
+    <string name="qr_history_privacy">इतिहास इस डिवाइस पर एन्क्रिप्ट करके रखा जाता है और कभी अपलोड नहीं होता। इसमें निजी जानकारी हो सकती है, और इसे किसी दूसरे फ़ोन पर नहीं ले जाया जा सकता।</string>
     <string name="qr_history_clear_all">सब साफ़ करें</string>
     <string name="qr_history_clear_title">पूरा स्कैन इतिहास साफ़ करें?</string>
     <string name="qr_history_clear_message">पसंदीदा समेत सभी सहेजे गए स्कैन इस डिवाइस से हटा दिए जाएँगे। इसे वापस नहीं लाया जा सकता।</string>
@@ -52,4 +52,6 @@
     <string name="qr_share_title">QR कोड</string>
     <string name="qr_save_document">दस्तावेज़ के रूप में सहेजें</string>
     <string name="qr_save_failed">कोड सहेजा नहीं जा सका</string>
+    <string name="qr_history_storage_error">स्कैन इतिहास को सुरक्षित रूप से खोला या सहेजा नहीं जा सका। आपके सहेजे गए डेटा की सुरक्षा के लिए नई प्रविष्टियाँ रोक दी गई हैं। साफ़ करने से इतिहास हमेशा के लिए रीसेट हो जाता है।</string>
+    <string name="qr_history_clear_locked_warning">यह इतिहास खोला नहीं जा सकता। साफ़ करने से इसकी सहेजी गई प्रविष्टियाँ हमेशा के लिए बदल जाएँगी, और उन्हें वापस पाना संभव नहीं हो सकता। फिर भी साफ़ करें?</string>
 </resources>

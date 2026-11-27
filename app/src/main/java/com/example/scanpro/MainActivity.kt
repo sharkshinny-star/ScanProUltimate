@@ -28,13 +28,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
+import kotlinx.coroutines.flow.first
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import com.example.scanpro.core.security.ShortcutToken
 import com.example.scanpro.ui.EmphasizedDecelerate
 import com.example.scanpro.ui.LaunchIntro
 import androidx.core.content.ContextCompat
+import android.content.Context
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -119,7 +121,13 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         // A recreation (rotation, language or theme change) has no launch screen to finish: its state is already
         // loaded, so it must not be held back for the launch animation either.
-        val freshLaunch = savedInstanceState == null
+        // F140: a saved state does not always mean a recreation. When Android ends the process in the background (OnePlus
+        // does this often) and the app is opened again from its icon, the activity comes back with its saved state in a new
+        // process: a real cold start, with the system launch screen showing, that used to skip the launch animation and the
+        // launch-screen hold. The first activity of a process is always a launch.
+        val firstInProcess = !activityCreatedInProcess
+        activityCreatedInProcess = true
+        val freshLaunch = savedInstanceState == null || firstInProcess
         // The launch animation plays for a plain start from the launcher. Shortcuts, shares, notification taps and
         // reopening from Recents go straight to the app, and a recreation never replays it. App lock also skips it
         // (decided once the setting has loaded): the lock screen asks for a fingerprint straight away.
@@ -154,6 +162,11 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+        // CameraX's one-off start-up (its executors and camera list) runs now, off the main thread, so the first time the
+        // camera opens does not pay for it while the screen is sliding in.
+        if (packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_ANY)) {
+            runCatching { androidx.camera.lifecycle.ProcessCameraProvider.getInstance(applicationContext) }
+        }
         setContent {
           androidx.compose.runtime.CompositionLocalProvider(
             com.example.scanpro.core.security.LocalDeviceUnlock provides { onSuccess -> authenticate(onSuccess = onSuccess) }
@@ -163,9 +176,10 @@ class MainActivity : FragmentActivity() {
             val savedPalette by viewModel.accentPalette.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
             val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
-            // True until this start's launch animation has played (or been ruled out); saved, so a rotation
-            // during it does not replay it.
-            var launchPending by rememberSaveable { mutableStateOf(introWanted) }
+            // True until this start's launch animation has played (or been ruled out). Not saveable: a restored false from
+            // the process before would rule out this cold start's animation. A recreation within the process never replays
+            // it, because introWanted is false then (freshLaunch above).
+            var launchPending by remember { mutableStateOf(introWanted) }
             // The app settles from a slight zoom while the launch animation opens onto it.
             val settle = remember { Animatable(1f) }
             val launchScope = rememberCoroutineScope()
@@ -294,19 +308,34 @@ class MainActivity : FragmentActivity() {
             keep
         }
         splash.setOnExitAnimationListener { provider ->
-            if (introWanted && viewModel.appLockEnabled.value == false) {
-                // When the launch animation plays, it starts from the exact same picture.
-                // Step aside immediately so LaunchIntro smoothly takes over without being obscured by the system overlay.
-                provider.remove()
-            } else {
-                provider.view.animate()
-                    .alpha(0f)
-                    .setDuration(220L)
-                    .setInterpolator(interpolator)
-                    .withEndAction { provider.remove() }
-                    .start()
-                // Safety timeout: ensure the splash view is always removed even if the animator is dropped or stalled.
-                provider.view.postDelayed({ runCatching { provider.remove() } }, 350L)
+            lifecycleScope.launch {
+                // F140: the hold above has a time cap, and a cold start of a debug build (or a busy phone) reaches it before
+                // the settings are read: 2 of 3 measured starts on the OnePlus. The launch screen then faded to an empty
+                // window, the app drew nothing until the settings came, and the launch animation appeared late or seemed
+                // not to play. Keep the launch screen's picture until the app can draw its first frame, within a second cap.
+                if (!viewModel.launchStateReady) {
+                    kotlinx.coroutines.withTimeoutOrNull(LAUNCH_HANDOFF_MAX_WAIT_MS) {
+                        kotlinx.coroutines.flow.combine(viewModel.themeMode, viewModel.accentPalette, viewModel.appLockEnabled) { theme, palette, lock ->
+                            theme != null && palette != null && lock != null
+                        }.first { it }
+                    }
+                    // Two frames, so Compose has drawn the launch animation (or the app) underneath before the picture goes.
+                    repeat(2) { kotlinx.coroutines.android.awaitFrame() }
+                }
+                if (introWanted && viewModel.appLockEnabled.value == false) {
+                    // When the launch animation plays, it starts from the exact same picture.
+                    // Step aside immediately so LaunchIntro smoothly takes over without being obscured by the system overlay.
+                    provider.remove()
+                } else {
+                    provider.view.animate()
+                        .alpha(0f)
+                        .setDuration(220L)
+                        .setInterpolator(interpolator)
+                        .withEndAction { provider.remove() }
+                        .start()
+                    // Safety timeout: ensure the splash view is always removed even if the animator is dropped or stalled.
+                    provider.view.postDelayed({ runCatching { provider.remove() } }, 350L)
+                }
             }
         }
     }
@@ -385,17 +414,21 @@ class MainActivity : FragmentActivity() {
             ACTION_OPEN_TRASH -> viewModel.requestDestination(ScanProDestinations.TRASH)
             ACTION_OPEN_SETTINGS -> viewModel.requestDestination(ScanProDestinations.SETTINGS)
             ACTION_OPEN_KEPT_SCANS -> viewModel.requestDestination(ScanProDestinations.KEPT_SCANS)
+            ACTION_OPEN_TOOLS -> viewModel.requestDestination(ScanProDestinations.TOOLS)
+            ACTION_OPEN_FILES -> viewModel.requestDestination(ScanProDestinations.FILES)
             ACTION_SCAN_NOW -> {
                 // Launchers rank shortcuts by how often each is used.
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_SCAN_NOW)
                 viewModel.requestScan(intent.getStringExtra(EXTRA_SCAN_MODE).orEmpty())
             }
             ACTION_IMPORT_IMAGES -> imageImportLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            ACTION_REPORT_ISSUE -> {
+            // The two support actions leave the app (an email draft, one with a diagnostics file), so they are
+            // honoured only from the app's own shortcuts (F215); from anywhere else the app simply opens.
+            ACTION_REPORT_ISSUE -> if (ShortcutToken.matches(this, intent)) {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_REPORT_ISSUE)
                 lifecycleScope.launch { contactSupport(this@MainActivity, SupportTopic.ISSUE) }
             }
-            ACTION_GIVE_FEEDBACK -> {
+            ACTION_GIVE_FEEDBACK -> if (ShortcutToken.matches(this, intent)) {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_GIVE_FEEDBACK)
                 lifecycleScope.launch { contactSupport(this@MainActivity, SupportTopic.FEEDBACK) }
             }
@@ -449,7 +482,8 @@ class MainActivity : FragmentActivity() {
      * providers are refused, so another app can't point the importer at ScanPro's private files.
      */
     private fun isAllowedExternalUri(uri: Uri): Boolean =
-        uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority?.startsWith(packageName) != true
+        uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority != packageName &&
+            uri.authority?.startsWith("$packageName.") != true
 
     /**
      * Launcher shortcuts, published at runtime: a static shortcuts.xml cannot name the package, which differs
@@ -457,12 +491,7 @@ class MainActivity : FragmentActivity() {
      */
     private fun publishShortcuts() {
         runCatching {
-            fun shortcut(id: String, short: Int, long: Int, action: String) = ShortcutInfoCompat.Builder(this, id)
-                .setShortLabel(getString(short))
-                .setLongLabel(getString(long))
-                .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
-                .setIntent(Intent(this, MainActivity::class.java).setAction(action))
-                .build()
+            fun shortcut(id: String, short: Int, long: Int, action: String) = launcherShortcut(this, id, short, long, action)
             ShortcutManagerCompat.setDynamicShortcuts(
                 this,
                 listOf(
@@ -555,6 +584,10 @@ class MainActivity : FragmentActivity() {
     companion object {
         private const val LOCK_TIMEOUT_MS = 30_000L
         private const val LAUNCH_SCREEN_MAX_HOLD_MS = 600L
+        /** After the hold above: how much longer the launch screen's picture may wait for the settings (F140). */
+        private const val LAUNCH_HANDOFF_MAX_WAIT_MS = 1_500L
+        /** Set by the first activity created in this process; a later one is a recreation, not a launch (F140). */
+        @Volatile private var activityCreatedInProcess = false
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
         /** Widget and tile (R33): the camera mode to open in (a ScanMode name), and the image picker straight away. */
         const val EXTRA_SCAN_MODE = "scanMode"
@@ -564,7 +597,23 @@ class MainActivity : FragmentActivity() {
         const val ACTION_OPEN_TRASH = "com.example.scanpro.action.OPEN_TRASH"
         const val ACTION_OPEN_SETTINGS = "com.example.scanpro.action.OPEN_SETTINGS"
         const val ACTION_OPEN_KEPT_SCANS = "com.example.scanpro.action.OPEN_KEPT_SCANS"
+        /** The widget's Tools and Files buttons (F197). */
+        const val ACTION_OPEN_TOOLS = "com.example.scanpro.action.OPEN_TOOLS"
+        const val ACTION_OPEN_FILES = "com.example.scanpro.action.OPEN_FILES"
         const val EXTRA_DOCUMENT_ID = "documentId"
+        /** One launcher shortcut that opens this activity with [action]. */
+        private fun launcherShortcut(context: Context, id: String, short: Int, long: Int, action: String) =
+            ShortcutInfoCompat.Builder(context, id)
+                .setShortLabel(context.getString(short))
+                .setLongLabel(context.getString(long))
+                .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
+                .setIntent(Intent(context, MainActivity::class.java).setAction(action).putExtra(ShortcutToken.EXTRA, ShortcutToken.of(context)))
+                .build()
+
+        /** The "Scan now" shortcut, for Settings to offer pinning it to the home screen (same id as the dynamic one). */
+        fun scanNowShortcut(context: Context): ShortcutInfoCompat =
+            launcherShortcut(context, SHORTCUT_SCAN_NOW, R.string.shortcut_scan_short, R.string.shortcut_scan_long, ACTION_SCAN_NOW)
+
         // Shortcut ids are stored by launchers (pinned shortcuts); never rename them.
         private const val SHORTCUT_SCAN_NOW = "scan_now"
         private const val SHORTCUT_REPORT_ISSUE = "bugs_or_issues"

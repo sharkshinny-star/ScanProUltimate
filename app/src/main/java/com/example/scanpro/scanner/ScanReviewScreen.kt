@@ -1,6 +1,5 @@
 package com.example.scanpro.scanner
 
-import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.filled.Folder
 import com.example.scanpro.feature.library.FolderPickerDialog
 import androidx.compose.material.icons.filled.Edit
@@ -19,6 +18,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.border
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.layout.ContentScale
@@ -35,14 +39,15 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
@@ -50,10 +55,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.NavigateBefore
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Check
@@ -64,13 +73,14 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Rotate90DegreesCw
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
+import com.example.scanpro.core.designsystem.ProcessingDots
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -112,6 +122,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.semantics.liveRegion
@@ -264,7 +275,7 @@ fun ScanReviewScreen(
         delay(150.milliseconds)
         withContext(Dispatchers.IO) {
             runCatching {
-                ImageProcessor.renderPreview(java.io.File(uri.path.orEmpty()), pageFilter, 0, quad, pageAdjustments, maxDimension = 1400)
+                ImageProcessor.renderPreview(File(uri.path.orEmpty()), pageFilter, 0, quad, pageAdjustments, maxDimension = 1400)
             }.getOrNull()
         }?.let { resultPreview = it }
     }
@@ -286,7 +297,7 @@ fun ScanReviewScreen(
         val quad = quads[key] ?: return@LaunchedEffect
         if (snapshot == null) snapshot = ReviewSnapshot(quad, filters[key], adjustments[key])
     }
-    val canUndo = snapshot?.let { it.quad != quads[key] || it.filter != filters[key] || it.adjustments != adjustments[key] } == true
+    val canUndo = snapshot?.let { (it.quad != quads[key]) || (it.filter != filters[key]) || (it.adjustments != adjustments[key]) } == true
     fun undo() {
         val start = snapshot ?: return
         quads[key] = start.quad
@@ -400,75 +411,37 @@ fun ScanReviewScreen(
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
-        // Top bar: Back · title · Undo · Retake · Delete · overflow.
+        // Top bar: Back · title · Undo · Retake · Delete · overflow; Save is the large button at the bottom.
         var menu by remember { mutableStateOf(false) }
         Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(enabled = !blocked, onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.scan_review_back_to_camera))
             }
-            Text(
-                if (pages.size > 1) stringResource(R.string.scan_review_adjust_page, current + 1) else stringResource(R.string.scan_review_adjust_page_single),
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
-            )
+            // Seven controls share this bar, so a visible title only ever showed as "Adj". The strip below already marks
+            // the page; the title stays for screen readers as a heading.
+            val screenTitle = if (pages.size > 1) stringResource(R.string.scan_review_adjust_page, current + 1) else stringResource(R.string.scan_review_adjust_page_single)
+            Box(Modifier.weight(1f).semantics { heading(); contentDescription = screenTitle })
             IconButton(enabled = !blocked && canUndo, onClick = ::undo) {
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.scan_review_undo))
             }
             if (onRetake != null) {
                 IconButton(enabled = !blocked, onClick = onRetake) {
-                    Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.scan_review_retake_page))
+                    // A camera, not a circular arrow: the arrow read as Rotate, which is the round button by Save.
+                    Icon(Icons.Default.CameraAlt, contentDescription = stringResource(R.string.scan_review_retake_page))
                 }
             }
-            // Deleting removes the photo file for good, so it asks first.
             IconButton(enabled = !blocked, onClick = { confirmDelete = true }) {
                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.scan_review_delete_page))
             }
+            // No Save here: the large Save button at the bottom does the same, and two primary buttons for one action
+            // made the screen read as if they did different things.
             Box {
                 IconButton(enabled = !blocked, onClick = { menu = true }) {
                     Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.scan_review_more))
                 }
-                val curveOn = stringResource(R.string.scan_review_state_on)
+                // Declutter (2026-11-19): only actions on the scan as a whole live here. No crop and Curve are on the
+                // Crop panel and "Use on all pages" on the Filters panel; listing them here too doubled every choice.
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.scan_review_no_crop)) },
-                        leadingIcon = { Icon(Icons.Default.Fullscreen, contentDescription = null) },
-                        enabled = bitmap != null,
-                        onClick = { menu = false; quads[key] = CropQuad.DEFAULT }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.scan_review_curve)) },
-                        leadingIcon = { Icon(Icons.Default.Gesture, contentDescription = null) },
-                        trailingIcon = { if (curveMode) Icon(Icons.Default.Check, contentDescription = curveOn) },
-                        enabled = bitmap != null && quads[key] != null,
-                        modifier = Modifier.semantics { if (curveMode) stateDescription = curveOn },
-                        onClick = {
-                            menu = false
-                            val image = bitmap ?: return@DropdownMenuItem
-                            val start = quads[key] ?: return@DropdownMenuItem
-                            if (curveMode) {
-                                curveMode = false
-                                quads[key] = start.straightened()
-                            } else {
-                                curveMode = true
-                                // The bend handles live on the Crop view, so it comes up with them.
-                                panel = PANEL_CROP
-                                // Start from the page's own edges; the orange handles then fine-tune each bend.
-                                scope.launch {
-                                    val estimated = withContext(Dispatchers.Default) {
-                                        runCatching { ImageProcessor.estimateCurves(image, start) }.getOrDefault(start)
-                                    }
-                                    if (curveMode && quads[key] == start) quads[key] = estimated
-                                }
-                            }
-                        }
-                    )
-                    if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) },
-                            onClick = { menu = false; pages.forEach { filters[it.toString()] = pageFilter }; onDefaultFilterChange(pageFilter) }
-                        )
-                    }
                     if (pages.size > 1) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.scan_review_move_earlier)) },
@@ -502,6 +475,7 @@ fun ScanReviewScreen(
         var swipe by remember { mutableFloatStateOf(0f) }
         // Pages follow the reading direction: swiping towards the end of the row (left in LTR, right in RTL) goes forward.
         val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        val haptic = LocalHapticFeedback.current
         val stage: @Composable (Modifier) -> Unit = { stageModifier -> Column(stageModifier) {
         // A page that came out blurred, glary or dark says so, with a one-tap retake (Genius Scan, Scanbot). Above the
         // page rather than over it, so it never covers a corner handle.
@@ -527,8 +501,13 @@ fun ScanReviewScreen(
                         onDragEnd = {
                             if (!blocked) {
                                 val travel = if (isRtl) -swipe else swipe
-                                if (travel < -120f && current < pages.lastIndex) onIndexChange(current + 1)
-                                else if (travel > 120f && current > 0) onIndexChange(current - 1)
+                                if (travel < -120f && current < pages.lastIndex) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onIndexChange(current + 1)
+                                } else if (travel > 120f && current > 0) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onIndexChange(current - 1)
+                                }
                             }
                             swipe = 0f
                         },
@@ -541,7 +520,7 @@ fun ScanReviewScreen(
             val image = bitmap
             val quad = quads[key]
             if (image == null || quad == null) {
-                CircularProgressIndicator(color = primary)
+                FileLoadingAnimation()
             } else if (panel == PANEL_CROP) {
                 CropCanvas(
                     image = image,
@@ -560,15 +539,24 @@ fun ScanReviewScreen(
                         bitmap = result.asImageBitmap(),
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                if (panel != PANEL_CROP) {
+                                    translationX = swipe
+                                    alpha = (1f - (kotlin.math.abs(swipe) / 500f)).coerceIn(0.5f, 1f)
+                                }
+                            }
                     )
                 } else {
-                    CircularProgressIndicator(color = primary)
+                    FileLoadingAnimation()
                 }
             }
         } } }
 
         // Thumbnails, filters and sliders; below the page, or beside it in landscape.
+        // False with animations turned off in system settings.
+        val panelMotion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
         val lowerControls: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         // Every page as a thumbnail: tap one to adjust it, "+" takes another page.
         ReviewFilmstrip(
@@ -584,45 +572,48 @@ fun ScanReviewScreen(
 
         // Crop, Filters or Adjust, one panel at a time, as Adobe Scan, CamScanner, OKEN and Lens do: the sliders and
         // crop actions no longer take room from the page while nobody is using them. A dot on Adjust says this page's sliders have moved.
-        Row(
-            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Equal-width tabs, icon above a one-line label. They were chips in a plain row: with more than one page the
+        // fourth chip was left about 40 dp on a 360 dp phone, so its label broke into one letter per line and the row
+        // grew tall enough to push the filters half-way down the screen.
+        ReviewToolTabs(
+            tools = buildList {
+                add(ReviewTool(PANEL_CROP, Icons.Default.Crop, stringResource(R.string.doc_crop)))
+                add(ReviewTool(PANEL_FILTERS, Icons.Default.ColorLens, stringResource(R.string.doc_filters)))
+                add(ReviewTool(PANEL_ADJUST, Icons.Default.Tune, stringResource(R.string.scan_review_adjust), marked = adjustments[key] != null))
+                if (pages.size > 1) add(ReviewTool(PANEL_REORDER, Icons.Default.SwapHoriz, stringResource(R.string.scan_review_reorder)))
+            },
+            selected = panel,
+            onSelect = { panel = it },
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp)
+        )
+        // Each tool's controls have a different height (a row of buttons, the filter strip, four sliders). Swapped in
+        // one frame, the page above jumped to its new size; the height now glides and the page follows it.
+        Column(
+            Modifier.fillMaxWidth().then(
+                if (panelMotion) Modifier.animateContentSize(tween(200, easing = androidx.compose.animation.core.FastOutSlowInEasing)) else Modifier
+            )
         ) {
-            FilterChip(
-                selected = panel == PANEL_CROP,
-                onClick = { panel = PANEL_CROP },
-                leadingIcon = { Icon(Icons.Default.Crop, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.doc_crop)) }
-            )
-            FilterChip(
-                selected = panel == PANEL_FILTERS,
-                onClick = { panel = PANEL_FILTERS },
-                leadingIcon = { Icon(Icons.Default.ColorLens, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.doc_filters)) }
-            )
-            FilterChip(
-                selected = panel == PANEL_ADJUST,
-                onClick = { panel = PANEL_ADJUST },
-                leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.scan_review_adjust) + if (adjustments[key] != null) " •" else "") }
-            )
-        }
         if (panel == PANEL_CROP) {
             // Dedicated Crop controls directly under the canvas (Adobe Scan style: Auto-detect, No crop, Curve/Straighten).
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
                     enabled = !blocked && bitmap != null,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     onClick = {
                         val image = bitmap ?: return@OutlinedButton
-                        scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
+                        scope.launch {
+                            val turned = rotationTick
+                            val found = withContext(Dispatchers.Default) { detectQuad(image) }
+                            // Found on the photo as it was: if it was turned meanwhile, the outline no longer fits it.
+                            if (rotationTick == turned) quads[key] = found
+                        }
                     }
                 ) {
                     Icon(Icons.Default.AutoFixHigh, contentDescription = null, Modifier.size(16.dp))
@@ -636,8 +627,8 @@ fun ScanReviewScreen(
                 }
                 OutlinedButton(
                     enabled = !blocked && bitmap != null,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     onClick = { quads[key] = CropQuad.DEFAULT }
                 ) {
                     Icon(Icons.Default.Fullscreen, contentDescription = null, Modifier.size(16.dp))
@@ -654,8 +645,9 @@ fun ScanReviewScreen(
                     enabled = !blocked && bitmap != null && quads[key] != null,
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = 48.dp)
                         .semantics { if (curveMode) stateDescription = curveOn },
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     colors = if (curveMode) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) else ButtonDefaults.outlinedButtonColors(),
                     onClick = {
                         val image = bitmap ?: return@OutlinedButton
@@ -710,29 +702,71 @@ fun ScanReviewScreen(
                 }
             }
         } else if (panel == PANEL_ADJUST) {
-
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-            AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
-            AdjustmentRow(stringResource(R.string.doc_contrast), sliders.second, !blocked) { setSliders(sliders.first, it, sliders.third) }
-            AdjustmentRow(stringResource(R.string.doc_saturation), sliders.third, !blocked) { setSliders(sliders.first, sliders.second, it) }
-        }
-        // Shown only when they would do something: Reset once a slider has moved, "Apply to all pages" while other
-        // pages differ (Adobe Scan and Lens offer the same for their sliders).
-        val slidersMoved = adjustments[key] != null
-        val othersDiffer = pages.size > 1 && pages.any { adjustments[it.toString()] != adjustments[key] }
-        if (slidersMoved || othersDiffer) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                if (slidersMoved) {
-                    TextButton(enabled = !blocked, onClick = { adjustments.remove(key) }) { Text(stringResource(R.string.common_reset)) }
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
+                AdjustmentRow(stringResource(R.string.doc_contrast), sliders.second, !blocked) { setSliders(sliders.first, it, sliders.third) }
+                AdjustmentRow(stringResource(R.string.doc_saturation), sliders.third, !blocked) { setSliders(sliders.first, sliders.second, it) }
+            }
+            val slidersMoved = adjustments[key] != null
+            val othersDiffer = pages.size > 1 && pages.any { adjustments[it.toString()] != adjustments[key] }
+            if (slidersMoved || othersDiffer) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
+                    if (slidersMoved) {
+                        TextButton(enabled = !blocked, onClick = { adjustments.remove(key) }) { Text(stringResource(R.string.common_reset)) }
+                    }
+                    if (othersDiffer) {
+                        TextButton(
+                            enabled = !blocked,
+                            onClick = {
+                                val chosen = adjustments[key]
+                                pages.forEach { page -> if (chosen == null) adjustments.remove(page.toString()) else adjustments[page.toString()] = chosen }
+                            }
+                        ) { Text(stringResource(R.string.scan_review_adjust_use_on_all)) }
+                    }
                 }
-                if (othersDiffer) {
-                    TextButton(
-                        enabled = !blocked,
-                        onClick = {
-                            val chosen = adjustments[key]
-                            pages.forEach { page -> if (chosen == null) adjustments.remove(page.toString()) else adjustments[page.toString()] = chosen }
+            }
+        } else if (panel == PANEL_REORDER) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "review_reorder_item" }) { index, uri ->
+                    val isCurrent = index == current
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clickable(enabled = !blocked) { onIndexChange(index) }
+                                .padding(start = 12.dp)
+                        ) {
+                            Text(
+                                text = "${index + 1}",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            IconButton(
+                                enabled = !blocked && index > 0,
+                                onClick = { movePage(index, index - 1) },
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = stringResource(R.string.scan_review_move_earlier), modifier = Modifier.size(18.dp))
+                            }
+                            IconButton(
+                                enabled = !blocked && index < pages.lastIndex,
+                                onClick = { movePage(index, index + 1) },
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.scan_review_move_later), modifier = Modifier.size(18.dp))
+                            }
                         }
-                    ) { Text(stringResource(R.string.scan_review_adjust_use_on_all)) }
+                    }
                 }
             }
         }
@@ -747,7 +781,7 @@ fun ScanReviewScreen(
         // with the Save button: under the controls in portrait, pinned beside it in landscape.
         val nameRow: @Composable () -> Unit = {
             if (onNameChange != null || onFolderChange != null) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (onNameChange != null) {
                         SaveOptionCell(
                             label = stringResource(R.string.scan_review_name_label),
@@ -813,7 +847,7 @@ fun ScanReviewScreen(
                 onClick = onDone
             ) {
                 if (processing) {
-                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                    ProcessingDots(MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
@@ -877,7 +911,18 @@ private fun ReviewFilmstrip(
     onAdd: () -> Unit,
     onMove: (from: Int, to: Int) -> Unit
 ) {
-    val cache = remember { HashMap<String, Bitmap>() }
+    // Bounded (8 MB, about a hundred thumbnails): the strip lives as long as the review, and a plain map kept every
+    // thumbnail of every earlier rotation and of every page since deleted.
+    val cache = remember {
+        object : android.util.LruCache<String, Bitmap>(THUMBNAIL_CACHE_BYTES) {
+            override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+        }
+    }
+    // Entries of an older rotation, or of a page that is gone, can never be asked for again: let go of them now.
+    LaunchedEffect(refresh, pages.size) {
+        val live = pages.mapTo(HashSet()) { "$it#$refresh" }
+        cache.snapshot().keys.forEach { if (it !in live) cache.remove(it) }
+    }
     val listState = rememberLazyListState()
     // Not while dragging: scrolling to the selected page would pull the strip out from under the finger.
     var draggingKey by remember { mutableStateOf<String?>(null) }
@@ -902,10 +947,10 @@ private fun ReviewFilmstrip(
         itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "review_thumb" }) { index, uri ->
             // A turned page is decoded again: the refresh counter is part of the cache key.
             val cacheKey = "$uri#$refresh"
-            val thumbnail by produceState<Bitmap?>(initialValue = cache[cacheKey], cacheKey) {
+            val thumbnail by produceState<Bitmap?>(initialValue = cache.get(cacheKey), cacheKey) {
                 if (value == null) {
                     value = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 160) }.getOrNull() }
-                    value?.let { cache[cacheKey] = it }
+                    value?.let { cache.put(cacheKey, it) }
                 }
             }
             val isCurrent = index == current
@@ -985,17 +1030,17 @@ private fun ReviewFilmstrip(
                             .align(Alignment.TopStart)
                             .padding(3.dp)
                             .size(16.dp)
-                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), androidx.compose.foundation.shape.CircleShape)
+                            .background(Color.Black.copy(alpha = 0.55f), CircleShape)
                             .padding(2.dp)
                     )
                 }
                 Text(
                     "${index + 1}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = androidx.compose.ui.graphics.Color.White,
+                    color = Color.White,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), RoundedCornerShape(topStart = 6.dp))
+                        .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(topStart = 6.dp))
                         .padding(horizontal = 4.dp)
                 )
             }
@@ -1015,7 +1060,7 @@ private fun ReviewFilmstrip(
 }
 
 /** Amber for "worth a look": readable on the dark thumbnail badge and as the notice's icon in both themes. */
-internal val QualityAmber = androidx.compose.ui.graphics.Color(0xFFFFB13D)
+internal val QualityAmber = Color(0xFFFFB13D)
 
 /**
  * Over the top of the page: what looks wrong with it (all issues, most serious first) and, where the page can be shot
@@ -1056,11 +1101,11 @@ private fun SaveOptionCell(
     label: String,
     value: String,
     chosen: Boolean,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     enabled: Boolean,
     onClickLabel: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier
@@ -1085,9 +1130,64 @@ private fun SaveOptionCell(
     }
 }
 
+/** One of the review's tools: which panel it opens, and whether it carries a dot (this page's sliders have moved). */
+private class ReviewTool(val panel: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector, val label: String, val marked: Boolean = false)
+
+/**
+ * The review's tools as one segmented control: every tool gets the same share of the width, so three or four fit on
+ * any phone, in any language and at any font size (the label shrinks before it is cut, and never wraps).
+ */
+@Composable
+private fun ReviewToolTabs(tools: List<ReviewTool>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(scheme.surfaceContainerHigh)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        tools.forEach { tool ->
+            val isSelected = tool.panel == selected
+            val container by androidx.compose.animation.animateColorAsState(
+                if (isSelected) scheme.secondaryContainer else Color.Transparent, tween(160), label = "toolTab"
+            )
+            val content by androidx.compose.animation.animateColorAsState(
+                if (isSelected) scheme.onSecondaryContainer else scheme.onSurfaceVariant, tween(160), label = "toolTabContent"
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(container)
+                    .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(tool.panel) })
+                    .heightIn(min = 48.dp)
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box {
+                    Icon(tool.icon, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
+                    if (tool.marked) {
+                        Box(Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-2).dp).size(7.dp).background(scheme.primary, CircleShape))
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
+                com.example.scanpro.core.designsystem.FitText(
+                    tool.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = content
+                )
+            }
+        }
+    }
+}
+
 private const val PANEL_FILTERS = 0
 private const val PANEL_ADJUST = 1
 private const val PANEL_CROP = 2
+private const val PANEL_REORDER = 3
 
 /** One slider row: label · slider · value, with the value as a whole number from −50 to 50. */
 @Composable
@@ -1133,87 +1233,105 @@ private fun CropCanvas(
     val latestEnabled by rememberUpdatedState(enabled)
     val latestCurveMode by rememberUpdatedState(curveMode)
     val pagePreview = stringResource(R.string.a11y_page_preview)
-    Canvas(
-        Modifier
-            .aspectRatio(image.width.toFloat() / image.height.toFloat())
-            .semantics { contentDescription = pagePreview }
-            .pointerInput(image) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    val points = handles(latest, latestCurveMode).map { Offset(it.x * size.width, it.y * size.height) }
-                    val nearest = points.indices.minByOrNull { hypot(points[it].x - down.position.x, points[it].y - down.position.y) } ?: 0
-                    val reach = 44.dp.toPx()
-                    val distance = hypot(points[nearest].x - down.position.x, points[nearest].y - down.position.y)
-                    // Away from every corner the touch is left alone, so the page can be swiped.
-                    if (distance > reach || !latestEnabled) return@awaitEachGesture
-                    active = nearest
-                    dragging = true
-                    drag(down.id) { change ->
-                        change.consume()
-                        val delta = change.position - change.previousPosition
-                        if (active >= 4) {
-                            onCropChange(bend(latest, active - 4, delta.x / size.width, delta.y / size.height))
-                            return@drag
+    // The page is fitted to both the width and the height with a safe gutter round it, so a handle on the page's
+    // edge is drawn whole and can be grabbed from every side, not just from its inner half.
+    BoxWithConstraints(contentAlignment = Alignment.Center) {
+        val imageRatio = image.width.toFloat() / image.height.toFloat()
+        val handleInset = minOf(18.dp, maxWidth / 10f, maxHeight / 10f)
+        val contentWidthDp = minOf((maxWidth - handleInset * 2).coerceAtLeast(1.dp), (maxHeight - handleInset * 2).coerceAtLeast(1.dp) * imageRatio)
+        val contentHeightDp = contentWidthDp / imageRatio
+        val insetPx = with(LocalDensity.current) { handleInset.toPx() }
+        Canvas(
+            Modifier
+                .width(contentWidthDp + handleInset * 2)
+                .height(contentHeightDp + handleInset * 2)
+                .semantics { contentDescription = pagePreview }
+                .pointerInput(image, insetPx) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+                        val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
+                        val points = handles(latest, latestCurveMode).map { Offset(insetPx + it.x * contentWidth, insetPx + it.y * contentHeight) }
+                        val nearest = points.indices.minByOrNull { hypot(points[it].x - down.position.x, points[it].y - down.position.y) } ?: 0
+                        val reach = 44.dp.toPx()
+                        val distance = hypot(points[nearest].x - down.position.x, points[nearest].y - down.position.y)
+                        // Away from every corner the touch is left alone, so the page can be swiped.
+                        if (distance > reach || !latestEnabled) return@awaitEachGesture
+                        active = nearest
+                        dragging = true
+                        drag(down.id) { change ->
+                            change.consume()
+                            val delta = change.position - change.previousPosition
+                            if (active >= 4) {
+                                onCropChange(bend(latest, active - 4, delta.x / contentWidth, delta.y / contentHeight))
+                                return@drag
+                            }
+                            val list = corners(latest).toMutableList()
+                            val p = list[active]
+                            list[active] = NormalizedPoint(
+                                (p.x + delta.x / contentWidth).coerceIn(0f, 1f),
+                                (p.y + delta.y / contentHeight).coerceIn(0f, 1f)
+                            )
+                            // copy() keeps any bends: they are stored relative to the corners, so they follow them.
+                            onCropChange(latest.copy(topLeft = list[0], topRight = list[1], bottomRight = list[2], bottomLeft = list[3]))
                         }
-                        val list = corners(latest).toMutableList()
-                        val p = list[active]
-                        list[active] = NormalizedPoint(
-                            (p.x + delta.x / size.width).coerceIn(0f, 1f),
-                            (p.y + delta.y / size.height).coerceIn(0f, 1f)
-                        )
-                        // copy() keeps any bends: they are stored relative to the corners, so they follow them.
-                        onCropChange(latest.copy(topLeft = list[0], topRight = list[1], bottomRight = list[2], bottomLeft = list[3]))
+                        dragging = false
                     }
-                    dragging = false
                 }
-            }
-    ) {
-        // The filtered view under the outline; the corner loupe below keeps the full-detail photo.
-        drawImage(display.asImageBitmap(), dstOffset = IntOffset.Zero, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
-        val all = handles(crop, curveMode = true).map { Offset(it.x * size.width, it.y * size.height) }
-        val points = all.take(4)
-        // Each edge as the curve it will be flattened along (a straight edge's midpoint gives a straight line).
-        fun control(a: Offset, b: Offset, mid: Offset) = Offset(2f * mid.x - (a.x + b.x) / 2f, 2f * mid.y - (a.y + b.y) / 2f)
-        val path = Path().apply {
-            moveTo(points[0].x, points[0].y)
-            for (edge in 0 until 4) {
-                val a = points[edge]
-                val b = points[(edge + 1) % 4]
-                val c = control(a, b, all[4 + edge])
-                quadraticTo(c.x, c.y, b.x, b.y)
-            }
-            close()
-        }
-        drawPath(path, accent.copy(alpha = 0.18f))
-        drawPath(path, Color.White, style = Stroke(width = 2.dp.toPx()))
-        // Corner handles: 30 dp circles with a translucent primary fill, a white ring and a thin primary outer ring.
-        points.forEach { centre ->
-            drawCircle(accent.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
-            drawCircle(Color.White, radius = 13.dp.toPx(), center = centre, style = Stroke(width = 2.5.dp.toPx()))
-            drawCircle(accent, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
-        }
-        if (curveMode) all.drop(4).forEach { drawCircle(Amber, radius = 9.dp.toPx(), center = it) }
-        if (dragging && active < 4) {
-            val corner = corners(crop)[active]
-            val sample = 96
-            val sx = (corner.x * image.width).toInt().coerceIn(0, image.width - 1)
-            val sy = (corner.y * image.height).toInt().coerceIn(0, image.height - 1)
-            val left = (sx - sample / 2).coerceIn(0, (image.width - sample).coerceAtLeast(0))
-            val top = (sy - sample / 2).coerceIn(0, (image.height - sample).coerceAtLeast(0))
-            val loupe = 120.dp.toPx()
-            val dstLeft = if (corner.x < 0.5f) size.width - loupe - 8.dp.toPx() else 8.dp.toPx()
-            val dstTop = 8.dp.toPx()
-            drawRect(Color.Black.copy(alpha = 0.8f), Offset(dstLeft - 4.dp.toPx(), dstTop - 4.dp.toPx()), Size(loupe + 8.dp.toPx(), loupe + 8.dp.toPx()))
+        ) {
+            // The filtered view under the outline; the corner loupe below keeps the full-detail photo.
+            val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+            val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
             drawImage(
-                image.asImageBitmap(),
-                srcOffset = IntOffset(left, top),
-                srcSize = IntSize(sample.coerceAtMost(image.width - left), sample.coerceAtMost(image.height - top)),
-                dstOffset = IntOffset(dstLeft.toInt(), dstTop.toInt()),
-                dstSize = IntSize(loupe.toInt(), loupe.toInt())
+                display.asImageBitmap(),
+                dstOffset = IntOffset(insetPx.toInt(), insetPx.toInt()),
+                dstSize = IntSize(contentWidth.toInt(), contentHeight.toInt())
             )
-            val c = Offset(dstLeft + loupe / 2f, dstTop + loupe / 2f)
-            drawLine(Color.White, Offset(c.x - 14.dp.toPx(), c.y), Offset(c.x + 14.dp.toPx(), c.y), strokeWidth = 2f)
-            drawLine(Color.White, Offset(c.x, c.y - 14.dp.toPx()), Offset(c.x, c.y + 14.dp.toPx()), strokeWidth = 2f)
+            val all = handles(crop, curveMode = true).map { Offset(insetPx + it.x * contentWidth, insetPx + it.y * contentHeight) }
+            val points = all.take(4)
+            // Each edge as the curve it will be flattened along (a straight edge's midpoint gives a straight line).
+            fun control(a: Offset, b: Offset, mid: Offset) = Offset(2f * mid.x - (a.x + b.x) / 2f, 2f * mid.y - (a.y + b.y) / 2f)
+            val path = Path().apply {
+                moveTo(points[0].x, points[0].y)
+                for (edge in 0 until 4) {
+                    val a = points[edge]
+                    val b = points[(edge + 1) % 4]
+                    val c = control(a, b, all[4 + edge])
+                    quadraticTo(c.x, c.y, b.x, b.y)
+                }
+                close()
+            }
+            drawPath(path, PageOutlineBlue.copy(alpha = 0.14f))
+            drawPath(path, PageOutlineBlue, style = Stroke(width = 2.dp.toPx()))
+            // Corner handles: 30 dp circles with a translucent primary fill, a white ring and a thin primary outer ring.
+            points.forEach { centre ->
+                drawCircle(PageOutlineBlue.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
+                drawCircle(Color.White, radius = 13.dp.toPx(), center = centre, style = Stroke(width = 2.5.dp.toPx()))
+                drawCircle(PageOutlineBlue, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
+            }
+            if (curveMode) all.drop(4).forEach { drawCircle(Amber, radius = 9.dp.toPx(), center = it) }
+            if (dragging && active < 4) {
+                val corner = corners(crop)[active]
+                val sample = 96
+                val sx = (corner.x * image.width).toInt().coerceIn(0, image.width - 1)
+                val sy = (corner.y * image.height).toInt().coerceIn(0, image.height - 1)
+                val left = (sx - sample / 2).coerceIn(0, (image.width - sample).coerceAtLeast(0))
+                val top = (sy - sample / 2).coerceIn(0, (image.height - sample).coerceAtLeast(0))
+                val loupe = 120.dp.toPx()
+                val dstLeft = if (corner.x < 0.5f) size.width - loupe - 8.dp.toPx() else 8.dp.toPx()
+                val dstTop = 8.dp.toPx()
+                drawRect(Color.Black.copy(alpha = 0.8f), Offset(dstLeft - 4.dp.toPx(), dstTop - 4.dp.toPx()), Size(loupe + 8.dp.toPx(), loupe + 8.dp.toPx()))
+                drawImage(
+                    image.asImageBitmap(),
+                    srcOffset = IntOffset(left, top),
+                    srcSize = IntSize(sample.coerceAtMost(image.width - left), sample.coerceAtMost(image.height - top)),
+                    dstOffset = IntOffset(dstLeft.toInt(), dstTop.toInt()),
+                    dstSize = IntSize(loupe.toInt(), loupe.toInt())
+                )
+                val c = Offset(dstLeft + loupe / 2f, dstTop + loupe / 2f)
+                drawLine(Color.White, Offset(c.x - 14.dp.toPx(), c.y), Offset(c.x + 14.dp.toPx(), c.y), strokeWidth = 2f)
+                drawLine(Color.White, Offset(c.x, c.y - 14.dp.toPx()), Offset(c.x, c.y + 14.dp.toPx()), strokeWidth = 2f)
+            }
         }
     }
 }
@@ -1250,3 +1368,5 @@ private fun detectQuad(image: Bitmap): CropQuad {
     return if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
 }
 
+/** Memory the review filmstrip may spend on page thumbnails. */
+private const val THUMBNAIL_CACHE_BYTES = 8 * 1024 * 1024

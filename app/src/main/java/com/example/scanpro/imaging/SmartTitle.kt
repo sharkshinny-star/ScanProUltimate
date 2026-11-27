@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.text.takeWhole
 import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.DocumentKind
 
@@ -50,7 +51,8 @@ object SmartTitle {
         // A kind alone ("Invoice") says too little; fall back to the first line, as before.
         val title = when {
             parts.size >= 2 -> parts.joinToString(SEPARATOR)
-            kind != null -> "$kind$SEPARATOR${tidy(lines.first())}"
+            // A first line that is only punctuation tidies to nothing: the kind alone, not "Invoice –".
+            kind != null -> tidy(lines.first()).let { first -> if (first.isBlank()) kind else "$kind$SEPARATOR$first" }
             else -> tidy(lines.first())
         }
         return shorten(title).ifBlank { fallback }
@@ -64,7 +66,7 @@ object SmartTitle {
 
     private fun shorten(value: String): String {
         if (value.length <= MAX_LENGTH) return value.trim()
-        val cut = value.take(MAX_LENGTH)
+        val cut = value.takeWhole(MAX_LENGTH)
         val space = cut.lastIndexOf(' ')
         return (if (space > MAX_LENGTH / 2) cut.take(space) else cut).trim().trimEnd('–', '-').trim()
     }

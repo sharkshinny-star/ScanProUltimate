@@ -1,5 +1,6 @@
 package com.example.scanpro.core.operations
 
+import com.example.scanpro.core.text.outOfSpaceMessageRes
 import android.content.Context
 import com.example.scanpro.R
 import com.example.scanpro.core.notifications.AppNotifications
@@ -85,6 +86,12 @@ class OperationRunner @Inject constructor(
     fun offerScanSaved(id: String) { _scanSaved.value = id }
     fun clearScanSaved(id: String) { _scanSaved.compareAndSet(id, null) }
 
+    private val _feedbackPrompt = MutableStateFlow(false)
+    /** True when "Rate your experience" should show: set as a "Scan saved" sheet closes and the schedule is due. */
+    val feedbackPrompt: StateFlow<Boolean> = _feedbackPrompt.asStateFlow()
+    fun requestFeedbackPrompt() { _feedbackPrompt.value = true }
+    fun clearFeedbackPrompt() { _feedbackPrompt.value = false }
+
     private val mutex = Mutex()
     @Volatile private var current: kotlinx.coroutines.Job? = null
 
@@ -94,6 +101,19 @@ class OperationRunner @Inject constructor(
      */
     fun cancelCurrent() {
         current?.cancel()
+    }
+
+    // The PDF tools' jobs while they are kept alive, so the notification's Cancel button can stop them too.
+    private val keptJobs = java.util.concurrent.CopyOnWriteArraySet<kotlinx.coroutines.Job>()
+
+    /** The notification's Cancel button (F215): stops the queued operation and every kept-alive tool job. */
+    fun cancelAll() {
+        current?.cancel()
+        keptJobs.forEach { it.cancel() }
+    }
+
+    init {
+        OperationForegroundService.cancelHandler = ::cancelAll
     }
     // Guards the pending count together with the busy flags: start() runs on Main and the finish runs
     // on a background thread, and without one lock a finishing job could clear busy just after a
@@ -154,6 +174,8 @@ class OperationRunner @Inject constructor(
                 if (pending == 0) {
                     _busyLabel.value = null
                     _busy.value = false
+                    // A queued job started the service while this one waited; whichever finishes last stops it.
+                    if (keptAlive == 0) OperationForegroundService.stop(context)
                 }
             }
         }
@@ -169,9 +191,12 @@ class OperationRunner @Inject constructor(
             keptAlive++
             OperationForegroundService.show(context, label ?: _busyLabel.value)
         }
+        val job = kotlin.coroutines.coroutineContext[kotlinx.coroutines.Job]
+        if (job != null) keptJobs += job
         try {
             return block()
         } finally {
+            if (job != null) keptJobs -= job
             synchronized(stateLock) {
                 keptAlive--
                 if (keptAlive == 0 && pending == 0) OperationForegroundService.stop(context)
@@ -211,7 +236,7 @@ class OperationRunner @Inject constructor(
                     } catch (cancelled: kotlinx.coroutines.CancellationException) {
                         _message.value = UiMessage(context.getString(R.string.common_stopped))
                     } catch (error: Throwable) {
-                        val text = error.message ?: context.getString(R.string.common_something_went_wrong)
+                        val text = outOfSpaceMessageRes(error)?.let { context.getString(it) } ?: error.message ?: context.getString(R.string.common_something_went_wrong)
                         _message.value = UiMessage(text)
                         if (label != null) runCatching { notifications.taskFailed(text) }
                     } finally {

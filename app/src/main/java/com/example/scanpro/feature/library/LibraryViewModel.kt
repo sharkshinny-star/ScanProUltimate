@@ -51,8 +51,14 @@ class LibraryViewModel @Inject constructor(
     private val settings: SettingsStore,
     private val savedState: SavedStateHandle,
     private val folderLock: com.example.scanpro.core.security.FolderLock,
+    recentPdfStore: com.example.scanpro.data.RecentPdfStore,
+    toolResultsStore: com.example.scanpro.data.ToolResultsStore,
     keptScans: KeptScanStore
 ) : ViewModel() {
+    /** PDFs opened in ScanPro and files the tools made, for Home's "Recent files" strip. */
+    val recentPdfs: StateFlow<List<com.example.scanpro.data.RecentPdf>> = recentPdfStore.items
+    val toolResults: StateFlow<List<com.example.scanpro.data.ToolResultFile>> = toolResultsStore.items
+
     private val _movedAside = MutableStateFlow<MovedAsideLibrary?>(null)
 
     /** A library that an older build set aside and this one can read again; the screen offers to restore it. */
@@ -123,9 +129,9 @@ class LibraryViewModel @Inject constructor(
     val lockedFolders: StateFlow<Set<String>> = folderLock.locked
     val hiddenFolders: StateFlow<Set<String>> = folderLock.hidden
 
-    /** The library overview with documents in closed locked folders left out of Recent. */
+    /** The library overview with what closed locked folders hold left out: Recent, the tags, and the counts. */
     val overview: StateFlow<LibraryOverview> = combine(library.overview, folderLock.hidden) { o, hidden ->
-        if (hidden.isEmpty()) o else o.copy(recent = o.recent.filterNot { it.inHidden(hidden) })
+        o.withoutHidden(hidden)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, library.overview.value)
 
     fun setFolderLocked(name: String, locked: Boolean) = folderLock.setLocked(name, locked)
@@ -201,12 +207,18 @@ class LibraryViewModel @Inject constructor(
         else context.getString(R.string.lib_msg_moved_to_folder, folder.trim())
     ) { ids.forEach { repository.setFolder(it, folder) } }
 
+    /** Renames one document from its card's ⋮ menu: the same rules as inside the document (a clash is allowed and said). */
+    fun renameDocument(id: String, title: String) = operations.run(null, null) {
+        if (repository.rename(id, title)) operations.showMessage(context.getString(R.string.msg_renamed_duplicate_name))
+    }
+
     /** Stars or unstars the selected documents. Queued if another job is running. */
     fun setFavorite(ids: Set<String>, favorite: Boolean) = operations.run(
         null,
         context.getString(if (favorite) R.string.lib_msg_added_to_favorites else R.string.lib_msg_removed_from_favorites)
     ) {
-        ids.forEach { id -> if (repository.loadDocument(id)?.isFavorite == !favorite) repository.toggleFavorite(id) }
+        // Straight to the database: reading each document in full (all its pages and text) only to see one flag was slow.
+        ids.forEach { id -> repository.setFavorite(id, favorite) }
     }
 
     /** Takes every document out of the folder; the folder is gone once it holds nothing. */
@@ -219,6 +231,9 @@ class LibraryViewModel @Inject constructor(
     }
 
     suspend fun folderExists(name: String): Boolean = repository.folderExists(name)
+
+    /** The ids among [ids] still in the library, so a selection can drop documents deleted elsewhere. */
+    suspend fun existingIds(ids: Set<String>): Set<String> = repository.existingIds(ids)
 
     /** False when nothing was selected, so the caller keeps its selection. */
     fun moveManyToTrash(ids: Set<String>): Boolean {
@@ -290,3 +305,19 @@ class LibraryViewModel @Inject constructor(
 }
 
 private fun DocumentSummary.inHidden(hidden: Set<String>) = com.example.scanpro.core.security.FolderLock.hides(hidden, folderName)
+
+/**
+ * [this] without anything the closed locked folders in [hidden] hold: their documents in Recent, their tag names (a tag
+ * such as "divorce" would give the folder's contents away), and their share of the document and favourite counts. The
+ * folder chips stay: a locked folder is shown as locked on purpose. Nothing is hidden when no folder is closed.
+ */
+internal fun LibraryOverview.withoutHidden(hidden: Set<String>): LibraryOverview {
+    if (hidden.isEmpty()) return this
+    val shown = facets.filterNot { com.example.scanpro.core.security.FolderLock.hides(hidden, it.folder) }
+    return copy(
+        documentCount = shown.size,
+        favoriteCount = shown.count { it.favorite },
+        tags = shown.flatMap { it.tags }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() },
+        recent = recent.filterNot { it.inHidden(hidden) }
+    )
+}

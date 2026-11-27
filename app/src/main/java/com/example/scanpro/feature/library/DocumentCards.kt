@@ -23,6 +23,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import com.example.scanpro.core.designsystem.pressTilt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
@@ -82,13 +84,18 @@ private fun rememberUpdatedText(updatedAt: Long): String =
 
 /** The first page as a sheet of paper: white card, hairline, soft shadow, on a tonal backdrop. */
 @Composable
-private fun PaperThumbnail(document: DocumentSummary, modifier: Modifier = Modifier, maxDimension: Int, corner: Dp = 8.dp) {
+internal fun PaperThumbnail(document: DocumentSummary, modifier: Modifier = Modifier, maxDimension: Int, corner: Dp = 8.dp) {
     val shape = RoundedCornerShape(corner)
     Box(
         modifier
             .shadow(6.dp, shape, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.22f))
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            // Paper white in the light theme. In the dark theme the lowest surface is near black, and a page that does
+            // not fill the frame (a landscape photo, a receipt) sat in a black slab; a raised grey reads as a sheet.
+            .background(
+                if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) MaterialTheme.colorScheme.surfaceContainerHighest
+                else MaterialTheme.colorScheme.surfaceContainerLowest
+            )
             .border(BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)), shape)
     ) {
         PageThumbnail(
@@ -245,6 +252,7 @@ internal fun highlightedSnippet(snippet: String, highlight: Color): AnnotatedStr
  * (Adobe Scan, Lens and CamScanner put the same few actions on every file).
  */
 internal class DocumentCardMenu(
+    val onRename: () -> Unit,
     val onShare: () -> Unit,
     val onMoveToFolder: () -> Unit,
     val onToggleFavourite: () -> Unit,
@@ -263,6 +271,8 @@ private fun DocumentCardMenuButton(document: DocumentSummary, menu: DocumentCard
             )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            // Rename first: it was only inside the document's own menu, while other scanners offer it on the card.
+            DropdownMenuItem(text = { Text(stringResource(R.string.common_rename)) }, onClick = { open = false; menu.onRename() })
             DropdownMenuItem(text = { Text(stringResource(R.string.doc_share_pdf)) }, onClick = { open = false; menu.onShare() })
             DropdownMenuItem(text = { Text(stringResource(R.string.lib_menu_move_to_folder)) }, onClick = { open = false; menu.onMoveToFolder() })
             DropdownMenuItem(
@@ -286,13 +296,18 @@ internal fun DocumentGridCard(
 ) {
     val (container, border) = cardColors(selected)
     val shape = MaterialTheme.shapes.medium
+    val interaction = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Column(
         Modifier
             .fillMaxWidth()
+            // The card tilts towards the finger as it is pressed, like picking up a page (F197).
+            .pressTilt(interaction)
             .clip(shape)
             .background(container)
             .border(1.5.dp, border, shape)
             .combinedClickable(
+                interactionSource = interaction,
+                indication = androidx.compose.material3.ripple(),
                 onClickLabel = stringResource(R.string.lib_card_open),
                 onLongClickLabel = stringResource(if (selected) R.string.lib_card_deselect else R.string.lib_card_select),
                 onClick = onClick,
@@ -301,10 +316,11 @@ internal fun DocumentGridCard(
             .semantics { this.selected = selected }
             .padding(10.dp)
     ) {
+        // The page fills most of a page-shaped panel: at 78% of a squarer one the scan itself was small (UI pass 2026-11-16).
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(0.86f)
+                .aspectRatio(0.78f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
@@ -312,8 +328,7 @@ internal fun DocumentGridCard(
             PaperThumbnail(
                 document,
                 Modifier
-                    .fillMaxSize(0.78f)
-                    .padding(top = 6.dp)
+                    .fillMaxSize(0.9f)
                     .aspectRatio(0.72f, matchHeightConstraintsFirst = true),
                 THUMBNAIL_GRID
             )
@@ -321,14 +336,17 @@ internal fun DocumentGridCard(
             SelectionBadge(selected, Modifier.align(Alignment.TopEnd).padding(6.dp))
         }
         Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.Top) {
+            // Two lines: at half the screen width one line showed only ~10 characters ("Android St…", "Scan 2026-…"),
+            // so scans could not be told apart by name. Two lines are always reserved so the cards in a row line up.
             Text(
                 document.title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
+                maxLines = com.example.scanpro.core.ui.cardTitleLines(),
+                minLines = com.example.scanpro.core.ui.cardTitleLines(),
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).padding(top = 12.dp)
             )
             // 48 dp: the smallest touch target Android recommends (it was 32 dp).
             if (menu != null) DocumentCardMenuButton(document, menu, Modifier.size(48.dp))

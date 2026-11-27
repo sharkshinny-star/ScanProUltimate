@@ -10,7 +10,6 @@ import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.SAXParserFactory
 import org.w3c.dom.Element
-import org.w3c.dom.Node
 import org.xml.sax.Attributes
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
@@ -24,7 +23,7 @@ class OfficeConversionException(message: String, cause: Throwable? = null) : Exc
  * external load. Pure Kotlin/JDK (no Android classes) so it runs in JVM unit tests.
  */
 object OfficeToHtml {
-    enum class Kind { DOCX, XLSX, TEXT, CSV, HTML }
+    enum class Kind { DOCX, XLSX, PPTX, TEXT, CSV, HTML }
 
     private const val MAX_ENTRY_BYTES = 50L * 1024 * 1024
     private const val MAX_ZIP_TOTAL_BYTES = 200L * 1024 * 1024
@@ -39,6 +38,7 @@ object OfficeToHtml {
         val byExt = when (ext) {
             "docx", "docm", "dotx" -> Kind.DOCX
             "xlsx", "xlsm", "xltx" -> Kind.XLSX
+            "pptx", "pptm", "ppsx", "potx" -> Kind.PPTX
             "txt", "text", "log", "md" -> Kind.TEXT
             "csv" -> Kind.CSV
             "htm", "html", "xhtml", "mht", "mhtml" -> Kind.HTML
@@ -51,6 +51,9 @@ object OfficeToHtml {
             "application/vnd.ms-word.document.macroenabled.12" -> Kind.DOCX
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "application/vnd.ms-excel.sheet.macroenabled.12" -> Kind.XLSX
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+            "application/vnd.ms-powerpoint.presentation.macroenabled.12" -> Kind.PPTX
             "text/csv", "text/comma-separated-values", "application/csv" -> Kind.CSV
             "text/html", "application/xhtml+xml", "multipart/related", "message/rfc822",
             "application/x-mimearchive" -> Kind.HTML
@@ -69,7 +72,9 @@ object OfficeToHtml {
         val fileTooLong: String,
         /** Takes the cell limit already formatted, for example "20,000". */
         val workbookTruncated: (cells: String) -> String,
-        val fileTruncated: (cells: String) -> String
+        val fileTruncated: (cells: String) -> String,
+        /** Takes the slide limit, for example "500". */
+        val slidesTruncated: (slides: String) -> String = { "Only the first $it slides are shown; the rest were not converted." }
     ) {
         companion object {
             val ENGLISH = Notes(
@@ -93,7 +98,7 @@ object OfficeToHtml {
     private fun note(text: String): String = esc(text)
 
     /** A complete, self-contained HTML document (inline CSS, images as data: URIs, no scripts, no external links loaded). */
-    fun convert(kind: Kind, input: java.io.InputStream, title: String, notes: Notes = Notes.ENGLISH): String {
+    fun convert(kind: Kind, input: InputStream, title: String, notes: Notes = Notes.ENGLISH): String {
         val previous = activeNotes.get()
         activeNotes.set(notes)
         try {
@@ -103,10 +108,11 @@ object OfficeToHtml {
         }
     }
 
-    private fun convertChecked(kind: Kind, input: java.io.InputStream, title: String): String = try {
+    private fun convertChecked(kind: Kind, input: InputStream, title: String): String = try {
         when (kind) {
             Kind.DOCX -> Docx.convert(input, title)
             Kind.XLSX -> Xlsx.convert(input, title)
+            Kind.PPTX -> Pptx.convert(input, title)
             Kind.TEXT -> textToHtml(input, title)
             Kind.CSV -> csvToHtml(input, title)
             Kind.HTML -> Html.convert(input, title)
@@ -140,7 +146,9 @@ object OfficeToHtml {
         "pre { white-space: pre-wrap; font-family: monospace; font-size: 10pt; margin: 0; }\n" +
         ".pb { page-break-after: always; break-after: page; height: 0; }\n" +
         ".link { color: #1a4fa0; text-decoration: underline; }\n" +
-        ".note { color: #555; font-style: italic; margin-top: 12pt; }\n"
+        ".note { color: #555; font-style: italic; margin-top: 12pt; }\n" +
+        ".slide-no { color: #777; font-size: 9pt; margin: 0 0 8pt; }\n" +
+        "h2.slide-title { font-size: 18pt; margin: 0 0 10pt; }\n"
 
     private fun headTags(title: String): String =
         "<meta charset=\"utf-8\">\n<meta http-equiv=\"Content-Security-Policy\" content=\"$CSP\">\n" +
@@ -369,6 +377,109 @@ object OfficeToHtml {
             else -> parts.add(p)
         }
         return parts.joinToString("/")
+    }
+
+    // ---------------------------------------------------------------- PPTX
+
+    /**
+     * PowerPoint (iLovePDF's PowerPoint to PDF): one printed page per slide, in the presentation's slide order. Text
+     * boxes become paragraphs (title placeholders become headings) and pictures become images, in reading order (top
+     * to bottom, then left to right). Themes, backgrounds, charts and animations are not drawn: the PDF carries the
+     * slides' content, readable and searchable, not their design.
+     */
+    private object Pptx {
+        private const val REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+        private const val MAX_SLIDES = 500
+
+        fun convert(input: InputStream, title: String): String {
+            val zip = readZip(input, "PowerPoint") {
+                it == "ppt/presentation.xml" || it == "ppt/_rels/presentation.xml.rels" ||
+                    it.startsWith("ppt/slides/") || it.startsWith("ppt/media/")
+            }
+            val presentation = zip["ppt/presentation.xml"] ?: throw OfficeConversionException("This is not a valid PowerPoint file")
+            val rels = readRels(zip["ppt/_rels/presentation.xml.rels"], "ppt/")
+            // Slide order is the presentation's list, not the file names (a moved slide keeps its old name).
+            val listed = newDom(presentation).documentElement.firstDescendant("sldIdLst")?.children().orEmpty()
+                .mapNotNull { slideId -> slideId.getAttributeNS(REL_NS, "id").takeIf { it.isNotEmpty() }?.let { rels[it]?.first } }
+                .filter { zip.containsKey(it) }
+            val all = listed.ifEmpty {
+                zip.keys.filter { Regex("ppt/slides/slide\\d+\\.xml").matches(it) }
+                    .sortedBy { it.substringAfter("slide").substringBefore(".xml").toIntOrNull() ?: 0 }
+            }
+            // Slides past the limit used to be dropped without a word (F211): the PDF now says so on its last page.
+            val slides = all.take(MAX_SLIDES)
+            if (slides.isEmpty()) return page(title, "<p class=\"note\">${note(currentNotes().fileEmpty)}</p>")
+
+            val sb = StringBuilder()
+            slides.forEachIndexed { index, path ->
+                if (index > 0) sb.append("<div class=\"pb\"></div>\n")
+                sb.append("<section class=\"slide\">\n<p class=\"slide-no\">").append(index + 1).append(" / ").append(slides.size).append("</p>\n")
+                val slideRels = readRels(zip["ppt/slides/_rels/${path.substringAfterLast('/')}.rels"], "ppt/slides/")
+                val tree = zip[path]?.let { newDom(it).documentElement.firstDescendant("spTree") }
+                if (tree != null) items(tree).sortedWith(compareBy({ it.y }, { it.x })).forEach { item ->
+                    when (item) {
+                        is Item.Text -> item.paragraphs.forEach { para ->
+                            if (item.title) sb.append("<h2 class=\"slide-title\">").append(esc(para)).append("</h2>\n")
+                            else sb.append("<p>").append(esc(para).replace("\n", "<br>")).append("</p>\n")
+                        }
+                        is Item.Picture -> {
+                            val part = slideRels[item.relId]?.takeIf { !it.second }?.first
+                            val bytes = part?.let { zip[it] }
+                            val mime = if (part != null && bytes != null) imageMime(part, bytes) else null
+                            if (bytes != null && mime != null) sb.append("<p><img src=\"").append(dataUri(mime, bytes)).append("\" alt=\"\"></p>\n")
+                            else sb.append("<p class=\"note\">").append(note(currentNotes().imageNotShown)).append("</p>\n")
+                        }
+                    }
+                }
+                sb.append("</section>\n")
+            }
+            if (all.size > slides.size) {
+                sb.append("<p class=\"note\">").append(note(currentNotes().slidesTruncated(MAX_SLIDES.toString()))).append("</p>\n")
+            }
+            return page(title, sb)
+        }
+
+        private sealed class Item(val x: Long, val y: Long) {
+            class Text(x: Long, y: Long, val title: Boolean, val paragraphs: List<String>) : Item(x, y)
+            class Picture(x: Long, y: Long, val relId: String) : Item(x, y)
+        }
+
+        /** Text boxes and pictures anywhere in the shape tree, groups included. */
+        private fun items(tree: Element): List<Item> {
+            val out = ArrayList<Item>()
+            fun position(shape: Element): Pair<Long, Long> {
+                val off = shape.firstDescendant("off")
+                return (off?.attr("x")?.toLongOrNull() ?: 0L) to (off?.attr("y")?.toLongOrNull() ?: 0L)
+            }
+            fun walk(parent: Element) {
+                for (child in parent.children()) when (child.local) {
+                    "sp" -> {
+                        val body = child.child("txBody") ?: continue
+                        val paragraphs = body.children().filter { it.local == "p" }.map { paragraph(it) }.filter { it.isNotBlank() }
+                        if (paragraphs.isEmpty()) continue
+                        val type = child.firstDescendant("ph")?.attr("type")
+                        val (x, y) = position(child)
+                        out += Item.Text(x, y, type == "title" || type == "ctrTitle", paragraphs)
+                    }
+                    "pic" -> {
+                        val rel = child.firstDescendant("blip")?.getAttributeNS(REL_NS, "embed")?.takeIf { it.isNotEmpty() } ?: continue
+                        val (x, y) = position(child)
+                        out += Item.Picture(x, y, rel)
+                    }
+                    "grpSp" -> walk(child)
+                }
+            }
+            walk(tree)
+            return out
+        }
+
+        /** One paragraph's text: its runs and fields in order, line breaks kept. */
+        private fun paragraph(p: Element): String = buildString {
+            for (part in p.children()) when (part.local) {
+                "r", "fld" -> append(part.child("t")?.textContent.orEmpty())
+                "br" -> append('\n')
+            }
+        }.trim()
     }
 
     // ---------------------------------------------------------------- DOCX
@@ -702,7 +813,7 @@ object OfficeToHtml {
                     }
                 }
                 override fun characters(ch: CharArray, start: Int, length: Int) {
-                    if (inT) cur?.append(ch, start, length)
+                    if (inT) cur?.appendRange(ch, start, start + length)
                 }
             })
             return out
@@ -782,7 +893,7 @@ object OfficeToHtml {
                     }
                 }
                 override fun characters(ch: CharArray, start: Int, length: Int) {
-                    text?.append(ch, start, length)
+                    text?.appendRange(ch, start, start + length)
                 }
             })
             return Sheet(cells, merges, truncated)

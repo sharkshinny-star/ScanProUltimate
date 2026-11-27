@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home-screen widget (F197). Machine translation, not yet reviewed by a speaker. -->
+    <string name="widget_tools">టూల్స్</string>
+    <string name="widget_files">ఫైల్‌లు</string>
+    <string name="widget_scan_document">పత్రాన్ని స్కాన్ చేయండి</string>
+    <string name="widget_large_subtitle">మీ ఫోన్‌లోనే స్కాన్, సంతకం, మార్పిడి</string>
+</resources>

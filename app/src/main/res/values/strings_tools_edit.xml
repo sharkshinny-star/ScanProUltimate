@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Edit and secure tools (F212): Redact, Redact areas, Flatten, Crop, Header and footer, Watermark, Greyscale, Invert, Protect, Sign -->
+    <string name="edit_err_cannot_read">This PDF can\'t be read. If it needs a password, unlock it first.</string>
+    <string name="edit_section_what_happens">What happens</string>
+    <string name="edit_section_found">Found in this PDF</string>
+    <string name="edit_size_mm">%1$d × %2$d mm</string>
+
+    <string name="edit_recolour_estimate_note">The size is worked out from the first page; pages with photos come out larger.</string>
+
+    <string name="edit_flatten_marked">Marked: the fields and comments on page 1 that become part of the page.</string>
+    <string name="edit_flatten_fields">Form fields</string>
+    <string name="edit_flatten_comments">Comments and stamps</string>
+    <string name="edit_flatten_what_happens">Form answers, comments, highlights and stamps that have their own look are drawn into the pages, so they can no longer be edited as fields or comments. The answers stay readable, selectable text, and anyone with a PDF editor can still change page content. Links, and comments without a look of their own, are kept as they are. Nothing is hidden: use Redact to remove words.</string>
+    <string name="edit_flatten_links">Links (kept)</string>
+
+    <string name="edit_crop_section_how">How to crop</string>
+    <string name="edit_crop_err_no_margins">Set a margin on at least one side.</string>
+    <string name="edit_crop_err_too_small">These margins leave less than %1$d mm of the first page.</string>
+    <string name="edit_crop_mode_manual">By hand</string>
+    <string name="edit_crop_apply_to">A drag changes</string>
+    <string name="edit_crop_scope_all">All pages</string>
+    <string name="edit_crop_scope_page">This page</string>
+    <string name="edit_crop_adjust">Adjust</string>
+    <string name="edit_crop_preview">Preview</string>
+    <string name="edit_crop_frame_description">The page with the crop frame; drag its corners or sides</string>
+    <string name="edit_crop_drag_hint">Drag a corner or side to choose what to keep; drag inside the frame to move it.</string>
+    <string name="edit_crop_status_shared_all">The same crop on every page</string>
+    <string name="edit_crop_status_keeps_own">This page has its own crop and keeps it</string>
+    <string name="edit_crop_status_shared_page">Uses the all-pages crop; a drag gives it its own</string>
+    <string name="edit_crop_status_own">This page has its own crop</string>
+    <string name="edit_crop_status_whole">This page is kept whole</string>
+    <string name="edit_crop_page_size">Page %1$d: %2$s → %3$s</string>
+    <string name="edit_crop_reset_all_pages">Reset</string>
+    <string name="edit_crop_reset_page">Reset this page</string>
+    <string name="edit_crop_use_shared">Use the all-pages crop</string>
+    <string name="edit_crop_start_over">Start over</string>
+    <string name="edit_crop_same_everywhere">Use this crop on them too</string>
+    <string name="edit_crop_nothing_chosen">Drag the frame to choose what to keep</string>
+    <plurals name="edit_crop_own_count">
+        <item quantity="one">%1$d page has its own crop and keeps it.</item>
+        <item quantity="other">%1$d pages have their own crop and keep it.</item>
+    </plurals>
+    <plurals name="edit_crop_pages_cropped">
+        <item quantity="one">%1$d of %2$d page will be cropped</item>
+        <item quantity="other">%1$d of %2$d pages will be cropped</item>
+    </plurals>
+    <string name="edit_crop_size_change">Page 1: %1$s → %2$s</string>
+    <string name="edit_crop_first_blank">Page 1 looks blank, so it is left as it is. Pages with content are trimmed.</string>
+    <string name="edit_crop_auto_hint">The frame shows what auto trim keeps of page 1; every page gets its own frame.</string>
+    <string name="edit_crop_all_sides">All sides</string>
+    <string name="edit_crop_not_redaction">Cropping hides the cut-away parts but does not delete them, so anyone can undo it. To remove something for good, use Redact.</string>
+
+    <string name="edit_redact_reading">Reading the text of every page…</string>
+    <string name="edit_redact_need_words">Type the words to black out.</string>
+    <string name="edit_redact_no_text">This PDF has no text to search (it looks like a scan). Run Make searchable first, or use Redact areas.</string>
+    <string name="edit_redact_found">Found %1$s on %2$s</string>
+    <plurals name="edit_redact_matches">
+        <item quantity="one">%1$d match</item>
+        <item quantity="other">%1$d matches</item>
+    </plurals>
+    <string name="edit_redact_term_count" translatable="false">%1$s · %2$d</string>
+    <string name="edit_redact_none_on_first">No matches on page 1; they are on later pages.</string>
+    <string name="edit_redact_search_rules">Capitals and accents are ignored unless Match case is on. Words split over two lines, and words in comments and form fields, are found too.</string>
+
+    <string name="edit_redact_box_summary">%1$s on %2$s</string>
+    <plurals name="edit_redact_box_areas">
+        <item quantity="one">%1$d area</item>
+        <item quantity="other">%1$d areas</item>
+    </plurals>
+
+    <string name="edit_hf_err_empty">Write a header, a footer or both.</string>
+    <string name="edit_hf_err_only_page_skipped">This PDF has one page, and the first page is skipped.</string>
+    <string name="edit_hf_first_skipped">The first page is skipped, so it stays as it is; the others get the text.</string>
+    <string name="edit_hf_shrunk">The text is longer than the page is wide, so it is made smaller to fit: %1$d pt.</string>
+    <string name="edit_hf_section_text">Text</string>
+    <string name="edit_hf_quick_footer">Page numbers for the footer</string>
+    <string name="edit_hf_quick_page_of">Page {page} of {total}</string>
+    <string name="edit_hf_section_look">Position and size</string>
+    <string name="edit_hf_size_small">Small</string>
+    <string name="edit_hf_size_medium">Medium</string>
+    <string name="edit_hf_size_large">Large</string>
+
+    <plurals name="edit_wm_pages">
+        <item quantity="one">Watermark on %1$d of %2$d page</item>
+        <item quantity="other">Watermark on %1$d of %2$d pages</item>
+    </plurals>
+
+    <string name="edit_protect_what_happens">The file is encrypted with AES-256. Whoever has the password can open, print, copy and edit it; without it, nobody can open it. Keep the password safe: it can\'t be recovered.</string>
+    <string name="edit_protect_strength">Strength: %1$s (about %2$d bits)</string>
+    <string name="edit_protect_strength_weak">weak</string>
+    <string name="edit_protect_strength_fair">fair</string>
+    <string name="edit_protect_strength_good">good</string>
+    <string name="edit_protect_strength_strong">strong</string>
+
+    <string name="edit_sign_summary">%1$s on %2$s</string>
+    <plurals name="edit_sign_stamps">
+        <item quantity="one">%1$d signature or text</item>
+        <item quantity="other">%1$d signatures or texts</item>
+    </plurals>
+</resources>

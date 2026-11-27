@@ -97,4 +97,41 @@ class QuadMathTest {
         assertNull(decoded.bottomBow)
         assertEquals(8, encodeQuads(mapOf("k" to skewed)).single().substringAfter('|').split(',').size)
     }
+
+    @Test
+    fun `an edge inside the image moves by the whole drag`() {
+        val (a, b) = translateEdge(NormalizedPoint(0.2f, 0.3f), NormalizedPoint(0.8f, 0.4f), 0.1f, -0.1f)
+        assertEquals(0.3f, a.x, 1e-6f); assertEquals(0.2f, a.y, 1e-6f)
+        assertEquals(0.9f, b.x, 1e-6f); assertEquals(0.3f, b.y, 1e-6f)
+    }
+
+    @Test
+    fun `an edge stops at the border and keeps its length and angle`() {
+        val (a, b) = translateEdge(NormalizedPoint(0.2f, 0.05f), NormalizedPoint(0.8f, 0.15f), 0.5f, -0.5f)
+        // The right end reaches x = 1 after 0.2; the upper end reaches y = 0 after 0.05. Both ends move the same.
+        assertEquals(0.4f, a.x, 1e-6f); assertEquals(0f, a.y, 1e-6f)
+        assertEquals(1f, b.x, 1e-6f); assertEquals(0.1f, b.y, 1e-6f)
+        assertEquals(0.6f, b.x - a.x, 1e-6f)
+        assertEquals(0.1f, b.y - a.y, 1e-6f)
+    }
+
+    @Test
+    fun `an edge already outside the image is not pushed further and does not throw`() {
+        val (a, b) = translateEdge(NormalizedPoint(-0.2f, 0.5f), NormalizedPoint(1.1f, 0.5f), 0.3f, 0f)
+        assertEquals(-0.2f, a.x, 1e-6f)
+        assertEquals(1.1f, b.x, 1e-6f)
+        val (c, d) = translateEdge(NormalizedPoint(0.5f, 0.5f), NormalizedPoint(0.6f, 0.5f), Float.NaN, Float.NaN)
+        assertEquals(0.5f, c.x, 1e-6f); assertEquals(0.6f, d.x, 1e-6f)
+    }
+
+    @Test
+    fun `turning by quarter turns matches repeated clockwise rotation and undoes itself`() {
+        assertSame(skewed, turnQuad(skewed, 0))
+        assertSame(rotateQuad(skewed, clockwise = true), turnQuad(skewed, 1))
+        assertSame(rotateQuad(skewed, clockwise = false), turnQuad(skewed, -1))
+        assertSame(turnQuad(skewed, 1), turnQuad(skewed, 5))
+        for (n in 0..3) assertSame(skewed, turnQuad(turnQuad(skewed, n), -n))
+        // The same path gives the same floats, so an untouched outline compares equal after Rotate in the editor.
+        assertEquals(turnQuad(skewed, 2), turnQuad(turnQuad(skewed, 1), 1))
+    }
 }

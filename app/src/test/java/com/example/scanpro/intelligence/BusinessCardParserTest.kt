@@ -70,4 +70,11 @@ class BusinessCardParserTest {
     fun `text with no contact details is not useful`() {
         assertFalse(BusinessCardParser.parse("meeting notes\nbuy milk").isUseful)
     }
+
+    @Test
+    fun `a product name that reads like a person's name is not a card`() {
+        // "MacBook Air" is two capitalised words, so it parses as a name; with no phone or email it must not offer Add to contacts.
+        assertFalse(BusinessCardParser.parse("MacBook Air").isUseful)
+        assertFalse(BusinessCardParser.parse("Magic Keyboard\nSpace Grey").isUseful)
+    }
 }

@@ -175,4 +175,56 @@ class ScannedCodeTest {
         assertFalse(summary.contains('\n'))
         assertTrue(summary.endsWith("…"))
     }
+
+    @Test
+    fun groupedVCardLinesKeepTheirPhonesEmailsAndAddress() {
+        // iPhone and Google contacts write "item1.TEL;type=pref:..." lines; the group is not part of the property name.
+        val code = parse(
+            "BEGIN:VCARD\nVERSION:3.0\nFN:Ada Lovelace\nitem1.TEL;type=pref:+44 20 7946 0000\n" +
+                "item2.EMAIL;type=INTERNET:ada@example.com\nitem3.URL:https://example.com\n" +
+                "item4.ADR:;;1 Main St;London;;;UK\nEND:VCARD"
+        )
+        val contact = code.contact!!
+        assertEquals("Ada Lovelace", contact.name)
+        assertEquals(listOf("+44 20 7946 0000"), contact.phones)
+        assertEquals(listOf("ada@example.com"), contact.emails)
+        assertEquals("https://example.com", contact.website)
+        assertEquals("1 Main St, London, UK", contact.address)
+    }
+
+    @Test
+    fun aGeoLinkAtZeroZeroTakesItsPlaceFromTheQuery() {
+        val place = parse("geo:0,0?q=34.99,-106.61(Treasure)").geo!!
+        assertEquals(34.99, place.lat, 1e-9)
+        assertEquals(-106.61, place.lng, 1e-9)
+        // A name is not coordinates, so the stand-in stays; and a real leading pair is never replaced.
+        assertEquals(0.0, parse("geo:0,0?q=Eiffel+Tower").geo!!.lat, 1e-9)
+        assertEquals(48.85, parse("geo:48.85,2.35?q=34.99,-106.61(X)").geo!!.lat, 1e-9)
+        assertEquals(0.0, parse("geo:0,0").geo!!.lng, 1e-9)
+    }
+
+    @Test
+    fun eventTimesAreReadInTheZoneTheCodeNames() {
+        val raw = "BEGIN:VEVENT\nSUMMARY:Call\nDTSTART;TZID=Asia/Kolkata:20260131T093000\nDTEND;TZID=Asia/Kolkata:20260131T103000\nEND:VEVENT"
+        val event = parse(raw).event!!
+        // 09:30 in India (UTC+5:30) is 04:00 UTC.
+        assertEquals(icalMillis("20260131T040000Z"), event.startMillis)
+        assertEquals(icalMillis("20260131T050000Z"), event.endMillis)
+        assertEquals(icalMillis("20260131T040000Z"), icalMillis("20260131T093000", "Asia/Kolkata"))
+        // A name Java does not know is not turned into GMT: the phone's zone is used, as before.
+        assertEquals(icalMillis("20260131T093000"), icalMillis("20260131T093000", "Nowhere/Land"))
+        assertEquals(icalMillis("20260131T093000"), parse(raw.replace("Asia/Kolkata", "Nowhere/Land")).event!!.startMillis)
+        // A trailing Z wins over a zone name.
+        assertEquals(icalMillis("20260131T093000Z"), icalMillis("20260131T093000Z", "Asia/Kolkata"))
+    }
+
+    @Test
+    fun quotedWifiValuesLoseTheirQuotesButEscapedOnesStay() {
+        val quoted = parse("WIFI:T:WPA;S:\"1234\";P:\"abcdef\";;").wifi!!
+        assertEquals("1234", quoted.ssid)
+        assertEquals("abcdef", quoted.password)
+        // A quote that belongs to the name is escaped, so it is kept.
+        val escaped = parse("WIFI:T:WPA;S:\\\"net\\\";P:x;;").wifi!!
+        assertEquals("\"net\"", escaped.ssid)
+    }
 }

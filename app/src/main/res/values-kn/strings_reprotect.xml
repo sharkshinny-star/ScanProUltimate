@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="msg_tools_reprotected">ಫಲಿತಾಂಶವನ್ನು ಅದೇ ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ಸಂರಕ್ಷಿಸಲಾಗಿದೆ.</string>
+    <string name="msg_tools_reprotect_failed">ಫಲಿತಾಂಶವನ್ನು ಮತ್ತೆ ಸಂರಕ್ಷಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಸಂರಕ್ಷಣೆ ಇಲ್ಲದೆ ಉಳಿಸಲಿಲ್ಲ.</string>
+</resources>

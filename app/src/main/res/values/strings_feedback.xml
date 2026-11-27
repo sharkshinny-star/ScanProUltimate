@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- In-app feedback: the "Rate your experience" sheet and the "Report an issue" / "Suggest a feature" form.
+     Nothing is sent by the app itself: each screen opens the user's email app with the message filled in. -->
+<resources>
+    <!-- Rate your experience -->
+    <string name="feedback_face_awful">Awful</string>
+    <string name="feedback_face_poor">Poor</string>
+    <string name="feedback_face_okay">Okay</string>
+    <string name="feedback_face_good">Good</string>
+    <string name="feedback_face_loved">Loved it</string>
+    <!-- TalkBack label for one face: its word, then its place in the row, e.g. "Poor, 2 of 5". -->
+    <string name="feedback_face_description">%1$s, %2$d of 5</string>
+    <string name="feedback_submit_note">Opens your email app with your feedback filled in</string>
+    <string name="feedback_not_now">Not now</string>
+    <string name="feedback_thanks_title">Thank you!</string>
+    <string name="feedback_enjoying_title">Enjoying ScanPro?</string>
+    <string name="feedback_enjoying_body">Tap a star to rate the app.</string>
+    <string name="feedback_thanks_rating_title">Thank you for your rating!</string>
+    <string name="feedback_thanks_body">Your feedback helps us make ScanPro better.</string>
+    <string name="feedback_play_body">Glad you like it! A rating on Google Play helps other people find ScanPro.</string>
+    <string name="feedback_rate_on_play">Rate ScanPro on Google Play</string>
+    <string name="feedback_done">Done</string>
+    <string name="feedback_close">Close</string>
+
+    <!-- The email a rating opens. The user sees it in their email app before sending. -->
+    <string name="feedback_email_rating">Rating: %1$d/5 (%2$s)</string>
+    <string name="feedback_email_categories">Categories: %1$s</string>
+    <string name="feedback_email_issue_subject">ScanPro issue: %1$s</string>
+
+    <!-- Report an issue / Suggest a feature -->
+    <string name="feedback_form_issue_heading">Tell us the problem you encountered</string>
+    <string name="feedback_form_feature_heading">What would you like ScanPro to do?</string>
+    <string name="feedback_cat_slow">Slow file processing</string>
+    <string name="feedback_cat_quality">Poor scan quality</string>
+    <string name="feedback_cat_filter">Poor filter effect</string>
+    <string name="feedback_cat_save_share">Save or share issue</string>
+    <string name="feedback_cat_crash">App crashes &amp; bugs</string>
+    <string name="feedback_cat_others">Others</string>
+    <string name="feedback_form_issue_hint">Please describe the issue in detail (at least 6 characters)</string>
+    <string name="feedback_form_feature_hint">Describe the feature and how you would use it (at least 6 characters)</string>
+    <string name="feedback_attach">Attach screenshots</string>
+    <string name="feedback_attach_more">Add more</string>
+    <string name="feedback_attach_note">Optional, up to %1$d images</string>
+    <string name="feedback_attach_remove">Remove screenshot %1$d</string>
+    <string name="feedback_attach_failed">That image couldn\'t be added</string>
+    <string name="feedback_form_issue_note">Device details and recent app logs are added to the email. You can check everything before you send it.</string>
+    <string name="feedback_form_submit">Submit</string>
+</resources>

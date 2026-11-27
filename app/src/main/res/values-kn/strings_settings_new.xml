@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_shortcuts">ಶಾರ್ಟ್‌ಕಟ್‌ಗಳು ಮತ್ತು ಡೀಫಾಲ್ಟ್ ಆ್ಯಪ್</string>
+    <string name="settings_shortcuts_summary">ಡೀಫಾಲ್ಟ್ PDF ಆ್ಯಪ್ · ವಿಜೆಟ್ · ಸ್ಕ್ಯಾನ್ ಶಾರ್ಟ್‌ಕಟ್</string>
+
+    <string name="settings_open_by_default_title">PDF ಗಳನ್ನು ಯಾವಾಗಲೂ ScanPro ನಲ್ಲಿ ತೆರೆಯಿರಿ</string>
+    <string name="settings_open_by_default_subtitle">Android ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ PDF ಫೈಲ್‌ಗಳಿಗೆ ScanPro ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="settings_open_by_default_body">PDF ಫೈಲ್‌ಗಳನ್ನು ಯಾವ ಆ್ಯಪ್ ತೆರೆಯಬೇಕು ಎಂದು Android ನಿರ್ಧರಿಸುತ್ತದೆ. ಮುಂದಿನ ಬಾರಿ PDF ತೆರೆಯುವಾಗ ScanPro ಆಯ್ಕೆಮಾಡಿ ಮತ್ತು ಯಾವಾಗಲೂ ಟ್ಯಾಪ್ ಮಾಡಿ.\n\nಬೇರೆ ಆ್ಯಪ್ ನೇರವಾಗಿ PDF ತೆರೆಯುತ್ತಿದ್ದರೆ, ಮೊದಲು Android ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಆ ಆ್ಯಪ್‌ನ ಡೀಫಾಲ್ಟ್‌ಗಳನ್ನು ತೆರವುಗೊಳಿಸಿ. ಕೆಳಗಿನ ಬಟನ್ ಅಲ್ಲಿ ScanPro ನ ಸ್ವಂತ ಪುಟವನ್ನು ತೆರೆಯುತ್ತದೆ.</string>
+    <string name="settings_open_android_settings">Android ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ</string>
+    <string name="settings_android_settings_unavailable">ಈ ಫೋನ್‌ನಲ್ಲಿ Android ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಲಾಗಲಿಲ್ಲ</string>
+
+    <string name="settings_group_home_screen">ಹೋಮ್ ಸ್ಕ್ರೀನ್</string>
+    <string name="settings_widget_title">ಹೋಮ್ ಸ್ಕ್ರೀನ್ ವಿಜೆಟ್ ಸೇರಿಸಿ</string>
+    <string name="settings_widget_subtitle">ಒಂದೇ ಟ್ಯಾಪ್‌ನಲ್ಲಿ ಸ್ಕ್ಯಾನ್ ಅಥವಾ ID ಕಾರ್ಡ್ ಸ್ಕ್ಯಾನ್ ಪ್ರಾರಂಭಿಸಿ</string>
+    <string name="settings_scan_shortcut_title">ಹೋಮ್ ಸ್ಕ್ರೀನ್‌ಗೆ ಸ್ಕ್ಯಾನ್ ಶಾರ್ಟ್‌ಕಟ್ ಸೇರಿಸಿ</string>
+    <string name="settings_scan_shortcut_subtitle">ನೇರವಾಗಿ ಕ್ಯಾಮರಾ ತೆರೆಯುವ ಐಕಾನ್</string>
+    <string name="settings_pin_not_accepted">ನಿಮ್ಮ ಹೋಮ್ ಸ್ಕ್ರೀನ್ ಇದನ್ನು ಸ್ವೀಕರಿಸಲಿಲ್ಲ. ಹೋಮ್ ಸ್ಕ್ರೀನ್‌ನಿಂದಲೇ ಸೇರಿಸಿ ನೋಡಿ.</string>
+
+    <string name="settings_group_camera">ಕ್ಯಾಮರಾ</string>
+    <string name="settings_group_saving">ಉಳಿಸುವಿಕೆ</string>
+    <string name="settings_group_advanced">ಸುಧಾರಿತ</string>
+    <string name="settings_group_help">ಸಹಾಯ</string>
+    <string name="settings_group_contact">ಸಂಪರ್ಕಿಸಿ</string>
+    <string name="settings_group_spread">ಇತರರಿಗೆ ತಿಳಿಸಿ</string>
+    <string name="settings_group_legal">ಕಾನೂನು</string>
+    <string name="settings_group_notify_about">ಇವುಗಳ ಬಗ್ಗೆ ತಿಳಿಸಿ</string>
+
+    <string name="settings_recycle_bin_open">ರಿಸೈಕಲ್ ಬಿನ್ ತೆರೆಯಿರಿ</string>
+    <string name="settings_recycle_bin_empty">ಖಾಲಿ</string>
+    <plurals name="settings_recycle_bin_count">
+        <item quantity="one">%d ಡಾಕ್ಯುಮೆಂಟ್</item>
+        <item quantity="other">%d ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</item>
+    </plurals>
+    <string name="settings_recycle_bin_summary">%1$s · %2$s ಇರಿಸಲಾಗುತ್ತದೆ</string>
+</resources>

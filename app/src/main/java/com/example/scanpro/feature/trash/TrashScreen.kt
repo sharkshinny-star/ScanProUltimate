@@ -275,7 +275,8 @@ internal fun TrashScreen(
                 ) {
                     items(sortedDocuments, key = { it.id }, contentType = { "trash_item" }) { doc ->
                         Surface(
-                            modifier = Modifier.fillMaxWidth(),
+                            // A restored or deleted document fades out while the others close the gap (F146).
+                            modifier = Modifier.animateItem().fillMaxWidth(),
                             shape = MaterialTheme.shapes.medium,
                             color = MaterialTheme.colorScheme.surfaceContainerLow
                         ) {

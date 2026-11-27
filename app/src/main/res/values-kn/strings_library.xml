@@ -7,6 +7,7 @@
     <string name="greeting_morning">ಶುಭೋದಯ</string>
     <string name="greeting_afternoon">ಶುಭ ಅಪರಾಹ್ನ</string>
     <string name="greeting_evening">ಶುಭ ಸಂಜೆ</string>
+    <string name="greeting_night">ಶುಭ ರಾತ್ರಿ</string>
     <string name="lib_title_files">ನನ್ನ ಫೈಲ್‌ಗಳು</string>
     <string name="lib_cd_clear_selection">ಆಯ್ಕೆ ತೆರವುಗೊಳಿಸಿ</string>
     <string name="lib_cd_share_selected">ಆಯ್ಕೆಮಾಡಿದ್ದನ್ನು ಹಂಚಿಕೊಳ್ಳಿ</string>
@@ -206,13 +207,11 @@
     <string name="settings_report_issue_subtitle">ಆ್ಯಪ್ ಲಾಗ್‌ಗಳು ಮತ್ತು ಸಾಧನದ ವಿವರಗಳು ತಾನಾಗಿ ತುಂಬಲ್ಪಡುತ್ತವೆ</string>
     <string name="settings_share_subtitle">Play Store ಲಿಂಕ್ ಅನ್ನು ಸ್ನೇಹಿತರಿಗೆ ಕಳುಹಿಸಿ</string>
     <string name="settings_library_title">ನಿಮ್ಮ ಲೈಬ್ರರಿ</string>
-    <string name="settings_library_subtitle">ಈ ಸಾಧನದಲ್ಲಿ ಮಾತ್ರ ಸಂಗ್ರಹಿಸಲಾಗಿದೆ</string>
-    <plurals name="settings_stat_documents" tools:ignore="ImpliedQuantity">
-        <item quantity="one">ಡಾಕ್ಯುಮೆಂಟ್</item>
-        <item quantity="other">ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</item>
-    </plurals>
-    <string name="settings_stat_in_recycle_bin">ರೀಸೈಕಲ್ ಬಿನ್‌ನಲ್ಲಿ</string>
-    <string name="settings_stat_used">ಬಳಸಲಾಗಿದೆ</string>
+    <string name="settings_free_space_title">ಜಾಗ ಖಾಲಿ ಮಾಡಿ</string>
+    <string name="settings_free_space_subtitle">ಹಳೆಯ ಸ್ಕ್ಯಾನ್‌ಗಳು ಅಗತ್ಯಕ್ಕಿಂತ ದೊಡ್ಡ PDFಗಳಲ್ಲಿ ಉಳಿದಿವೆ. ಅವನ್ನು ಮರುರಚಿಸಿದರೆ %1$s ವರೆಗೆ ಜಾಗ ಖಾಲಿಯಾಗುತ್ತದೆ; ಪ್ರತಿ ಪುಟ ಮತ್ತು ಹುಡುಕಬಹುದಾದ ಪಠ್ಯ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.</string>
+    <string name="settings_free_space_action">ಖಾಲಿ ಮಾಡಿ</string>
+    <string name="settings_free_space_running">ಜಾಗ ಖಾಲಿ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="settings_free_space_done">%1$s ಖಾಲಿಯಾಯಿತು</string>
     <string name="settings_footer_privacy">ಸಂಪೂರ್ಣ ಖಾಸಗಿ. ಖಾತೆ ಬೇಕಿಲ್ಲ, ಏನೂ ಅಪ್‌ಲೋಡ್ ಆಗುವುದಿಲ್ಲ.</string>
     <string name="settings_privacy_dialog_title">ನಿಮ್ಮ ಸ್ಕ್ಯಾನ್‌ಗಳು ಈ ಫೋನ್‌ನಲ್ಲೇ ಇರುತ್ತವೆ</string>
     <string name="settings_privacy_dialog_account">ScanPro ಗೆ ಖಾತೆ ಬೇಕಿಲ್ಲ ಮತ್ತು ಸರ್ವರ್‌ಗೆ ಏನನ್ನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು, ಪಠ್ಯ ಗುರುತಿಸುವಿಕೆ ಮತ್ತು PDF ಟೂಲ್‌ಗಳು ಎಲ್ಲವೂ ಸಾಧನದಲ್ಲೇ ಕೆಲಸ ಮಾಡುತ್ತವೆ.</string>
@@ -233,6 +232,16 @@
     <string name="settings_review_mode_subtitle">ಅಗತ್ಯವಿದ್ದರೆ: ಪುಟದ ಅಂಚು ಸಿಗದಿದ್ದರೆ, ಮಸುಕಾಗಿದ್ದರೆ, ಹೊಳಪು ಇದ್ದರೆ ಅಥವಾ ತುಂಬಾ ಕತ್ತಲಾಗಿದ್ದರೆ ಹೊರತು "ಮುಗಿದಿದೆ" ತಕ್ಷಣ ಉಳಿಸುತ್ತದೆ. ಎಂದಿಗೂ ಇಲ್ಲ: ಸ್ವಯಂಚಾಲಿತ ಕ್ರಾಪ್ ಮತ್ತು ಫಿಲ್ಟರ್‌ನೊಂದಿಗೆ ಯಾವಾಗಲೂ ತಕ್ಷಣ ಉಳಿಸುತ್ತದೆ</string>
     <string name="lib_share_separate">ಪ್ರತ್ಯೇಕ PDF ಗಳು (%1$d)</string>
     <string name="lib_share_one_pdf">ಒಂದೇ PDF</string>
+    <string name="settings_search_placeholder">ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಹುಡುಕಿ</string>
+    <string name="settings_search_clear">ಹುಡುಕಾಟ ತೆರವುಗೊಳಿಸಿ</string>
+    <string name="settings_search_no_match">“%1$s” ಗೆ ಹೊಂದುವ ಸೆಟ್ಟಿಂಗ್ ಇಲ್ಲ</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF ಅಥವಾ lock ಮುಂತಾದ ಪದವನ್ನು ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="settings_backup_last">ಕೊನೆಯ ಬ್ಯಾಕಪ್: %1$s</string>
+    <string name="settings_backup_never">ಇನ್ನೂ ಬ್ಯಾಕಪ್ ಇಲ್ಲ. ಫೋನ್ ಬದಲಿಸುವ ಮೊದಲು ಬ್ಯಾಕಪ್ ಮಾಡಿ.</string>
+    <string name="settings_backup_intro_title">ನಿಮ್ಮ ಲೈಬ್ರರಿಯನ್ನು ಬ್ಯಾಕಪ್ ಮಾಡಿ</string>
+    <string name="settings_backup_intro_body">ಪ್ರತಿ ದಾಖಲೆಯನ್ನು ನೀವು ಆಯ್ಕೆಮಾಡಿದ ಫೋಲ್ಡರ್‌ನಲ್ಲಿ ಪ್ರತ್ಯೇಕ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿದ ಫೈಲ್ ಆಗಿ ಉಳಿಸಲಾಗುತ್ತದೆ; ಕ್ಲೌಡ್ ಡ್ರೈವ್ ಫೋಲ್ಡರ್ ಕೂಡ ಸರಿ.\n\nಮುಂದಿನ ಹಂತದಲ್ಲಿ ಪಾಸ್‌ವರ್ಡ್ ಹೊಂದಿಸುತ್ತೀರಿ. ಅದನ್ನು ಮರಳಿ ಪಡೆಯಲಾಗದು, ಆದ್ದರಿಂದ ಸುರಕ್ಷಿತವಾಗಿಡಿ.</string>
+    <string name="settings_backup_choose_folder">ಫೋಲ್ಡರ್ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="settings_backup_nothing">ಬ್ಯಾಕಪ್ ಮಾಡಲು ಇನ್ನೂ ದಾಖಲೆಗಳಿಲ್ಲ.</string>
     <string name="lib_restore_aside_title">ಹಿಂದಿನ ಲೈಬ್ರರಿಯನ್ನು ಮರುಸ್ಥಾಪಿಸಬೇಕೆ?</string>
     <string name="lib_restore_aside_body">ಆಪ್‌ನ ಹಳೆಯ ಆವೃತ್ತಿ ಇನ್‌ಸ್ಟಾಲ್ ಆದಾಗ ನಿಮ್ಮ ಲೈಬ್ರರಿಯನ್ನು ಪಕ್ಕಕ್ಕೆ ಇಡಲಾಗಿತ್ತು. ಈ ಆವೃತ್ತಿ ಅದನ್ನು ಮತ್ತೆ ಓದಬಲ್ಲದು. ಅದರ ದಾಖಲೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಬೇಕೆ? ಅದರ ನಂತರ ನೀವು ಸ್ಕ್ಯಾನ್ ಮಾಡಿದವು ಹಾಗೆಯೇ ಇರುತ್ತವೆ.</string>
     <string name="lib_restore_aside_confirm">ಮರುಸ್ಥಾಪಿಸಿ</string>
@@ -244,4 +253,25 @@
         <item quantity="one">%1$d ದಾಖಲೆ ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
         <item quantity="other">%1$d ದಾಖಲೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
     </plurals>
+    <string name="home_recent_files">ಇತ್ತೀಚಿನ ಫೈಲ್‌ಗಳು</string>
+    <string name="home_recent_opened">ತೆರೆದವು</string>
+    <string name="home_recent_scans">ಸ್ಕ್ಯಾನ್‌ಗಳು</string>
+    <string name="settings_section_about">ScanPro ಬಗ್ಗೆ</string>
+    <string name="settings_group_more">ಇನ್ನಷ್ಟು</string>
+    <string name="settings_about_tagline">ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಕೆಲಸ ಮಾಡುವ ಡಾಕ್ಯುಮೆಂಟ್ ಸ್ಕ್ಯಾನರ್ ಮತ್ತು PDF ಟೂಲ್‌ಕಿಟ್.</string>
+    <string name="settings_group_general">ಸಾಮಾನ್ಯ</string>
+    <string name="settings_group_data">ಡೇಟಾ ಮತ್ತು ಗೌಪ್ಯತೆ</string>
+    <string name="settings_stat_documents">ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</string>
+    <string name="settings_stat_storage">ಬಳಸಿದ ಸಂಗ್ರಹಣೆ</string>
+    <string name="settings_stat_recycle_bin">ರೀಸೈಕಲ್ ಬಿನ್‌ನಲ್ಲಿ</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">ಟ್ಯಾಗ್ ಸೇರಿಸಿ</string>
+    <string name="name_pattern_example">ಮುಂದಿನ ಸ್ಕ್ಯಾನ್: %1$s</string>
+    <string name="name_pattern_sample_text">ಇನ್‌ವಾಯ್ಸ್ Acme</string>
+    <string name="name_pattern_suggestions">ಸಲಹೆಗಳು</string>
+    <string name="name_pattern_tag_date">ದಿನಾಂಕ</string>
+    <string name="name_pattern_tag_mode">ಸ್ಕ್ಯಾನ್ ಪ್ರಕಾರ</string>
+    <string name="name_pattern_tag_text">ಪುಟದ ಪಠ್ಯ</string>
+    <string name="name_pattern_tag_time">ಸಮಯ</string>
+    <string name="name_pattern_unknown">ಟ್ಯಾಗ್ ಅಲ್ಲ, ಟೈಪ್ ಮಾಡಿದಂತೆಯೇ ಉಳಿಸಲಾಗಿದೆ: %1$s</string>
 </resources>

@@ -62,4 +62,17 @@ class CacheCleanerTest {
         assertTrue(freshCopy.exists())
         assertTrue(unrelated.exists())
     }
+
+    @Test
+    fun `temp files the tools leave after a cancel are swept after an hour`() {
+        val cache = temp.newFolder("cache")
+        val leftovers = listOf("wm_in_1.pdf", "num_in_2.pdf", "resize_in_3.jpg", "crop_staged_4.jpg", "repair_5", "pdf2ppt_6", "PDFBox7.tmp")
+            .map { name -> File(cache, name).apply { writeText("x"); setLastModified(now - 2 * 60 * 60 * 1000) } }
+        val running = File(cache, "wm_in_running.pdf").apply { writeText("x"); setLastModified(now - 5 * 60 * 1000) }
+        val unrelated = File(cache, "notes.txt").apply { writeText("x"); setLastModified(now - 2 * day) }
+        CacheCleaner.purgeFolders(cache, temp.newFolder("files"), now)
+        leftovers.forEach { assertFalse(it.name, it.exists()) }
+        assertTrue("a run in progress keeps its file", running.exists())
+        assertTrue("files the tools did not make are left alone", unrelated.exists())
+    }
 }

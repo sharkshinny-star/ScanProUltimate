@@ -5,6 +5,7 @@ import com.example.scanpro.core.text.UserFacingException
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
+import com.example.scanpro.data.OcrWord
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageAnnotation
@@ -59,6 +60,7 @@ class EncryptedDocumentPackageTest {
                 id = "p$i", documentId = "d", position = i,
                 sourcePath = source.absolutePath, imagePath = image.absolutePath,
                 ocrText = "text of page $i", filter = if (i == 1) PageFilter.BW else PageFilter.COLOR,
+                ocrEdited = i == 2, ocrWords = if (i == 2) emptyList() else listOf(OcrWord("page", 0.1f, 0.2f, 0.3f, 0.25f)),
                 rotationDegrees = 90 * i, crop = crop, adjustments = adjustments,
                 annotations = if (i != 0) emptyList() else listOf(
                     PageAnnotation(id = "t1", type = AnnotationType.TEXT, x = 0.1f, y = 0.2f, width = 0.3f, height = 0.1f, text = "Hello"),
@@ -125,6 +127,9 @@ class EncryptedDocumentPackageTest {
             assertEquals(90 * i, page.rotationDegrees)
             assertEquals(crop, page.crop)
             assertEquals(adjustments, page.adjustments)
+            // A hand correction must survive, or the next edit re-runs OCR over it.
+            assertEquals(source.ocrEdited, page.ocrEdited)
+            assertEquals(source.ocrWords, page.ocrWords)
         }
     }
 
@@ -259,6 +264,82 @@ class EncryptedDocumentPackageTest {
     }
 
     @Test
+    fun `an oversized version 1 backup is refused before it is decrypted`() {
+        // Version 1 is one GCM stream, which Android buffers whole before releasing any plaintext, so a huge
+        // one must be refused on its size alone. The limit follows this machine's heap, so the file is made one
+        // byte past whatever it is. The file is sparse: only the header is really written.
+        val file = File(tmp.root, "legacy-huge.scanpro")
+        FileOutputStream(file).use { raw ->
+            val header = DataOutputStream(BufferedOutputStream(raw))
+            header.write(byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '1'.code.toByte()))
+            header.writeInt(100_000)
+            header.write(ByteArray(16) { it.toByte() })
+            header.flush()
+        }
+        java.io.RandomAccessFile(file, "rw").use { it.setLength(EncryptedDocumentPackage.legacyPackageLimit() + 1) }
+        val outDir = File(tmp.root, "restore-legacy-huge")
+        try {
+            EncryptedDocumentPackage.read(file, outDir, password.toCharArray())
+            fail("a version 1 backup over the limit should be refused")
+        } catch (expected: UserFacingException) {
+            assertEquals(R.string.err_backup_too_large, expected.messageRes)
+        }
+        assertFalse("the restore folder is removed", outDir.exists())
+    }
+
+    @Test
+    fun `a wrong password on a version 1 backup says so`() {
+        // Version 1 is one GCM stream: a wrong key fails its tag check, which surfaces as an authentication error
+        // inside an IOException, not as the version 2 "wrong key" error, and used to read as a generic failure.
+        val salt = ByteArray(16) { (it + 1).toByte() }
+        val iv = ByteArray(12) { (it + 40).toByte() }
+        val iterations = 100_000
+        val sealingKey = SecretKeySpec(
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+                .generateSecret(PBEKeySpec("the right password".toCharArray(), salt, iterations, 256)).encoded,
+            "AES"
+        )
+        val cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding").apply {
+            init(javax.crypto.Cipher.ENCRYPT_MODE, sealingKey, javax.crypto.spec.GCMParameterSpec(128, iv))
+        }
+        val file = File(tmp.root, "legacy-v1.scanpro")
+        FileOutputStream(file).use { raw ->
+            val header = DataOutputStream(BufferedOutputStream(raw))
+            header.write(byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '1'.code.toByte()))
+            header.writeInt(iterations)
+            header.write(salt)
+            header.write(iv)
+            header.write(cipher.doFinal(bytes(7, 4096)))
+            header.flush()
+        }
+        val outDir = File(tmp.root, "restore-legacy-wrong")
+        try {
+            EncryptedDocumentPackage.read(file, outDir, "not the password".toCharArray())
+            fail("a wrong password should be refused")
+        } catch (expected: UserFacingException) {
+            assertEquals(R.string.err_backup_wrong_password, expected.messageRes)
+        }
+        assertFalse("the restore folder is removed", outDir.exists())
+    }
+
+    @Test
+    fun `a full phone is reported as not enough space, not as a bad password or file`() {
+        val full = java.io.IOException("write failed: ENOSPC (No space left on device)")
+        assertTrue(EncryptedDocumentPackage.isOutOfSpace(full))
+        // Found anywhere in the chain of causes, whichever wrapper the unzip or the copy put around it.
+        assertTrue(EncryptedDocumentPackage.isOutOfSpace(java.io.IOException("copy failed", RuntimeException("x", full))))
+        val mapped = EncryptedDocumentPackage.asUserFacing(full)
+        assertTrue(mapped is UserFacingException)
+        assertEquals(R.string.err_backup_no_space, (mapped as UserFacingException).messageRes)
+        assertTrue("the original error stays as the cause", mapped.cause === full)
+
+        // Anything else is passed on untouched.
+        val damaged = java.io.IOException("Backup is damaged")
+        assertFalse(EncryptedDocumentPackage.isOutOfSpace(damaged))
+        assertTrue(EncryptedDocumentPackage.asUserFacing(damaged) === damaged)
+    }
+
+    @Test
     fun `copying a picked backup stops at the size limit`() {
         val out = ByteArrayOutputStream()
         EncryptedDocumentPackage.copyCapped(ByteArray(100).inputStream(), out, limit = 100)
@@ -281,6 +362,21 @@ class EncryptedDocumentPackageTest {
         val file = craft(password, entries = listOf("../escape.txt" to "pwned".toByteArray(), "manifest.json" to "{}".toByteArray()))
         assertRestoreFails(file, expectedCause = "Unsafe backup entry")
         assertFalse("nothing was written outside", outside.exists())
+    }
+
+    @Test
+    fun `a directory entry cannot escape into a sibling with the same prefix`() {
+        val outDir = File(tmp.root, "restore")
+        val sibling = File(tmp.root, "restore-sibling")
+        val file = craft(password, entries = listOf("../restore-sibling/" to byteArrayOf()))
+        try {
+            restore(file, outDir = outDir)
+            fail("unsafe directory entry accepted")
+        } catch (expected: UserFacingException) {
+            assertTrue(expected.cause?.message.orEmpty().contains("Unsafe backup entry"))
+        }
+        assertFalse(sibling.exists())
+        assertFalse(outDir.exists())
     }
 
     @Test

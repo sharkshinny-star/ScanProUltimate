@@ -202,6 +202,12 @@
     <string name="doc_sign_below">Sign below. The signature will be flattened onto the current page.</string>
     <string name="doc_or_draw_new">Or draw a new one below.</string>
     <string name="doc_save_for_next_time">Save for next time</string>
+    <string name="doc_save_for_next_time_hint">Pick it from Saved signatures in future</string>
+    <string name="doc_ink_custom">Custom colour</string>
+    <string name="doc_colour_picker_title">Choose a colour</string>
+    <string name="doc_colour_palette">Colour palette</string>
+    <string name="doc_colour_hex">Hex code</string>
+    <string name="doc_colour_use">Use colour</string>
     <string name="doc_place_signature">Place signature</string>
     <!-- Placement screen shown after drawing or choosing a signature -->
     <string name="doc_place_signature_hint">Drag to move. Pinch or drag the corner to resize.</string>
@@ -255,6 +261,7 @@
     <!-- Document screen rebuilt from the owner's "Document" design: bar, tabs, page grid, export sheet -->
     <string name="doc_tab_pages">Pages</string>
     <string name="doc_edit_page">Edit page %1$d</string>
+    <string name="doc_view_page">View page %1$d</string>
     <string name="doc_page_options">Page options</string>
     <string name="doc_move_earlier">Move earlier</string>
     <string name="doc_move_later">Move later</string>
@@ -309,4 +316,9 @@
     <string name="doc_saved_more">More ways to save</string>
     <string name="doc_saved_total">Total %1$s</string>
     <string name="doc_saved_copy_total">Copy total</string>
+    <string name="doc_share_as_word">Share as Word</string>
+    <string name="doc_share_as_word_hint">Editable text from the words ScanPro found</string>
+    <string name="doc_translate_download_title">Download the language pack?</string>
+    <string name="doc_translate_download_body">Translating into %1$s the first time downloads its language pack from Google (about 30 MB for each language), over the connection your phone is using now, mobile data included. After that, translation into %1$s works offline.</string>
+    <string name="doc_translate_download_confirm">Download and translate</string>
 </resources>

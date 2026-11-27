@@ -23,11 +23,11 @@ class PdfShareTest {
 
     @Test
     fun `the shrink plan steps down through the qualities and then the sides`() {
-        assertEquals(listOf(PdfShare.Step(PdfQuality.HIGH, 3200)), PdfShare.shrinkPlan(PdfQuality.HIGH, shrink = false))
+        assertEquals(listOf(PdfShare.Step(PdfQuality.HIGH, 3400)), PdfShare.shrinkPlan(PdfQuality.HIGH, shrink = false))
         val plan = PdfShare.shrinkPlan(PdfQuality.BALANCED, shrink = true)
         assertEquals(
             listOf(
-                PdfShare.Step(PdfQuality.BALANCED, 2200), PdfShare.Step(PdfQuality.SMALL, 1400),
+                PdfShare.Step(PdfQuality.BALANCED, 2800), PdfShare.Step(PdfQuality.SMALL, 1400),
                 PdfShare.Step(PdfQuality.SMALL, 1000), PdfShare.Step(PdfQuality.SMALL, 800), PdfShare.Step(PdfQuality.SMALL, 600)
             ),
             plan

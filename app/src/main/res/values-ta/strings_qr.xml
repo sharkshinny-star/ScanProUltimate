@@ -7,7 +7,7 @@
     <string name="qr_history_title">ஸ்கேன் வரலாறு</string>
     <string name="qr_history_save_switch">ஸ்கேன் வரலாற்றைச் சேமி</string>
     <string name="qr_history_search">வரலாற்றில் தேடு</string>
-    <string name="qr_history_privacy">வரலாறு இந்தச் சாதனத்திலேயே இருக்கும், ஒருபோதும் பதிவேற்றப்படாது. இதில் Wi-Fi கடவுச்சொற்களும் பிற தனிப்பட்ட தகவல்களும் இருக்கலாம், எனவே வேலை முடிந்ததும் அழித்துவிடுங்கள்.</string>
+    <string name="qr_history_privacy">வரலாறு இந்தச் சாதனத்தில் மறையாக்கம் செய்து வைக்கப்படுகிறது, ஒருபோதும் பதிவேற்றப்படாது. இதில் தனிப்பட்ட விவரங்கள் இருக்கலாம், வேறு ஃபோனுக்கு மாற்ற முடியாது.</string>
     <string name="qr_history_clear_all">அனைத்தையும் அழி</string>
     <string name="qr_history_clear_title">முழு ஸ்கேன் வரலாற்றையும் அழிக்கவா?</string>
     <string name="qr_history_clear_message">பிடித்தவை உட்பட சேமித்த அனைத்து ஸ்கேன்களும் இந்தச் சாதனத்திலிருந்து நீக்கப்படும். இதைத் திரும்பப் பெற முடியாது.</string>
@@ -52,4 +52,6 @@
     <string name="qr_share_title">QR கோடு</string>
     <string name="qr_save_document">ஆவணமாகச் சேமி</string>
     <string name="qr_save_failed">கோடைச் சேமிக்க முடியவில்லை</string>
+    <string name="qr_history_storage_error">ஸ்கேன் வரலாற்றைப் பாதுகாப்பாகத் திறக்கவோ சேமிக்கவோ முடியவில்லை. நீங்கள் சேமித்த தரவைப் பாதுகாக்க புதிய பதிவுகள் நிறுத்தப்பட்டுள்ளன. அழித்தால் வரலாறு நிரந்தரமாக மீட்டமைக்கப்படும்.</string>
+    <string name="qr_history_clear_locked_warning">இந்த வரலாற்றைத் திறக்க முடியாது. அழித்தால் சேமித்த பதிவுகள் நிரந்தரமாக மாற்றப்படும், அவற்றை மீட்க முடியாமல் போகலாம். இருந்தாலும் அழிக்கவா?</string>
 </resources>

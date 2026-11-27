@@ -7,7 +7,7 @@
     <string name="qr_history_title">ಸ್ಕ್ಯಾನ್ ಇತಿಹಾಸ</string>
     <string name="qr_history_save_switch">ಸ್ಕ್ಯಾನ್ ಇತಿಹಾಸ ಉಳಿಸಿ</string>
     <string name="qr_history_search">ಇತಿಹಾಸದಲ್ಲಿ ಹುಡುಕಿ</string>
-    <string name="qr_history_privacy">ಇತಿಹಾಸ ಈ ಸಾಧನದಲ್ಲೇ ಇರುತ್ತದೆ, ಎಂದಿಗೂ ಅಪ್‌ಲೋಡ್ ಆಗುವುದಿಲ್ಲ. ಇದರಲ್ಲಿ Wi-Fi ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಮತ್ತು ಇತರ ಖಾಸಗಿ ಮಾಹಿತಿ ಇರಬಹುದು, ಆದ್ದರಿಂದ ಕೆಲಸ ಮುಗಿದ ಮೇಲೆ ಅದನ್ನು ಅಳಿಸಿ.</string>
+    <string name="qr_history_privacy">ಇತಿಹಾಸವನ್ನು ಈ ಸಾಧನದಲ್ಲಿ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿ ಇರಿಸಲಾಗುತ್ತದೆ ಮತ್ತು ಎಂದಿಗೂ ಅಪ್‌ಲೋಡ್ ಆಗುವುದಿಲ್ಲ. ಇದರಲ್ಲಿ ಖಾಸಗಿ ವಿವರಗಳಿರಬಹುದು, ಮತ್ತು ಇದನ್ನು ಬೇರೆ ಫೋನ್‌ಗೆ ವರ್ಗಾಯಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.</string>
     <string name="qr_history_clear_all">ಎಲ್ಲವನ್ನೂ ಅಳಿಸಿ</string>
     <string name="qr_history_clear_title">ಎಲ್ಲಾ ಸ್ಕ್ಯಾನ್ ಇತಿಹಾಸ ಅಳಿಸಬೇಕೆ?</string>
     <string name="qr_history_clear_message">ಮೆಚ್ಚಿನವು ಸೇರಿದಂತೆ ಉಳಿಸಿದ ಎಲ್ಲಾ ಸ್ಕ್ಯಾನ್‌ಗಳು ಈ ಸಾಧನದಿಂದ ಅಳಿಸಲ್ಪಡುತ್ತವೆ. ಇದನ್ನು ಹಿಂತಿರುಗಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.</string>
@@ -52,4 +52,6 @@
     <string name="qr_share_title">QR ಕೋಡ್</string>
     <string name="qr_save_document">ಡಾಕ್ಯುಮೆಂಟ್ ಆಗಿ ಉಳಿಸಿ</string>
     <string name="qr_save_failed">ಕೋಡ್ ಉಳಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="qr_history_storage_error">ಸ್ಕ್ಯಾನ್ ಇತಿಹಾಸವನ್ನು ಸುರಕ್ಷಿತವಾಗಿ ತೆರೆಯಲು ಅಥವಾ ಉಳಿಸಲು ಆಗಲಿಲ್ಲ. ನೀವು ಉಳಿಸಿದ ಡೇಟಾವನ್ನು ರಕ್ಷಿಸಲು ಹೊಸ ನಮೂದುಗಳನ್ನು ತಡೆಹಿಡಿಯಲಾಗಿದೆ. ತೆರವುಗೊಳಿಸಿದರೆ ಇತಿಹಾಸ ಶಾಶ್ವತವಾಗಿ ಮರುಹೊಂದುತ್ತದೆ.</string>
+    <string name="qr_history_clear_locked_warning">ಈ ಇತಿಹಾಸವನ್ನು ತೆರೆಯಲು ಸಾಧ್ಯವಿಲ್ಲ. ತೆರವುಗೊಳಿಸಿದರೆ ಉಳಿಸಿದ ನಮೂದುಗಳು ಶಾಶ್ವತವಾಗಿ ಬದಲಾಗುತ್ತವೆ, ಮತ್ತು ಅವುಗಳನ್ನು ಮರಳಿ ಪಡೆಯಲು ಆಗದಿರಬಹುದು. ಆದರೂ ತೆರವುಗೊಳಿಸಬೇಕೇ?</string>
 </resources>

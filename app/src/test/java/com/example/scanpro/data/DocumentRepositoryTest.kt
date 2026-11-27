@@ -20,6 +20,7 @@ import org.junit.Test
  */
 class DocumentRepositoryTest : RepositoryTestBase() {
 
+    /** Renaming, tagging, filing and favouriting a document trims and de-duplicates what was typed and leaves the page order as it was. */
     @Test fun metadataEditsAreSavedWithoutTouchingPages() = runBlocking {
         val doc = newDocument(2)
         repository.rename(doc.id, "  New name ")
@@ -32,6 +33,25 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertEquals("Work", saved.folderName)
         assertTrue(saved.isFavorite)
         assertEquals(doc.order(), saved.order())
+    }
+
+    /** Starring is not an edit: the modified time stays, so the document does not jump to the top of a list sorted by it. */
+    @Test fun favouritingDoesNotChangeTheModifiedTime() = runBlocking {
+        val doc = newDocument(1)
+        val before = load(doc.id)!!.updatedAt
+        repository.setFavorite(doc.id, true)
+        assertTrue(load(doc.id)!!.isFavorite)
+        assertEquals(before, load(doc.id)!!.updatedAt)
+        repository.toggleFavorite(doc.id)
+        assertFalse(load(doc.id)!!.isFavorite)
+        assertEquals(before, load(doc.id)!!.updatedAt)
+    }
+
+    @Test fun existingIdsLeavesOutTrashedAndUnknownDocuments() = runBlocking {
+        val kept = newDocument(1)
+        val trashed = newDocument(1)
+        repository.moveToTrash(trashed.id)
+        assertEquals(setOf(kept.id), repository.existingIds(setOf(kept.id, trashed.id, "no-such-document")))
     }
 
     @Test fun movePageReordersAndRenumbersAndMarksThePdfStale() = runBlocking {
@@ -51,6 +71,7 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertNull(repository.undoState.value[doc.id])
     }
 
+    /** After a page is moved, undo puts the original order back, redo puts the move back, and a second redo has nothing left to do. */
     @Test fun undoAndRedoRestoreThePageOrder() = runBlocking {
         val doc = newDocument(3)
         val original = doc.order()
@@ -71,6 +92,7 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertFalse(repository.undo(newDocument(1).id))
     }
 
+    /** Removing a page renumbers the rest and drops the undo history, but keeps the page's files so the "Page removed" message can still undo it; they go when the removal is purged. */
     @Test fun deletePageKeepsItsFilesUntilTheUndoWindowClosesAndClearsHistory() = runBlocking {
         val doc = newDocument(3)
         repository.movePage(doc.id, doc.order()[0], delta = 1)
@@ -83,10 +105,11 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertFalse(saved.pages.any { it.id == target.id })
         assertEquals(listOf(0, 1), saved.pages.sortedBy { it.position }.map { it.position })
         assertNull("history refers to a deleted page", repository.undoState.value[doc.id])
-        // The files stay while the page can still be brought back, and go when the window closes.
+        // The files stay while the "Page removed" message can still undo the removal ...
         assertTrue(File(target.imagePath).exists())
         assertTrue(File(target.sourcePath).exists())
-        repository.purgeRemovedPage(doc.id)
+        // ... and go once the removal is purged (the message is dismissed or another page is removed).
+        repository.purgeRemovedPage(doc.id, target.id)
         assertFalse(File(target.imagePath).exists())
         assertFalse(File(target.sourcePath).exists())
     }
@@ -122,6 +145,7 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertEquals(doc.order(), load(doc.id)!!.order())
     }
 
+    /** Duplicating a page puts a copy right after it, with a new id and its own image file but the same text. */
     @Test fun duplicatePageInsertsACopyWithItsOwnFiles() = runBlocking {
         val doc = newDocument(2)
         val original = doc.order()
@@ -147,6 +171,7 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertTrue(repository.loadTrashSummaries().isEmpty())
     }
 
+    /** The purge removes documents trashed long enough ago, with their files, and leaves recently trashed and active documents alone. */
     @Test fun purgeDeletesOnlyExpiredTrashAndItsFiles() = runBlocking {
         val now = System.currentTimeMillis()
         val day = 24L * 60 * 60 * 1000
@@ -162,6 +187,7 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertNotNull(load(active.id))
     }
 
+    /** Documents restored from the trash while the expired-trash purge runs on another thread: every restore that succeeds must survive the purge. */
     @Test fun aDocumentRestoredDuringAPurgeIsNeverDeleted() {
         val now = System.currentTimeMillis()
         val day = 24L * 60 * 60 * 1000

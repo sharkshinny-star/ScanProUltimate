@@ -6,7 +6,7 @@ This checklist is intentionally conservative. Complete it against the Play Conso
 
 - [ ] Replace `com.example.scanpro` with the final reverse-DNS application ID **before** first production upload.
 - [ ] Replace the temporary product name/branding where desired; do not use CamScanner trademarks, screenshots, icons, or copied store text.
-- [ ] Create and protect the upload keystore. Prefer Play App Signing for the production signing key.
+- [ ] Create and protect the upload keystore (`bash scripts/setup-upload-key.sh` on your own computer, F220). Prefer Play App Signing for the production signing key.
 - [ ] Set production `versionCode` / `versionName` and keep them monotonically increasing.
 - [ ] Build an Android App Bundle (`.aab`) from the release variant.
 - [ ] Verify R8/minification release build on physical devices.
@@ -14,7 +14,7 @@ This checklist is intentionally conservative. Complete it against the Play Conso
 ## 2. SDK and device compatibility
 
 - [ ] Install the Android SDK/API level required by `compileSdk` in `app/build.gradle.kts`.
-- [ ] Verify the current Play target-API requirement again immediately before release. The project currently targets API 36.
+- [ ] Verify the current Play target-API requirement again immediately before release. The project targets API 37 (`targetSdk = 37`, `compileSdk = 37`), above the API 36 minimum for new apps (checked in the build file 2026-11-19; not run on an Android 17 device, R2).
 - [ ] Test minimum supported Android version (minSdk 24).
 - [ ] Test Android 12, 13, 14, 15, and 16/API 36 where devices/emulators are available.
 - [ ] Test at least one low/mid-range physical phone with 4–6 GB RAM and one recent flagship.
@@ -25,14 +25,15 @@ This checklist is intentionally conservative. Complete it against the Play Conso
 Current intended permissions are deliberately narrow. Re-check the merged release manifest.
 
 - [ ] Camera permission is explained contextually and only requested when entering the custom scanner.
-- [ ] No `MANAGE_EXTERNAL_STORAGE`, broad media permission, contacts, location, microphone, phone, or SMS permission has been introduced.
+- [ ] **Release blocker until filed:** the manifest declares `MANAGE_EXTERNAL_STORAGE` (and `READ_EXTERNAL_STORAGE` up to Android 10) for the optional "Files on this phone" feature (F160–F163). Play rejects the bundle without an All files access declaration and video: file the draft in `PLAY_ALL_FILES_ACCESS.md`, or build the bundle without the permission (`-Pscanpro.allFilesAccess=false`, see `app/build.gradle.kts`). No broad media, contacts, location, microphone, phone or SMS permission is declared (manifest read 2026-11-19).
+- [ ] The hosted privacy policy says the same as the build: sections 2, 10 and 12 of `docs/privacy-policy/index.html` were corrected on 2026-11-19 (they said the app never asks for access to all files, and did not mention the backup and drink-water reminders).
 - [ ] Gallery import uses Android Photo Picker/SAF instead of broad storage access.
 - [ ] File sharing uses `FileProvider`/content URIs with temporary grants.
 - [ ] App-private documents are not silently uploaded.
 - [ ] Translation model downloads and Google document-scanner fallback behaviour are accurately disclosed in the privacy policy if shipped.
 - [x] Data Safety form submitted by the owner 2026-11-08 (F88); re-check when SDKs change. Matches the exact production build and any analytics/crash SDKs you add later.
 - [x] Data Safety form (submitted) covers ML Kit's API usage; the privacy policy must say the same once hosted. Covers ML Kit's API usage and performance metrics (see `AUDIT_FINDINGS.md` R13; check Google's current ML Kit data disclosure).
-- [ ] Host the final privacy policy (`docs/privacy-policy/index.html`: fill the 8 highlighted fields, delete the yellow box, check `grep -c 'class="fill"'` prints 0) at a public HTTPS URL and link it in Play Console and the app where required.
+- [ ] Host the final privacy policy (`docs/privacy-policy/index.html`: filled in F218 except the developer name, highlighted in two places; add it, delete the yellow box, check `grep -c 'class="fill"'` prints 0) at the address written in the page, `https://sharkshinny-star.github.io/scanpro-privacy/` (a public repo the owner still has to create, with GitHub Pages on) and link it in Play Console and the app where required.
 - [ ] Review encrypted `.scanpro` backup behaviour and warn users that losing the password means losing access to that backup.
 
 ### Data safety form: draft answers (2026-11-08, from Google's ML Kit data-disclosure page; re-check that page on the day)
@@ -65,6 +66,15 @@ to an SDK provider as sharing unless the provider acts as your service provider;
 is the reference. (2) Add the same list to the privacy policy (`PRIVACY_POLICY_TEMPLATE.md` already has the ML Kit
 paragraph; keep the two consistent). (3) The `INTERNET` permission exists only for translation model downloads; say so in
 the "Data collected" explanations if the form asks.
+
+### Health apps declaration (2026-11-19, F232)
+
+The answer and its source are in `docs/playstore-release/PLAYSTORE_DECLARATIONS.md` section 8: "My app doesn't provide
+any health features" (owner confirms). It rests on the drink-water reminder staying a plain reminder: a timed
+notification with "I drank" and "Skip" buttons that both only dismiss it. Nothing is logged, no intake, goal or history
+is kept, and Health Connect is not used. Do not add logging of the answers, daily totals or goals without revisiting
+that answer: it would make the feature a hydration tracker, which Google's Nutrition and weight management category
+("tools for tracking dietary intake") covers. Keep health claims out of the notice text and the store listing.
 
 ## 4. Scanner quality acceptance
 
@@ -157,4 +167,7 @@ See `SCAN_QUALITY_TEST_PLAN.md` for measurable acceptance criteria.
 
 ## 12. Current limitation before store submission
 
-This source package has not been compiled into an APK/AAB in the generation environment because that environment does not contain the Android SDK/Gradle toolchain. Portable Kotlin checks and static resource/source checks are documented in `BUILD_STATUS.md`. A real Gradle build and physical-device validation are mandatory before Play submission.
+The app builds in a cloud container (unit tests, lint, release bundle: see `BUILD_AND_TEST.md` "Latest results"), but that
+container has no phone or emulator and no signing key. Before a production upload the owner still has to: sign the bundle
+with the upload key, install and smoke-test the release build on a phone (see `SMOOTHNESS_CHECK.md` and
+`REMAINING_WORK.md`), host the privacy policy, and file the All files access declaration.

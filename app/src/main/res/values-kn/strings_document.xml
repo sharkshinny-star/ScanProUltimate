@@ -216,6 +216,7 @@
     <string name="doc_opening_document">ಡಾಕ್ಯುಮೆಂಟ್ ತೆರೆಯಲಾಗುತ್ತಿದೆ</string>
     <string name="doc_tab_pages">ಪುಟಗಳು</string>
     <string name="doc_edit_page">ಪುಟ %1$d ಎಡಿಟ್ ಮಾಡಿ</string>
+    <string name="doc_view_page">ಪುಟ %1$d ನೋಡಿ</string>
     <string name="doc_page_options">ಪುಟದ ಆಯ್ಕೆಗಳು</string>
     <string name="doc_move_earlier">ಮುಂದಕ್ಕೆ ಸರಿಸಿ</string>
     <string name="doc_move_later">ಹಿಂದಕ್ಕೆ ಸರಿಸಿ</string>
@@ -267,4 +268,15 @@
     <string name="doc_saved_more">ಉಳಿಸಲು ಇನ್ನಷ್ಟು ಮಾರ್ಗಗಳು</string>
     <string name="doc_saved_total">ಒಟ್ಟು %1$s</string>
     <string name="doc_saved_copy_total">ಒಟ್ಟು ಕಾಪಿ ಮಾಡಿ</string>
+    <string name="doc_share_as_word">Word ಆಗಿ ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="doc_share_as_word_hint">ScanPro ಕಂಡುಕೊಂಡ ಪದಗಳಿಂದ ಸಂಪಾದಿಸಬಹುದಾದ ಪಠ್ಯ</string>
+    <string name="doc_colour_hex">ಹೆಕ್ಸ್ ಕೋಡ್</string>
+    <string name="doc_colour_palette">ಬಣ್ಣದ ಪ್ಯಾಲೆಟ್</string>
+    <string name="doc_colour_picker_title">ಬಣ್ಣ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="doc_colour_use">ಈ ಬಣ್ಣ ಬಳಸಿ</string>
+    <string name="doc_ink_custom">ನಿಮ್ಮ ಬಣ್ಣ</string>
+    <string name="doc_save_for_next_time_hint">ಮುಂದೆ ಉಳಿಸಿದ ಸಹಿಗಳಿಂದ ಇದನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="doc_translate_download_title">ಭಾಷಾ ಪ್ಯಾಕ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬೇಕೆ?</string>
+    <string name="doc_translate_download_body">%1$s ಗೆ ಮೊದಲ ಬಾರಿ ಅನುವಾದಿಸುವಾಗ ಅದರ ಭಾಷಾ ಪ್ಯಾಕ್ Google ನಿಂದ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತದೆ (ಪ್ರತಿ ಭಾಷೆಗೆ ಸುಮಾರು 30 MB), ನಿಮ್ಮ ಫೋನ್ ಈಗ ಬಳಸುತ್ತಿರುವ ಸಂಪರ್ಕದ ಮೂಲಕ, ಮೊಬೈಲ್ ಡೇಟಾ ಸೇರಿ. ನಂತರ %1$s ಗೆ ಅನುವಾದ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ.</string>
+    <string name="doc_translate_download_confirm">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ ಅನುವಾದಿಸಿ</string>
 </resources>

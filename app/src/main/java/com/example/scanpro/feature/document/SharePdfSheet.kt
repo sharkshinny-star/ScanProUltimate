@@ -100,7 +100,7 @@ fun SharePdfSheet(
                 }
             }
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                items(pages, key = { it.id }) { page ->
+                items(pages, key = { it.id }, contentType = { "share_page_chip" }) { page ->
                     val on = page.id in selected
                     val label = stringResource(R.string.viewer_page_of, page.position + 1, pages.size)
                     Box(

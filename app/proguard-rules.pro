@@ -34,3 +34,33 @@
 
 # The on-demand translate module's entry point is created by name from TranslationFeature.
 -keep class com.example.scanpro.translate.MlKitTranslator { <init>(); }
+
+# Composition tracing: strip trace strings from release builds to minimize APK size overhead.
+-assumenosideeffects public class androidx.compose.runtime.ComposerKt {
+   boolean isTraceInProgress();
+   void traceEventStart(int,int,int,java.lang.String);
+   void traceEventStart(int,java.lang.String);
+   void traceEventEnd();
+}
+
+
+# Release builds drop verbose, debug and info logs (F210): they can carry file names, OCR text or QR contents, and
+# logcat is readable over adb. Warnings and errors stay for crash diagnosis.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
+
+# File info and metadata (F243). jaudiotagger refers to desktop Java (AWT pictures for cover art, Swing in its demo
+# classes) that Android does not have; those paths are never used here, as cover art is only read as bytes.
+# Its tag formats are found by reflection, so they are kept whole.
+-dontwarn java.awt.**
+-dontwarn javax.imageio.**
+-dontwarn javax.swing.**
+-dontwarn javax.sound.**
+-dontwarn org.jaudiotagger.**
+-keep class org.jaudiotagger.** { *; }
+# metadata-extractor: its XMP reader (Adobe xmpcore) is found by class name.
+-dontwarn com.adobe.internal.xmp.**
+-keep class com.adobe.internal.xmp.** { *; }

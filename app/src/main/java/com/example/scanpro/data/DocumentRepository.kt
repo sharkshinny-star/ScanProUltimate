@@ -46,6 +46,11 @@ class DocumentRepository @Inject constructor(
         get() = store.pdfWriter
         set(value) { store.pdfWriter = value }
 
+    /** Tests can set this to throw before saving, to check clean-up when a save fails. */
+    internal var onBeforeSave: ((ScanDocument) -> Unit)?
+        get() = store.onBeforeSave
+        set(value) { store.onBeforeSave = value }
+
     /** Undo and redo steps available per document, for this session. */
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = store.history.state
 
@@ -72,6 +77,8 @@ class DocumentRepository @Inject constructor(
     suspend fun setFolder(id: String, folder: String) = catalog.setFolder(id, folder)
     suspend fun renameFolder(oldName: String, newName: String) = catalog.renameFolder(oldName, newName)
     suspend fun toggleFavorite(id: String) = catalog.toggleFavorite(id)
+    suspend fun setFavorite(id: String, favorite: Boolean) = catalog.setFavorite(id, favorite)
+    suspend fun existingIds(ids: Set<String>): Set<String> = catalog.existingIds(ids)
     suspend fun setPdfQuality(id: String, quality: PdfQuality) = catalog.setPdfQuality(id, quality)
     suspend fun setPdfPageSize(id: String, size: PdfPageSize) = catalog.setPdfPageSize(id, size)
     suspend fun setSearchablePdf(id: String, enabled: Boolean) = catalog.setSearchablePdf(id, enabled)
@@ -79,6 +86,8 @@ class DocumentRepository @Inject constructor(
     suspend fun setScanMode(id: String, mode: ScanMode) = catalog.setScanMode(id, mode)
     suspend fun ensurePdf(id: String): ScanDocument = catalog.ensurePdf(id)
     suspend fun documentsNeedingPdf(): List<String> = catalog.documentsNeedingPdf()
+    suspend fun oversizedPdfs(): OversizedPdfs = catalog.oversizedPdfs()
+    suspend fun compactPdfs(): Long = catalog.compactPdfs()
 
     // ---- DocumentTrash
     suspend fun trashExpiringWithin(withinMs: Long): Int = trash.trashExpiringWithin(withinMs)
@@ -188,7 +197,9 @@ class DocumentRepository @Inject constructor(
     suspend fun reOcrDocument(id: String, script: OcrScript? = null): Int = editor.reOcrDocument(id, script)
     suspend fun undo(documentId: String): Boolean = editor.undo(documentId)
     suspend fun redo(documentId: String): Boolean = editor.redo(documentId)
-    suspend fun cleanUnusedSignatures(documentId: String) = editor.cleanUnusedSignatures(documentId)
+    // A removed page still offered for Undo keeps its signatures too.
+    suspend fun cleanUnusedSignatures(documentId: String) =
+        editor.cleanUnusedSignatures(documentId, listOfNotNull(organiser.pendingRemovedPage(documentId)))
 
     // ---- PageOrganiser
     suspend fun movePage(documentId: String, pageId: String, delta: Int) = organiser.movePage(documentId, pageId, delta)

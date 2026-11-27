@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_err_resize_too_large">यह आकार इस फ़ोन के लिए बहुत बड़ा है। चित्र को 24 मेगापिक्सेल से कम रखें, जैसे 6000 × 4000।</string>
+</resources>

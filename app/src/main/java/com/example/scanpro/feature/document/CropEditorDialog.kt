@@ -8,10 +8,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -88,6 +88,8 @@ import com.example.scanpro.core.designsystem.GlassIconButton
 import com.example.scanpro.core.designsystem.ScanProTheme
 import androidx.compose.ui.text.font.FontWeight
 import com.example.scanpro.scanner.DocumentEdgeDetector
+import com.example.scanpro.scanner.translateEdge
+import com.example.scanpro.scanner.turnQuad
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -96,6 +98,9 @@ import kotlin.math.hypot
 /** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would); the 90° icons never flip and aren't deprecated. */
 private val RotateLeftIcon: ImageVector = Icons.Filled.Rotate90DegreesCcw
 private val RotateRightIcon: ImageVector = Icons.Filled.Rotate90DegreesCw
+
+/** The photo turned for display: [turns] quarter turns clockwise of the photo at [path]. */
+private class TurnedPicture(val bitmap: Bitmap?, val turns: Int, val path: String)
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
@@ -111,20 +116,42 @@ fun CropEditorDialog(
     pageIndex: Int = 0,
     pageCount: Int = 1,
     /** Moves to the page `delta` away, with the crop of the page being left; the editor stays open. */
-    onPage: ((delta: Int, crop: CropQuad) -> Unit)? = null
+    onPage: ((delta: Int, crop: CropQuad) -> Unit)? = null,
+    /**
+     * Quarter turns clockwise the page is shown with (its `rotationDegrees / 90`). The outline is stored on the
+     * unturned photo; the editor shows the photo turned, the way the page looks, and works on a turned outline (R51).
+     */
+    turns: Int = 0
 ) {
-    // Held above the dialog and saved, so a rotation keeps the outline the user has drawn.
-    var crop by rememberSaveable(initial, saver = CropStateSaver) { mutableStateOf(initial) }
+    // The turn the picture on screen has. It follows [turns] once the turned picture is ready (see below), so for the
+    // moment in between the outline, the picture and everything worked out from them still agree with each other.
+    var shownTurns by rememberSaveable(initial, sourcePath) { mutableIntStateOf(turns) }
+    val shownInitial = remember(initial, shownTurns) { turnQuad(initial, shownTurns) }
+    // Held above the dialog and saved, so a rotation keeps the outline the user has drawn. In the turned photo's terms.
+    var crop by rememberSaveable(initial, sourcePath, saver = CropStateSaver) { mutableStateOf(shownInitial) }
+    // Back to the unturned photo. An untouched outline is handed back exactly as it came, so it is not taken for an edit.
+    fun toSource(shown: CropQuad) = if (shown == shownInitial) initial else turnQuad(shown, -shownTurns)
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var panelHeightPx by remember { mutableIntStateOf(0) }
     // Back and the arrow ask first once the outline differs from where it started.
-    val close = { if (crop != initial) confirmDiscard = true else onDismiss() }
+    val close = { if (crop != shownInitial) confirmDiscard = true else onDismiss() }
     Dialog(
         onDismissRequest = close,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+            dismissOnClickOutside = false,
+            dismissOnBackPress = true
+        )
     ) {
+        // This editor is always dark, but a Dialog has its own window that ignores the app's bar style: in the light
+        // theme the clock and battery came out dark on dark (seen on a device). Light icons, whatever the theme.
+        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.SideEffect {
+            dialogWindow?.let { androidx.core.view.WindowCompat.getInsetsController(it, it.decorView).isAppearanceLightStatusBars = false }
+        }
         var loadFailed by rememberSaveable(sourcePath, fallbackPath) { mutableStateOf(false) }
-        val bitmap by produceState<Bitmap?>(initialValue = null, sourcePath, fallbackPath) {
+        val unturned by produceState<Bitmap?>(initialValue = null, sourcePath, fallbackPath) {
             loadFailed = false
             value = withContext(Dispatchers.IO) {
                 val candidates = buildList {
@@ -147,7 +174,6 @@ fun CropEditorDialog(
                             if (result != null) break
                         } catch (t: Throwable) {
                             Log.w("CropEditorDialog", "Failed decoding $path at $dim", t)
-                            System.gc()
                         }
                     }
                     if (result != null) break
@@ -159,6 +185,28 @@ fun CropEditorDialog(
                 result
             }
         }
+        // The picture is turned off the main thread (2026-11-19): turning a 2000 px photo during composition froze the
+        // editor for a moment on every tap of Rotate. Until the turned picture is ready the old one stays up with its
+        // outline; the outline then turns in the same frame the new picture is first shown.
+        val turned by produceState<TurnedPicture?>(initialValue = null, unturned, turns, sourcePath) {
+            val base = unturned
+            val quarter = ((turns % 4) + 4) % 4
+            val picture = if (base == null || quarter == 0) base else withContext(Dispatchers.Default) {
+                runCatching {
+                    // Quarter turns move whole pixels: no filtering needed, which is also faster.
+                    Bitmap.createBitmap(base, 0, 0, base.width, base.height, android.graphics.Matrix().apply { postRotate(90f * quarter) }, false)
+                }.getOrDefault(base)
+            }
+            value = TurnedPicture(picture, turns, sourcePath)
+        }
+        val bitmap = turned?.bitmap
+        turned?.let { ready ->
+            if (ready.path == sourcePath && ready.turns == turns && shownTurns != turns) {
+                // Rotate was tapped and its picture has arrived: the outline being drawn turns with it.
+                crop = turnQuad(crop, turns - shownTurns)
+                shownTurns = turns
+            }
+        }
         val scope = rememberCoroutineScope()
         val latestCrop by rememberUpdatedState(crop)
         var activeCorner by remember { mutableIntStateOf(0) }
@@ -168,14 +216,19 @@ fun CropEditorDialog(
         val latestCurveMode by rememberUpdatedState(curveMode)
 
         // The outline and its handles use the same mint as the live scanner, so "found page" looks the same everywhere.
-        val handleColor = ScanProTheme.colors.scanLine
-        val boundaryColor = ScanProTheme.colors.scanLine
+        val handleColor = com.example.scanpro.scanner.PageOutlineBlue
+        val boundaryColor = com.example.scanpro.scanner.PageOutlineBlue
         val pagePreview = stringResource(R.string.a11y_page_preview)
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DarkChrome.backdrop)
+                .clickable(
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}
+                )
         ) {
             // Top bar: back on glass, with the title and a hint in the middle.
             Row(
@@ -198,98 +251,112 @@ fun CropEditorDialog(
             }
 
             // Centre Viewport with Document Canvas
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .navigationBarsPadding()
+                    // No navigationBarsPadding here: the panel's measured height below already includes the navigation
+                    // bar, so the bar was counted twice and the page drawn smaller and higher than it needed to be.
                     // The bottom panel's real height, not a guess: it grows at large font sizes and wraps in landscape.
                     .padding(top = 56.dp, bottom = if (panelHeightPx > 0) with(LocalDensity.current) { panelHeightPx.toDp() } + 8.dp else 180.dp, start = 16.dp, end = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 bitmap?.let { image ->
+                    // Fit the page to both the width and the height, with a safe gutter round it, so a tall page or a
+                    // short landscape window can't push a corner handle off-screen or under the edge of the canvas.
+                    val imageRatio = image.width.toFloat() / image.height.toFloat()
+                    val handleInset = minOf(18.dp, maxWidth / 10f, maxHeight / 10f)
+                    val contentMaxWidth = (maxWidth - handleInset * 2).coerceAtLeast(1.dp)
+                    val contentMaxHeight = (maxHeight - handleInset * 2).coerceAtLeast(1.dp)
+                    val contentWidthDp = minOf(contentMaxWidth, contentMaxHeight * imageRatio)
+                    val contentHeightDp = contentWidthDp / imageRatio
+                    val insetPx = with(LocalDensity.current) { handleInset.toPx() }
                     Canvas(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                            .width(contentWidthDp + handleInset * 2)
+                            .height(contentHeightDp + handleInset * 2)
                             .semantics { contentDescription = pagePreview }
-                            .pointerInput(Unit) {
+                            .pointerInput(insetPx) {
+                                var currentCrop = latestCrop
                                 detectDragGestures(
                                     onDragStart = { start ->
-                                        draggingCorner = true
-                                        val handles = handlesForCrop(latestCrop, size.width.toFloat(), size.height.toFloat())
-                                        activeCorner = handles.indices.minByOrNull { index ->
+                                        currentCrop = latestCrop
+                                        val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+                                        val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
+                                        val handles = handlesForCrop(currentCrop, contentWidth, contentHeight)
+                                            .map { Offset(it.x + insetPx, it.y + insetPx) }
+                                        val distance = { index: Int ->
                                             hypot((handles[index].x - start.x).toDouble(), (handles[index].y - start.y).toDouble())
-                                        } ?: 0
+                                        }
+                                        val nearest = handles.indices.minByOrNull(distance)
+                                        // A drag that starts far from every handle (a stray swipe across the page) moves nothing.
+                                        activeCorner = nearest?.takeIf { distance(it) <= 48.dp.toPx() } ?: -1
+                                        draggingCorner = activeCorner >= 0
                                     },
                                     onDragEnd = { draggingCorner = false },
                                     onDragCancel = { draggingCorner = false },
                                     onDrag = { change, dragAmount ->
+                                        if (activeCorner < 0) return@detectDragGestures
                                         change.consume()
+                                        val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+                                        val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
                                         val points = listOf(
-                                            latestCrop.topLeft,
-                                            latestCrop.topRight,
-                                            latestCrop.bottomRight,
-                                            latestCrop.bottomLeft
+                                            currentCrop.topLeft,
+                                            currentCrop.topRight,
+                                            currentCrop.bottomRight,
+                                            currentCrop.bottomLeft
                                         ).toMutableList()
 
                                         if (latestCurveMode && activeCorner >= 4) {
-                                            val dx = dragAmount.x / size.width
-                                            val dy = dragAmount.y / size.height
+                                            val dx = dragAmount.x / contentWidth
+                                            val dy = dragAmount.y / contentHeight
                                             fun moved(bow: NormalizedPoint?) = NormalizedPoint(
                                                 ((bow?.x ?: 0f) + dx).coerceIn(-0.3f, 0.3f),
                                                 ((bow?.y ?: 0f) + dy).coerceIn(-0.3f, 0.3f)
                                             )
-                                            crop = when (activeCorner) {
-                                                4 -> latestCrop.copy(topBow = moved(latestCrop.topBow))
-                                                5 -> latestCrop.copy(rightBow = moved(latestCrop.rightBow))
-                                                6 -> latestCrop.copy(bottomBow = moved(latestCrop.bottomBow))
-                                                else -> latestCrop.copy(leftBow = moved(latestCrop.leftBow))
+                                            currentCrop = when (activeCorner) {
+                                                4 -> currentCrop.copy(topBow = moved(currentCrop.topBow))
+                                                5 -> currentCrop.copy(rightBow = moved(currentCrop.rightBow))
+                                                6 -> currentCrop.copy(bottomBow = moved(currentCrop.bottomBow))
+                                                else -> currentCrop.copy(leftBow = moved(currentCrop.leftBow))
                                             }
+                                            crop = currentCrop
                                             return@detectDragGestures
                                         }
                                         if (activeCorner < 4) {
                                             // Corner handle
                                             val current = points[activeCorner]
                                             points[activeCorner] = NormalizedPoint(
-                                                x = (current.x + dragAmount.x / size.width).coerceIn(0f, 1f),
-                                                y = (current.y + dragAmount.y / size.height).coerceIn(0f, 1f)
+                                                x = (current.x + dragAmount.x / contentWidth).coerceIn(0f, 1f),
+                                                y = (current.y + dragAmount.y / contentHeight).coerceIn(0f, 1f)
                                             )
                                         } else {
-                                            // Edge midpoint handle
-                                            val dx = dragAmount.x / size.width
-                                            val dy = dragAmount.y / size.height
-                                            when (activeCorner) {
-                                                4 -> { // Top edge
-                                                    points[0] = NormalizedPoint(points[0].x, (points[0].y + dy).coerceIn(0f, 1f))
-                                                    points[1] = NormalizedPoint(points[1].x, (points[1].y + dy).coerceIn(0f, 1f))
-                                                }
-                                                5 -> { // Right edge
-                                                    points[1] = NormalizedPoint((points[1].x + dx).coerceIn(0f, 1f), points[1].y)
-                                                    points[2] = NormalizedPoint((points[2].x + dx).coerceIn(0f, 1f), points[2].y)
-                                                }
-                                                6 -> { // Bottom edge
-                                                    points[2] = NormalizedPoint(points[2].x, (points[2].y + dy).coerceIn(0f, 1f))
-                                                    points[3] = NormalizedPoint(points[3].x, (points[3].y + dy).coerceIn(0f, 1f))
-                                                }
-                                                7 -> { // Left edge
-                                                    points[0] = NormalizedPoint((points[0].x + dx).coerceIn(0f, 1f), points[0].y)
-                                                    points[3] = NormalizedPoint((points[3].x + dx).coerceIn(0f, 1f), points[3].y)
-                                                }
-                                            }
+                                            // Edge handle: the edge moves as one piece and stops at the image border.
+                                            val first = activeCorner - 4
+                                            val second = (first + 1) % 4
+                                            val (a, b) = translateEdge(
+                                                points[first], points[second],
+                                                dragAmount.x / contentWidth, dragAmount.y / contentHeight
+                                            )
+                                            points[first] = a
+                                            points[second] = b
                                         }
                                         // copy() keeps any bend: it is stored relative to the corners, so it follows them.
-                                        crop = latestCrop.copy(topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3])
+                                        currentCrop = currentCrop.copy(topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3])
+                                        crop = currentCrop
                                     }
                                 )
                             }
                     ) {
+                        val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+                        val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
                         drawImage(
                             image = image.asImageBitmap(),
-                            dstOffset = IntOffset.Zero,
-                            dstSize = IntSize(size.width.toInt(), size.height.toInt())
+                            dstOffset = IntOffset(insetPx.toInt(), insetPx.toInt()),
+                            dstSize = IntSize(contentWidth.toInt(), contentHeight.toInt())
                         )
-                        val handles = handlesForCrop(crop, size.width, size.height)
+                        val handles = handlesForCrop(crop, contentWidth, contentHeight)
+                            .map { Offset(it.x + insetPx, it.y + insetPx) }
                         val corners = handles.take(4)
 
                         // Every edge is drawn as the curve the page will be flattened along.
@@ -303,20 +370,23 @@ fun CropEditorDialog(
                             quadraticTo(rightControl.x, rightControl.y, corners[2].x, corners[2].y)
                             quadraticTo(bottomControl.x, bottomControl.y, corners[3].x, corners[3].y)
                             quadraticTo(leftControl.x, leftControl.y, corners[0].x, corners[0].y)
-                            close()
+                            // Explicit receiver: a bare close() would call the dialog's own close lambda, which dismisses the editor on the first draw.
+                            this.close()
                         }
-                        drawPath(path, boundaryColor, style = Stroke(width = 6f))
+                        // In dp (2026-11-18): raw pixels made the outline and handles about a third of the review screen's
+                        // on a 3x phone, while their touch radius stayed 48dp.
+                        drawPath(path, boundaryColor, style = Stroke(width = 2.dp.toPx()))
 
                         // Draw 8 Handles (4 Corners + 4 Midpoints)
                         handles.forEachIndexed { index, point ->
-                            val radius = if (index < 4) 18f else 14f
+                            val radius = (if (index < 4) 12.dp else 9.dp).toPx()
                             val bendHandle = curveMode && index >= 4
                             drawCircle(if (bendHandle) DarkChrome.highlight else handleColor, radius = radius, center = point)
                             drawCircle(Color.White, radius = radius * 0.45f, center = point)
                         }
 
                         // Loupe magnifier on drag
-                        if (draggingCorner && activeCorner < 4) {
+                        if (draggingCorner && activeCorner in 0..3) {
                             val normalized = listOf(crop.topLeft, crop.topRight, crop.bottomRight, crop.bottomLeft)[activeCorner]
                             val sampleSize = 96
                             val sourceX = (normalized.x * image.width).toInt().coerceIn(0, image.width - 1)
@@ -326,7 +396,9 @@ fun CropEditorDialog(
                             val actualWidth = sampleSize.coerceAtMost(image.width - left)
                             val actualHeight = sampleSize.coerceAtMost(image.height - top)
                             val loupe = 132.dp.toPx()
-                            val dstLeft = (size.width - loupe) / 2f
+                            // On the side away from the dragged corner, so the loupe never covers the corner itself
+                            // (a top corner of a narrow receipt sat right under a centred loupe).
+                            val dstLeft = if (normalized.x < 0.5f) size.width - loupe - 12.dp.toPx() else 12.dp.toPx()
                             val dstTop = 12.dp.toPx()
 
                             drawRect(
@@ -374,7 +446,7 @@ fun CropEditorDialog(
                         }
                     }
                 } else {
-                    androidx.compose.material3.CircularProgressIndicator(color = ScanProTheme.colors.scanLine)
+                    com.example.scanpro.core.designsystem.FileLoadingAnimation(onDark = true)
                 }
             }
 
@@ -388,15 +460,15 @@ fun CropEditorDialog(
                     .navigationBarsPadding()
                     .padding(vertical = 12.dp)
             ) {
-                // Page Navigation Bar (e.g. 1/1 + Add Page)
-                FlowRow(
+                // Page navigation and Add page; nothing to show for a single page with no Add page.
+                if (pageCount > 1 || onAddPage != null) FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp),
                     itemVerticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
+                    if (pageCount > 1) Surface(
                         shape = RoundedCornerShape(24.dp),
                         color = Color.White.copy(alpha = 0.12f)
                     ) {
@@ -410,14 +482,14 @@ fun CropEditorDialog(
                                 Icons.AutoMirrored.Filled.NavigateBefore,
                                 contentDescription = stringResource(R.string.scan_review_previous_page),
                                 tint = if (hasPrevious) DarkChrome.text else DarkChrome.disabledText,
-                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasPrevious, role = Role.Button) { onPage?.invoke(-1, crop) }.padding(12.dp)
+                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasPrevious, role = Role.Button) { onPage?.invoke(-1, toSource(crop)) }.padding(12.dp)
                             )
                             Text(stringResource(R.string.doc_crop_page_x_of_y, pageIndex + 1, pageCount), color = DarkChrome.text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
                             Icon(
                                 Icons.AutoMirrored.Filled.NavigateNext,
                                 contentDescription = stringResource(R.string.scan_review_next_page),
                                 tint = if (hasNext) DarkChrome.text else DarkChrome.disabledText,
-                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasNext, role = Role.Button) { onPage?.invoke(1, crop) }.padding(12.dp)
+                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasNext, role = Role.Button) { onPage?.invoke(1, toSource(crop)) }.padding(12.dp)
                             )
                         }
                     }
@@ -500,9 +572,10 @@ fun CropEditorDialog(
                     }
 
                     if (onRotateLeft != null) DarkToolAction(RotateLeftIcon, stringResource(R.string.doc_rotate_left), onClick = onRotateLeft)
-                    if (onRotateRight != null) DarkToolAction(RotateRightIcon, stringResource(R.string.doc_rotate_right), onClick = onRotateRight)
+                    // "Right" only means something next to "Left"; alone, the button is "Rotate".
+                    if (onRotateRight != null) DarkToolAction(RotateRightIcon, stringResource(if (onRotateLeft != null) R.string.doc_rotate_right else R.string.doc_rotate), onClick = onRotateRight)
 
-                    AccentButton(stringResource(R.string.common_done), enabled = bitmap != null, onClick = { onConfirm(crop) })
+                    AccentButton(stringResource(R.string.common_done), enabled = bitmap != null, onClick = { onConfirm(toSource(crop)) })
                 }
             }
         }

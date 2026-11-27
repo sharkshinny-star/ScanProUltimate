@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.net.Uri
 import com.example.scanpro.R
@@ -14,7 +15,6 @@ import java.io.File
 import java.util.UUID
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
@@ -83,11 +83,19 @@ internal object SignGeometry {
 /** Sign PDF: stamps signature pictures and text pictures onto pages of a copy of a PDF. The original is never touched. */
 object SignPdfEngine {
     /**
+     * True when [file] (an unlocked working copy) carries a digital signature (F215). Stamping a picture of a
+     * signature rewrites the file, which makes such a signature invalid in the saved copy, so the screen says so first.
+     * False when the file cannot be read: the tool then fails later with its own message.
+     */
+    fun hasDigitalSignature(file: File): Boolean =
+        runCatching { PdfToolsEngine.openPdf(file).use { it.signatureDictionaries.isNotEmpty() } }.getOrDefault(false)
+
+    /**
      * Copies [uri] into app cache for editing. Returns null when the file needs a password and none was given; a wrong
      * one throws InvalidPasswordException. Protected files (password or restrictions) are written out unprotected,
      * which is why the signed copy is unprotected too; the screen says so.
      */
-    suspend fun prepare(context: Context, uri: Uri, password: String?): SignWorkingCopy? = withContext(Dispatchers.IO) {
+    suspend fun prepare(context: Context, uri: Uri, password: String?): SignWorkingCopy? = withContext(BackgroundWork.tools) {
         val copy = PdfToolsEngine.copyUriToTemp(context, uri, "sign_src_${UUID.randomUUID()}.pdf")
         try {
             val protection = PdfSecurity.protection(copy)
@@ -119,7 +127,7 @@ object SignPdfEngine {
         placements: List<SignPlacement>,
         output: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(placements.isNotEmpty(), R.string.sign_err_nothing_placed)
         output.parentFile?.mkdirs()
         val originalSize = source.length()

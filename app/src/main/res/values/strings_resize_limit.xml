@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_err_resize_too_large">That size is too large for this phone. Keep the picture under 24 megapixels, for example 6000 × 4000.</string>
+</resources>

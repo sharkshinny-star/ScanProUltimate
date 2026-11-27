@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_organizer_extract_short_title">பக்கங்களைப் பிரித்தெடு</string>
+
+    <string name="tools_card_blank_pages">வெற்றுப் பக்கங்களை அகற்று</string>
+    <string name="tools_tile_blank_pages">வெற்றுப் பக்கங்கள்</string>
+    <string name="tools_desc_blank_pages">வெற்றுப் பக்கங்களைக் கண்டறிந்து நீக்கு</string>
+    <string name="tools_card_greyscale">கிரேஸ்கேல் PDF</string>
+    <string name="tools_tile_greyscale">கிரேஸ்கேல்</string>
+    <string name="tools_desc_greyscale">வண்ணப் பக்கங்களைச் சாம்பலாக்கு</string>
+    <string name="tools_card_flatten">PDF-ஐ ஃபிளாட்டன் செய்</string>
+    <string name="tools_tile_flatten">ஃபிளாட்டன்</string>
+    <string name="tools_desc_flatten">படிவப் பதில்களையும் கருத்துகளையும் பக்கத்தின் பகுதியாக்கு</string>
+    <string name="tools_card_extract_images">படங்களைப் பிரித்தெடு</string>
+    <string name="tools_desc_extract_images">PDF-இல் உள்ள படங்களைச் சேமி</string>
+    <string name="tools_card_pdf_info">PDF தகவல் மற்றும் மெட்டாடேட்டா</string>
+    <string name="tools_tile_pdf_info">தகவல் &amp; மெட்டாடேட்டா</string>
+    <string name="tools_desc_pdf_info">மறைந்த விவரங்களைப் பார், திருத்து அல்லது அகற்று</string>
+
+    <string name="tools_new_progress_page">பக்கம் %1$d / %2$d</string>
+
+    <string name="tools_blank_progress_scanning">வெற்றுப் பக்கங்களைத் தேடுகிறது…</string>
+    <string name="tools_blank_progress_removing">வெற்றுப் பக்கங்களை அகற்றுகிறது…</string>
+    <string name="tools_blank_err_failed">இந்த PDF-இல் வெற்றுப் பக்கங்களைச் சரிபார்க்க முடியவில்லை.</string>
+    <string name="tools_blank_err_all">PDF-இல் குறைந்தது ஒரு பக்கம் இருக்க வேண்டும்.</string>
+    <string name="tools_blank_none_title">வெற்றுப் பக்கங்கள் இல்லை</string>
+    <string name="tools_blank_none_body">இந்த PDF-இன் ஒவ்வொரு பக்கத்திலும் ஏதோ உள்ளது, எனவே அகற்ற எதுவும் இல்லை.</string>
+    <string name="tools_blank_found_title">வெற்றுப் பக்கங்கள் கண்டறியப்பட்டன</string>
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%2$d பக்கங்களில் %1$d வெற்றாகத் தெரிகிறது: பக்கம் %3$s. புதிய நகலில் அது அகற்றப்படும்; மூலக் கோப்பு மாறாது.</item>
+        <item quantity="other">%2$d பக்கங்களில் %1$d வெற்றாகத் தெரிகின்றன: பக்கங்கள் %3$s. புதிய நகலில் அவை அகற்றப்படும்; மூலக் கோப்பு மாறாது.</item>
+    </plurals>
+    <string name="tools_blank_all_blank">எல்லாப் பக்கங்களும் வெற்றாகத் தெரிகின்றன. PDF-க்குக் குறைந்தது ஒரு பக்கம் தேவை, எனவே எதையும் அகற்ற முடியாது.</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">%1$d பக்கத்தை அகற்று</item>
+        <item quantity="other">%1$d பக்கங்களை அகற்று</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">%1$d வெற்றுப் பக்கம் அகற்றப்பட்டது</item>
+        <item quantity="other">%1$d வெற்றுப் பக்கங்கள் அகற்றப்பட்டன</item>
+    </plurals>
+
+    <string name="tools_grey_confirm_body">ஒவ்வொரு பக்கமும் %1$d dpi-இல் சாம்பல் நிழல்களில் மீண்டும் வரையப்படும். உரை பக்கப் படத்தின் பகுதியாகிவிடும், எனவே அதைத் தேட அல்லது நகலெடுக்கப் பின்னர் \"தேடக்கூடியதாக்கு\" பயன்படுத்தவும். மூலக் கோப்பு மாறாது.</string>
+    <string name="tools_grey_confirm_action">கிரேஸ்கேல் ஆக்கு</string>
+    <string name="tools_grey_progress">கிரேஸ்கேலுக்கு மாற்றுகிறது…</string>
+    <string name="tools_grey_err_failed">இந்த PDF-ஐக் கிரேஸ்கேலுக்கு மாற்ற முடியவில்லை.</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">%1$d பக்கம் கிரேஸ்கேலுக்கு மாற்றப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்கள் கிரேஸ்கேலுக்கு மாற்றப்பட்டன</item>
+    </plurals>
+
+    <string name="tools_flatten_confirm_body">படிவப் புலங்கள், கருத்துகள், ஹைலைட்கள், முத்திரைகள் ஆகியவை பக்கங்களிலேயே வரையப்படும், எனவே அவற்றை இனி மாற்றவோ அகற்றவோ முடியாது. இணைப்புகள் தொடர்ந்து வேலை செய்யும். மூலக் கோப்பு மாறாது.</string>
+    <string name="tools_flatten_confirm_action">ஃபிளாட்டன் செய்</string>
+    <string name="tools_flatten_progress">ஃபிளாட்டன் செய்கிறது…</string>
+    <string name="tools_flatten_err_failed">இந்த PDF-ஐ ஃபிளாட்டன் செய்ய முடியவில்லை.</string>
+    <string name="tools_flatten_nothing">இந்த PDF-இல் ஃபிளாட்டன் செய்யப் படிவப் புலங்களோ கருத்துகளோ இல்லை.</string>
+    <string name="tools_flatten_done">ஃபிளாட்டன் செய்யப்பட்டது. படிவப் புலங்கள்: %1$d, கருத்துகள் மற்றும் முத்திரைகள்: %2$d</string>
+
+    <string name="tools_ximg_progress">படங்களைப் பிரித்தெடுக்கிறது…</string>
+    <string name="tools_ximg_err_failed">இந்த PDF-இலிருந்து படங்களைப் பிரித்தெடுக்க முடியவில்லை.</string>
+    <string name="tools_ximg_err_none">இந்த PDF-இல் சேமிக்கக்கூடிய படங்கள் இல்லை. முழுப் பக்கங்களையும் படங்களாகச் சேமிக்க \"PDF-இலிருந்து படங்கள்\" பயன்படுத்தவும்.</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">%1$d படம் பிரித்தெடுக்கப்பட்டது</item>
+        <item quantity="other">%1$d படங்கள் பிரித்தெடுக்கப்பட்டன</item>
+    </plurals>
+
+    <string name="tools_info_progress">PDF விவரங்களைப் படிக்கிறது…</string>
+    <string name="tools_info_err_failed">இந்த PDF-இன் விவரங்களைப் படிக்க முடியவில்லை.</string>
+    <string name="tools_info_pages">பக்கங்கள்</string>
+    <string name="tools_info_version">PDF பதிப்பு</string>
+    <string name="tools_info_size">கோப்பு அளவு</string>
+    <string name="tools_info_created">உருவாக்கப்பட்டது</string>
+    <string name="tools_info_modified">மாற்றப்பட்டது</string>
+    <string name="tools_info_creator">உருவாக்கிய ஆப்</string>
+    <string name="tools_info_producer">தயாரிப்பாளர்</string>
+    <string name="tools_info_not_set">அமைக்கப்படவில்லை</string>
+    <string name="tools_info_edit_heading">நீங்கள் திருத்தக்கூடிய விவரங்கள்</string>
+    <string name="tools_info_field_title">தலைப்பு</string>
+    <string name="tools_info_field_author">ஆசிரியர்</string>
+    <string name="tools_info_field_subject">பொருள்</string>
+    <string name="tools_info_field_keywords">முக்கியச் சொற்கள்</string>
+    <string name="tools_info_save">நகலைச் சேமி</string>
+    <string name="tools_info_remove_all">எல்லா மெட்டாடேட்டாவையும் அகற்று</string>
+    <string name="tools_info_remove_all_hint">தனியுரிமைக்காக: தலைப்பு, ஆசிரியர், ஆப்கள், தேதிகள் மற்றும் பிற மறைந்த விவரங்களைப் புதிய நகலில் அகற்றும்.</string>
+    <string name="tools_info_xmp_note">இந்த PDF தன் விவரங்களின் இரண்டாவது (XMP) நகலையும் வைத்துள்ளது. சேமிக்கும்போது அது அகற்றப்படும், எனவே எல்லா ரீடர்களும் ஒரே விவரங்களைக் காட்டும்.</string>
+    <string name="tools_info_saving">விவரங்களைச் சேமிக்கிறது…</string>
+    <string name="tools_info_save_failed">புதிய விவரங்களைச் சேமிக்க முடியவில்லை.</string>
+    <string name="tools_info_saved">விவரங்கள் புதுப்பிக்கப்பட்டன</string>
+    <string name="tools_info_removed">எல்லா மெட்டாடேட்டாவும் அகற்றப்பட்டது</string>
+
+    <string name="hint_tool_blank_pages">ஸ்கேன் செய்த PDF-இன் வெற்றுப் பக்கங்களைக் கண்டறிந்து, பட்டியலைச் சரிபார்த்த பின் அகற்றவும்.</string>
+    <string name="hint_tool_greyscale">குறைந்த செலவில் அச்சிட அல்லது சிறிய கோப்புக்காக வண்ண PDF-ஐச் சாம்பல் நிழல்களாக மாற்றவும்.</string>
+    <string name="hint_tool_flatten">படிவப் பதில்கள், கருத்துகள், முத்திரைகளைப் பக்கங்களிலேயே வரையவும்; அவற்றை இனி புலமாகவோ கருத்தாகவோ மாற்ற முடியாது. PDF எடிட்டரால் பக்கத்தையே இன்னும் மாற்றலாம்.</string>
+    <string name="hint_tool_extract_images">PDF-இல் உள்ள ஒவ்வொரு படத்தையும் தனிப் படக் கோப்பாகச் சேமிக்கவும்.</string>
+    <string name="hint_tool_pdf_info">PDF-இன் மறைந்த விவரங்களைப் பார்க்கவும், தலைப்பு அல்லது ஆசிரியரைத் திருத்தவும், அல்லது தனியுரிமைக்காக அனைத்தையும் அகற்றவும்.</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF பக்கங்களை வெட்டு</string>
+    <string name="tools_tile_crop_pdf">பக்க வெட்டு</string>
+    <string name="tools_desc_crop_pdf">ஓரங்களை அல்லது வெற்றிடத்தை நீக்கு</string>
+    <string name="hint_tool_crop_pdf">ஒவ்வொரு பக்கத்தின் ஓரங்களையும் வெட்டுங்கள்: உள்ளடக்கத்தைச் சுற்றி தானாக, அல்லது மில்லிமீட்டரில். உரை அடுக்கு அப்படியே இருக்கும்.</string>
+    <string name="tools_crop_pdf_body">தானியங்கி ஒவ்வொரு பக்கத்தையும் உள்ளடக்கத்தைச் சுற்றி சிறிது இடைவெளியுடன் வெட்டுகிறது; ஓரங்கள் நீங்கள் அமைத்த அளவை ஒவ்வொரு பக்கத்திலிருந்தும் காட்டப்படும் விதத்தில் வெட்டுகிறது. எதுவும் நீக்கப்படவில்லை, எனவே பின்னர் பழுதுநீக்கம் மூலம் பக்கங்களை மீட்கலாம்.</string>
+    <string name="tools_crop_pdf_mode_auto">தானாக வெட்டு</string>
+    <string name="tools_crop_pdf_mode_margins">ஓரங்கள்</string>
+    <string name="tools_crop_pdf_padding">உள்ளடக்கத்தைச் சுற்றிய இடைவெளி</string>
+    <string name="tools_crop_pdf_top">மேல்</string>
+    <string name="tools_crop_pdf_bottom">கீழ்</string>
+    <string name="tools_crop_pdf_left">இடது</string>
+    <string name="tools_crop_pdf_right">வலது</string>
+    <string name="tools_crop_pdf_mm">%1$d மிமீ</string>
+    <string name="tools_crop_pdf_action">பக்கங்களை வெட்டு</string>
+    <string name="tools_crop_pdf_progress">பக்கங்கள் வெட்டப்படுகின்றன…</string>
+    <string name="tools_crop_pdf_err_failed">இந்த PDF-ஐ வெட்ட முடியவில்லை.</string>
+    <string name="tools_crop_pdf_err_nothing">வெட்ட ஒன்றுமில்லை: ஒவ்வொரு பக்கமும் ஏற்கனவே இறுக்கமாக உள்ளது, அல்லது வெட்டினால் மிகக் குறைவே மீதமிருக்கும்.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d பக்கம் வெட்டப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்கள் வெட்டப்பட்டன</item>
+    </plurals>
+    <string name="tools_card_redact">உரையை மறை</string>
+    <string name="tools_tile_redact">மறை</string>
+    <string name="tools_desc_redact">சொற்களை நிரந்தரமாகக் கறுப்பாக்கு</string>
+    <string name="hint_tool_redact">பெயர்கள், எண்கள் அல்லது எந்தச் சொற்களையும் எங்கு இருந்தாலும் கறுப்பாக்குங்கள். பொருந்திய பக்கங்கள் படங்களாகின்றன, எனவே சொற்கள் உண்மையிலேயே நீங்கும், மூடப்படுவதில்லை.</string>
+    <string name="tools_redact_body">ஒவ்வொரு பொருத்தமும் கறுப்பாக வரையப்பட்டு, பொருத்தம் உள்ள ஒவ்வொரு பக்கமும் படமாக மீண்டும் வரையப்படுகிறது, எனவே உரையை மீட்க முடியாது. பொருத்தம் இல்லாத பக்கங்கள் தங்கள் உரையை வைத்திருக்கும். உரை மீண்டும் வேண்டுமெனில் பிறகு “தேடக்கூடியதாக்கு”-ஐப் பயன்படுத்தவும்.</string>
+    <string name="tools_redact_terms_label">கறுப்பாக்க வேண்டிய சொற்கள்</string>
+    <string name="tools_redact_terms_hint">வரிக்கு ஒன்று, அல்லது காற்புள்ளியால் பிரித்து</string>
+    <string name="tools_redact_match_case">பெரிய, சிறிய எழுத்துகளைப் பொருத்து</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d சொல் தேடப்படும்</item>
+        <item quantity="other">%1$d சொற்கள் தேடப்படும்</item>
+    </plurals>
+    <string name="tools_redact_action">மறை</string>
+    <string name="tools_redact_progress">மறைக்கப்படுகிறது…</string>
+    <string name="tools_redact_progress_searching">சொற்கள் தேடப்படுகின்றன…</string>
+    <string name="tools_redact_err_failed">இந்த PDF-ஐ மறைக்க முடியவில்லை.</string>
+    <string name="tools_redact_err_no_matches">இந்தச் சொற்கள் எதுவும் இந்த PDF-இன் உரையில் இல்லை. ஸ்கேன் செய்த பக்கத்திற்கு முதலில் “தேடக்கூடியதாக்கு” தேவை.</string>
+    <string name="tools_redact_done">%2$d பக்கங்களில் %1$d பொருத்தங்கள் கறுப்பாக்கப்பட்டன</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">ஒரு தாளில் பல பக்கங்கள் (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">ஒரு தாளில் 2 அல்லது 4 பக்கங்கள்</string>
+    <string name="hint_tool_nup">ஒவ்வொரு தாளிலும் இரண்டு அல்லது நான்கு பக்கங்கள், படிக்கும் வரிசையில்: வரைவுகள், ஸ்லைடுகள் அல்லது கையேடுகள் அச்சிட.</string>
+    <string name="tools_nup_body">பக்கங்கள் சிறிதாக்கப்பட்டு படிக்கும் வரிசையில் அருகருகே வைக்கப்படுகின்றன. உரையும் படங்களும் கூர்மையாக இருக்கும்: எதுவும் மீண்டும் வரையப்படவில்லை, நகர்த்தி சிறிதாக்கப்படுகிறது மட்டுமே.</string>
+    <string name="tools_nup_two">தாளுக்கு 2</string>
+    <string name="tools_nup_four">தாளுக்கு 4</string>
+    <string name="tools_nup_action">தாள்களை உருவாக்கு</string>
+    <string name="tools_nup_progress">தாள்கள் அமைக்கப்படுகின்றன…</string>
+    <string name="tools_nup_err_failed">இந்த PDF-ஐ அமைக்க முடியவில்லை.</string>
+    <string name="tools_nup_err_one_page">இந்த PDF-இல் ஒரே பக்கம் உள்ளது, அருகருகே வைக்க எதுவுமில்லை.</string>
+    <string name="tools_nup_done">%2$d தாள்களில் %1$d பக்கங்கள் வைக்கப்பட்டன</string>
+    <string name="tools_card_header_footer">மேற்குறிப்பும் கீழ்க்குறிப்பும்</string>
+    <string name="tools_tile_header_footer">மேல்/கீழ் குறிப்பு</string>
+    <string name="tools_desc_header_footer">மேலே அல்லது கீழே உரை</string>
+    <string name="hint_tool_header_footer">ஒவ்வொரு பக்கத்தின் மேலோ கீழோ ஒரு வரி: தலைப்பு, தேதி அல்லது கோப்புக் குறிப்பு.</string>
+    <string name="tools_hf_body">உரை ஒவ்வொரு பக்கத்திலும் காட்டப்படும் விதத்தில் சேர்க்கப்படுகிறது; மற்றவை அப்படியே இருக்கும். பக்க எண்ணுக்கு {page}, மொத்தப் பக்கங்களுக்கு {total} என்று எழுதுங்கள்.</string>
+    <string name="tools_hf_header_label">மேற்குறிப்பு (பக்கத்தின் மேலே)</string>
+    <string name="tools_hf_footer_label">கீழ்க்குறிப்பு (பக்கத்தின் கீழே)</string>
+    <string name="tools_hf_placeholders_hint">{page} பக்க எண்ணாகவும், {total} மொத்தப் பக்கங்களாகவும் மாறும்.</string>
+    <string name="tools_hf_align_left">இடது</string>
+    <string name="tools_hf_align_centre">நடுவில்</string>
+    <string name="tools_hf_align_right">வலது</string>
+    <string name="tools_hf_skip_first">முதல் பக்கத்தைத் தவிர்</string>
+    <string name="tools_hf_action">உரையைச் சேர்</string>
+    <string name="tools_hf_progress">உரை சேர்க்கப்படுகிறது…</string>
+    <string name="tools_hf_err_failed">மேற்குறிப்பையோ கீழ்க்குறிப்பையோ சேர்க்க முடியவில்லை.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d பக்கத்தில் உரை சேர்க்கப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்களில் உரை சேர்க்கப்பட்டது</item>
+    </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">பகுதிகளை மறை</string>
+    <string name="tools_tile_redact_box">பகுதி மறைப்பு</string>
+    <string name="tools_desc_redact_box">கறுப்பாக்கப் பெட்டிகள் வரையுங்கள்</string>
+    <string name="hint_tool_redact_box">பக்கத்தில் எதன் மீதும் பெட்டிகள் வரையுங்கள்: புகைப்படம், கையொப்பம், கையெழுத்து. பெட்டிகள் நிரந்தரமாகக் கறுப்பாகும்.</string>
+    <string name="tools_redact_box_hint">நீக்க வேண்டியதன் மீது இழுத்துப் பெட்டி வரையுங்கள். பெட்டியைத் தேர்வு செய்யத் தொடவும், பின் குப்பைத் தொட்டி அதை நீக்கும்.</string>
+    <string name="tools_redact_box_remove">இந்தப் பெட்டியை நீக்கு</string>
+    <string name="tools_redact_box_undo">கடைசிப் பெட்டியை நீக்கு</string>
+    <string name="tools_redact_box_previous">முந்தைய பக்கம்</string>
+    <string name="tools_redact_box_next">அடுத்த பக்கம்</string>
+    <string name="tools_redact_box_apply_empty">முதலில் ஒரு பெட்டி வரையுங்கள்</string>
+    <string name="tools_redact_box_apply">%1$d பகுதிகளை மறை</string>
+    <string name="tools_redact_box_err_preview">இந்தப் பக்கங்களைக் காட்ட முடியவில்லை. PDF-க்கு கடவுச்சொல் தேவையெனில் முதலில் திறக்கவும்.</string>
+    <string name="tools_redact_box_err_none">இந்த PDF-இன் பக்கங்களில் பெட்டிகள் வரையப்படவில்லை.</string>
+    <string name="tools_redact_box_done">%2$d பக்கங்களில் %1$d பகுதிகள் கறுப்பாக்கப்பட்டன</string>
+</resources>

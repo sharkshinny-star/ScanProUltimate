@@ -31,7 +31,7 @@ data class DocumentInsights(
     val phoneNumbers: List<String>,
     val references: List<String>,
     val actionItems: List<String>,
-    val suggestedTags: List<String>
+    val suggestedTags: List<String>,
 )
 
 /**
@@ -51,7 +51,7 @@ object DocumentIntelligenceEngine {
     )
     private val emailRegex = Regex("[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", RegexOption.IGNORE_CASE)
     // No dots: "10.00 20.00 30.00" is a column of prices, not a phone number.
-    private val phoneRegex = Regex("(?<!\\d)(?:\\+?\\d[\\d ()-]{7,}\\d)(?!\\d)")
+    private val phoneRegex = Regex("(?<!\\d)\\+?\\d[\\d ()-]{7,}\\d(?!\\d)")
     private val referenceRegex = Regex("""(?i)\b(?:invoice|receipt|order|ref(?:erence)?|gstin|tax id|account|contract)[ \t]*(?:(?:no\.?|number|#)[ \t]*)?[:#-]?[ \t]*([A-Z0-9](?=[A-Z0-9/_-]*\d)[A-Z0-9/_-]{3,})""")
 
     fun analyze(raw: String): DocumentInsights {
@@ -63,7 +63,7 @@ object DocumentIntelligenceEngine {
         val amounts = amountRegex.findAll(text).map { it.value.trim() }.distinct().take(8).toList()
         val dates = dateRegex.findAll(text).map { it.value.trim() }.distinct().take(8).toList()
         val emails = emailRegex.findAll(text).map { it.value.trim() }.distinct().take(8).toList()
-        val phones = phoneRegex.findAll(text).map { it.value.trim() }.filter { it.count(Char::isDigit) in 8..15 }.distinct().take(8).toList()
+        val phones = phoneRegex.findAll(text).map { it.value.trim() }.filter { (it.count(Char::isDigit) in 8..15) }.distinct().take(8).toList()
         val refs = referenceRegex.findAll(text).mapNotNull { it.groups[1]?.value?.trim() }.distinct().take(8).toList()
         val actionItems = extractActionItems(text)
         val summary = structuredSummary(text, kind, dates) ?: extractiveSummary(text, kind, amounts, dates)
@@ -80,8 +80,21 @@ object DocumentIntelligenceEngine {
     fun answer(question: String, raw: String): String {
         val text = normalize(raw)
         // Drop question words and filler so "What is the address?" matches on "address", not "the".
-        val qTokens = tokens(question).filter { it.length >= 3 && it !in STOPWORDS }.toSet()
+        val qTokens = tokens(question).asSequence().filter { it.length >= 3 && it !in STOPWORDS }.toSet()
         if (qTokens.isEmpty() || text.isBlank()) return AppStrings.get(R.string.assistant_ask_specific)
+
+        // Intent shortcuts for natural on-device assistant queries
+        if (qTokens.any { it in setOf("summary", "summarise", "overview") }) {
+            val summary = analyze(raw).summary
+            if (summary.isNotBlank()) return summary
+        }
+        if (qTokens.any { it in setOf("total", "amount", "cost", "price", "due", "balance") }) {
+            total(text)?.let { return "Total: $it" }
+        }
+        if (qTokens.any { it in setOf("action", "actions", "todo", "task", "tasks") }) {
+            val actions = extractActionItems(text)
+            if (actions.isNotEmpty()) return actions.joinToString("\n• ", prefix = "• ")
+        }
 
         val chunks = text.split(Regex("\\n{2,}|(?<=[.!?])\\s+"))
             .map(String::trim)
@@ -110,12 +123,15 @@ object DocumentIntelligenceEngine {
             return Regex(head + Regex.escape(t) + tail).containsMatchIn(lower)
         }
         fun score(vararg terms: String) = terms.count { hasTerm(it) }
+        // A business card is short and carries a way to reach someone. One word such as "email" or "manager" on a
+        // laptop screen or a menu is not enough, and the label offers "Add to contacts", so it must not misfire.
+        val looksLikeCard = lower.length <= CARD_MAX_CHARS && (EMAIL.containsMatchIn(lower) || PHONE.containsMatchIn(lower))
         val scores = mapOf(
             DocumentKind.INVOICE to score("invoice", "gstin", "subtotal", "tax invoice", "amount due"),
             DocumentKind.RECEIPT to score("receipt", "cash", "change", "total", "thank you"),
             DocumentKind.CONTRACT to score("agreement", "contract", "party", "whereas", "terms and conditions", "signature"),
             DocumentKind.IDENTITY to score("passport", "date of birth", "nationality", "identity", "aadhaar", "driving licence", "driver license"),
-            DocumentKind.BUSINESS_CARD to score("www.", "mobile", "email", "director", "manager", "linkedin"),
+            DocumentKind.BUSINESS_CARD to if (looksLikeCard) score("www.", "mobile", "email", "director", "manager", "linkedin") else 0,
             DocumentKind.LETTER to score("dear ", "sincerely", "regards", "subject:"),
             DocumentKind.NOTES to score("notes", "todo", "to do", "agenda", "minutes")
         )
@@ -204,6 +220,13 @@ object DocumentIntelligenceEngine {
     private fun tokens(value: String) = value.lowercase(Locale.ROOT)
         .split(Regex("[^\\p{L}\\p{N}]+"))
         .filter { it.isNotBlank() }
+
+    /** Longest text still read as a business card. */
+    private const val CARD_MAX_CHARS = 700
+    private val EMAIL = Regex("[\\w.+-]+@[\\w-]+\\.[\\w.-]+")
+
+    /** A phone-like number: groups of at least two digits, so a keyboard's row of single digits does not count. */
+    private val PHONE = Regex("(?<!\\d)(?:\\+\\d{1,3}[\\s-]?)?\\(?\\d{2,5}\\)?[\\s-]?\\d{3,5}[\\s-]?\\d{3,5}(?!\\d)")
 
     private val GENERIC_HEADINGS = listOf(
         "tax invoice", "invoice", "receipt", "cash receipt", "bill", "bill to", "ship to", "sold to", "original",

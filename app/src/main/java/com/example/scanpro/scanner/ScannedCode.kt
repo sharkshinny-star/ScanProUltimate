@@ -98,7 +98,9 @@ fun scannedCodeFrom(barcode: Barcode): ScannedCode {
         )
     }
     val event = barcode.calendarEvent
-    if (barcode.valueType == Barcode.TYPE_CALENDAR_EVENT && event != null) {
+    // ML Kit reads times in UTC or the phone's zone only; a code that names its own zone keeps the text parser's reading.
+    val ownEventKept = code.event != null && raw.contains("TZID=", ignoreCase = true)
+    if (barcode.valueType == Barcode.TYPE_CALENDAR_EVENT && event != null && !ownEventKept) {
         code = code.copy(
             valueType = Barcode.TYPE_CALENDAR_EVENT,
             event = EventCode(
@@ -170,21 +172,33 @@ private fun splitFields(text: String): List<String> {
 
 private fun unescape(value: String): String = value.replace(Regex("\\\\(.)"), "$1")
 
-private fun fieldMap(parts: List<String>): Map<String, String> {
+/** The `KEY:value` fields as written: values are still escaped, so a quote that is part of a name can be told from one around it. */
+private fun rawFieldMap(parts: List<String>): Map<String, String> {
     val map = LinkedHashMap<String, String>()
     for (part in parts) {
         val colon = part.indexOf(':')
         if (colon <= 0) continue
         val key = part.substring(0, colon).trim().uppercase()
-        if (key !in map) map[key] = unescape(part.substring(colon + 1))
+        if (key !in map) map[key] = part.substring(colon + 1)
     }
     return map
 }
 
+/**
+ * A Wi-Fi field's text. The Wi-Fi code format writes a name or password that looks like hexadecimal inside double quotes
+ * (`S:"1234"`) to say it is the text itself, not hex digits; the quotes are not part of the value. A quote that belongs
+ * to the value is escaped (`\"`), so it never starts the field and is kept.
+ */
+private fun wifiValue(raw: String?): String? {
+    if (raw == null) return null
+    val quoted = raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"') && !raw.endsWith("\\\"")
+    return unescape(if (quoted) raw.substring(1, raw.length - 1) else raw)
+}
+
 private fun parseWifi(raw: String, format: Int): ScannedCode? {
     val body = raw.trim().substring(5)
-    val fields = fieldMap(splitFields(body))
-    val ssid = fields["S"] ?: return null
+    val fields = rawFieldMap(splitFields(body))
+    val ssid = wifiValue(fields["S"]) ?: return null
     val type = fields["T"].orEmpty().trim().uppercase()
     val sae = type == "SAE" || type == "WPA3"
     val encryption = when {
@@ -195,7 +209,7 @@ private fun parseWifi(raw: String, format: Int): ScannedCode? {
     val hidden = fields["H"].orEmpty().trim().equals("true", ignoreCase = true)
     return ScannedCode(
         raw, format, Barcode.TYPE_WIFI,
-        wifi = WifiCode(ssid, fields["P"].orEmpty(), encryption, sae, hidden)
+        wifi = WifiCode(ssid, wifiValue(fields["P"]).orEmpty(), encryption, sae, hidden)
     )
 }
 
@@ -213,7 +227,8 @@ private fun parseVCard(raw: String, format: Int): ScannedCode? {
     for (line in lines) {
         val colon = line.indexOf(':')
         if (colon <= 0) continue
-        val name = line.substring(0, colon).substringBefore(';').trim().uppercase()
+        // iPhone and Google contacts write grouped lines ("item1.TEL;type=pref:..."): the group is not part of the name.
+        val name = line.substring(0, colon).substringBefore(';').trim().uppercase().substringAfterLast('.')
         val value = vcardUnescape(line.substring(colon + 1)).trim()
         if (value.isEmpty()) continue
         when (name) {
@@ -275,30 +290,45 @@ private fun parseEvent(raw: String, format: Int): ScannedCode? {
     var description: String? = null
     var start: String? = null
     var end: String? = null
+    var startZone: String? = null
+    var endZone: String? = null
     for (line in lines) {
         val colon = line.indexOf(':')
         if (colon <= 0) continue
-        val name = line.substring(0, colon).substringBefore(';').trim().uppercase()
+        val head = line.substring(0, colon)
+        val name = head.substringBefore(';').trim().uppercase().substringAfterLast('.')
         val value = vcardUnescape(line.substring(colon + 1)).trim()
+        // "DTSTART;TZID=Europe/London:20260131T093000": the time is in that zone, not the phone's.
+        val zone = head.split(';').drop(1).firstOrNull { it.trim().startsWith("TZID=", ignoreCase = true) }
+            ?.substringAfter('=')?.trim()?.trim('"')
         when (name) {
             "SUMMARY" -> if (summary == null) summary = value.ifEmpty { null }
             "LOCATION" -> if (location == null) location = value.ifEmpty { null }
             "DESCRIPTION" -> if (description == null) description = value.ifEmpty { null }
-            "DTSTART" -> if (start == null) start = value
-            "DTEND" -> if (end == null) end = value
+            "DTSTART" -> if (start == null) { start = value; startZone = zone }
+            "DTEND" -> if (end == null) { end = value; endZone = zone }
         }
     }
     if (summary == null && start == null && location == null) return null
-    val event = EventCode(summary, location, description, icalMillis(start), icalMillis(end), allDay = start != null && start.length <= 8)
+    val event = EventCode(summary, location, description, icalMillis(start, startZone), icalMillis(end, endZone), allDay = start != null && start.length <= 8)
     return ScannedCode(raw, format, Barcode.TYPE_CALENDAR_EVENT, event = event)
 }
 
-/** An iCalendar date or date-time (`20260131`, `20260131T093000`, `20260131T093000Z`) as milliseconds; null when it is not one. */
-internal fun icalMillis(value: String?): Long? {
+/**
+ * An iCalendar date or date-time (`20260131`, `20260131T093000`, `20260131T093000Z`) as milliseconds; null when it is
+ * not one. [tzid] is the `TZID` parameter of the property, used when the value has no `Z`.
+ */
+internal fun icalMillis(value: String?, tzid: String? = null): Long? {
     val text = value?.trim().orEmpty()
     val match = Regex("^(\\d{4})(\\d{2})(\\d{2})(?:T(\\d{2})(\\d{2})(\\d{2})?(Z)?)?$").matchEntire(text) ?: return null
     val groups = match.groupValues
-    val zone = if (groups[7].isNotEmpty()) TimeZone.getTimeZone("UTC") else TimeZone.getDefault()
+    // A "Z" wins; else the code's own zone when it names one Java knows (getTimeZone would turn a bad name into GMT
+    // without a word); else this device's zone.
+    val zone = when {
+        groups[7].isNotEmpty() -> TimeZone.getTimeZone("UTC")
+        tzid != null && tzid in TimeZone.getAvailableIDs() -> TimeZone.getTimeZone(tzid)
+        else -> TimeZone.getDefault()
+    }
     return Calendar.getInstance(zone).apply {
         clear()
         set(
@@ -314,7 +344,18 @@ private fun parseGeo(raw: String, format: Int): ScannedCode? {
     val lat = numbers.getOrNull(0)?.trim()?.toDoubleOrNull() ?: return null
     val lng = numbers.getOrNull(1)?.trim()?.toDoubleOrNull() ?: return null
     if (lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) return null
-    return ScannedCode(raw, format, Barcode.TYPE_GEO, geo = GeoCode(lat, lng))
+    // "geo:0,0?q=34.99,-106.61(Label)" (Google Maps and many generators) puts the place in the query; 0,0 is only a stand-in.
+    val place = if (lat == 0.0 && lng == 0.0) geoFromQuery(raw.trim().substring(4).substringAfter('?', "")) else null
+    return ScannedCode(raw, format, Barcode.TYPE_GEO, geo = place ?: GeoCode(lat, lng))
+}
+
+/** The coordinates in a geo link's `q=lat,lng(label)` parameter; null when there is none or it is a name, not numbers. */
+private fun geoFromQuery(query: String): GeoCode? {
+    val q = queryParameters(query)["q"] ?: return null
+    val numbers = q.substringBefore('(').split(',')
+    val lat = numbers.getOrNull(0)?.trim()?.toDoubleOrNull() ?: return null
+    val lng = numbers.getOrNull(1)?.trim()?.toDoubleOrNull() ?: return null
+    return if (lat in -90.0..90.0 && lng in -180.0..180.0) GeoCode(lat, lng) else null
 }
 
 /** Percent-decodes [value]; a plus sign stays a plus (mailto and sms links are not form data). */

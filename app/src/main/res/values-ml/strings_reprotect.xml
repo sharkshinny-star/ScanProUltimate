@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="msg_tools_reprotected">ഫലം അതേ പാസ്‌വേഡ് ഉപയോഗിച്ച് സംരക്ഷിച്ചിരിക്കുന്നു.</string>
+    <string name="msg_tools_reprotect_failed">ഫലം വീണ്ടും സംരക്ഷിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ സംരക്ഷണമില്ലാതെ സേവ് ചെയ്തില്ല.</string>
+</resources>

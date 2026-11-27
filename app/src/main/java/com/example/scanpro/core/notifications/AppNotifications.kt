@@ -96,6 +96,45 @@ class AppNotifications @Inject constructor(
         )
     }
 
+    /**
+     * One of the day's drink-water reminders ([HydrationSchedule]); [wording] picks the text. Nothing private in it,
+     * so it reads the same on the lock screen. "I drank" and "Skip" both put the notice away; neither is recorded.
+     */
+    suspend fun drinkWater(wording: HydrationSchedule.Wording) {
+        if (!settings.hydrationReminders.first()) return
+        val body = when (wording) {
+            HydrationSchedule.Wording.MORNING -> R.string.notify_water_body_morning
+            HydrationSchedule.Wording.MIDDAY -> R.string.notify_water_body_midday
+            HydrationSchedule.Wording.LATER -> R.string.notify_water_body_later
+            HydrationSchedule.Wording.LAST -> R.string.notify_water_body_last
+        }
+        fun button(label: Int, action: String) = NotificationCompat.Action(
+            0,
+            context.getString(label),
+            PendingIntent.getBroadcast(
+                context,
+                ID_WATER,
+                Intent(context, com.example.scanpro.work.HydrationActionReceiver::class.java).setAction(action),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        )
+        post(
+            id = ID_WATER,
+            channel = CHANNEL_WATER,
+            title = context.getString(R.string.notify_water_title),
+            detail = context.getString(body),
+            tap = openAppIntent(),
+            neutralWhenLocked = false,
+            actions = listOf(
+                button(R.string.notify_water_drank, com.example.scanpro.work.HydrationActionReceiver.ACTION_DRANK),
+                button(R.string.notify_water_skip, com.example.scanpro.work.HydrationActionReceiver.ACTION_SKIP)
+            ),
+            timeoutMs = WATER_TIMEOUT_MS
+        )
+    }
+
+    fun clearDrinkWater() = NotificationManagerCompat.from(context).cancel(ID_WATER)
+
     /** Clears finished and failed notices once the user is back in the app, where the snackbar already said it. */
     fun clearTaskNotices() {
         val manager = NotificationManagerCompat.from(context)
@@ -126,6 +165,10 @@ class AppNotifications @Inject constructor(
                 NotificationChannel(CHANNEL_REMINDERS, context.getString(R.string.notify_channel_reminders), NotificationManager.IMPORTANCE_LOW).apply {
                     description = context.getString(R.string.notify_channel_reminders_description)
                     setShowBadge(false)
+                },
+                NotificationChannel(CHANNEL_WATER, context.getString(R.string.notify_channel_water), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = context.getString(R.string.notify_channel_water_description)
+                    setShowBadge(false)
                 }
             )
         )
@@ -137,7 +180,10 @@ class AppNotifications @Inject constructor(
         title: String,
         detail: String?,
         tap: PendingIntent,
-        neutralWhenLocked: Boolean = true
+        neutralWhenLocked: Boolean = true,
+        actions: List<NotificationCompat.Action> = emptyList(),
+        /** The notice removes itself after this long; 0 keeps it until dismissed. */
+        timeoutMs: Long = 0
     ) {
         if (!canPost()) return
         ensureChannels()
@@ -158,7 +204,11 @@ class AppNotifications @Inject constructor(
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(publicVersion)
-            .setCategory(if (channel == CHANNEL_REMINDERS) NotificationCompat.CATEGORY_REMINDER else NotificationCompat.CATEGORY_STATUS)
+            .setCategory(if (channel == CHANNEL_REMINDERS || channel == CHANNEL_WATER) NotificationCompat.CATEGORY_REMINDER else NotificationCompat.CATEGORY_STATUS)
+            .apply {
+                actions.forEach { addAction(it) }
+                if (timeoutMs > 0) setTimeoutAfter(timeoutMs)
+            }
             .build()
         try {
             NotificationManagerCompat.from(context).notify(id, notification)
@@ -195,5 +245,9 @@ class AppNotifications @Inject constructor(
         const val ID_FAILED = 0x5CB1
         const val ID_TRASH = 0x5CB2
         const val ID_BACKUP = 0x5CB3
+        const val CHANNEL_WATER = "drink_water"
+        const val ID_WATER = 0x5CB4
+        /** A reminder nobody looked at goes away after an hour, so the three never read as a backlog. */
+        const val WATER_TIMEOUT_MS = 60L * 60 * 1000
     }
 }
