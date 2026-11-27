@@ -16,6 +16,7 @@ import java.io.File
 import java.util.UUID
 import com.example.scanpro.core.concurrent.BackgroundWork
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 /**
@@ -255,7 +256,7 @@ internal object PdfTextEditTool {
                     if (outcome.covered > 0) add(AppStrings.plural(R.plurals.tools_edit_covered, outcome.covered, outcome.covered))
                 }
                 // Cancelled while saving: leave no finished-looking file behind (the catch below removes it).
-                coroutineContext[kotlinx.coroutines.Job]?.ensureActive()
+                ensureActive()
                 PdfToolResult(
                     outputFile = outputFile,
                     pageCount = pages,

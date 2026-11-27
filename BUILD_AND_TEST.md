@@ -53,6 +53,14 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 <!-- coderabbit-ai-generated-section:v1:c730b0d4ff65a2000e9a8f5cb11e6bbfcac3925859e9ff0a51b3ee3ecf07d927 -->
 
+## Latest results (2026-11-27, F289 build of F251–F288, Linux cloud container with the Android SDK)
+
+- Android SDK installed in the container (platform `android-37.0`, build-tools 37.0.0); Maven Central rate-limited (HTTP 429) the first downloads, a re-run resolved them.
+- `:app:compileDebugKotlin`: first run 1 error (`PdfTextEditTool.kt:258`, F258), fixed in F289; then passes.
+- `:app:testDebugUnitTest`: 1,235 tests, 0 failed, 163 skipped (screenshot tests and `RealPhotoEquivalenceTest` are opt-in and were not enabled).
+- `:app:lintDebug`: passed (0 errors). `scripts/ci/scanpro-quality-audit.py`: PASS.
+- Not run: `bundleRelease`, sideload APKs, screenshot tests, anything on a phone.
+
 ## Latest results (2026-11-22, F288 out-of-space message, Linux cloud container)
 
 - Not run: the Android build and unit tests (cloud Gradle cannot resolve the Android plugin); the F288 edits to the Sign PDF, Edit PDF text and crop screens are uncompiled.
